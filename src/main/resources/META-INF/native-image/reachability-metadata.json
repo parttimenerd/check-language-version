@@ -1,0 +1,218 @@
+{
+  "reflection": [
+    {
+      "type": "com.github.javaparser.ast.body.FieldDeclaration",
+      "fields": [
+        {
+          "name": "variables"
+        }
+      ]
+    },
+    {
+      "type": "com.github.javaparser.ast.expr.ArrayCreationExpr",
+      "fields": [
+        {
+          "name": "levels"
+        }
+      ]
+    },
+    {
+      "type": "com.github.javaparser.ast.expr.VariableDeclarationExpr",
+      "fields": [
+        {
+          "name": "variables"
+        }
+      ]
+    },
+    {
+      "type": "com.github.javaparser.ast.type.IntersectionType",
+      "fields": [
+        {
+          "name": "elements"
+        }
+      ]
+    },
+    {
+      "type": "com.github.javaparser.ast.type.UnionType",
+      "fields": [
+        {
+          "name": "elements"
+        }
+      ]
+    },
+    {
+      "type": "groovy.lang.Closure"
+    },
+    {
+      "type": "java.lang.Boolean",
+      "jniAccessible": true,
+      "methods": [
+        {
+          "name": "getBoolean",
+          "parameterTypes": [
+            "java.lang.String"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "java.lang.Object"
+    },
+    {
+      "type": "java.lang.Record"
+    },
+    {
+      "type": "java.nio.file.Path"
+    },
+    {
+      "type": "java.nio.file.Paths"
+    },
+    {
+      "type": "java.sql.Connection"
+    },
+    {
+      "type": "java.sql.Driver"
+    },
+    {
+      "type": "java.sql.DriverManager"
+    },
+    {
+      "type": "java.sql.Time"
+    },
+    {
+      "type": "java.sql.Timestamp"
+    },
+    {
+      "type": "java.time.Duration"
+    },
+    {
+      "type": "java.time.Instant"
+    },
+    {
+      "type": "java.time.LocalDate"
+    },
+    {
+      "type": "java.time.LocalDateTime"
+    },
+    {
+      "type": "java.time.LocalTime"
+    },
+    {
+      "type": "java.time.MonthDay"
+    },
+    {
+      "type": "java.time.OffsetDateTime"
+    },
+    {
+      "type": "java.time.OffsetTime"
+    },
+    {
+      "type": "java.time.Period"
+    },
+    {
+      "type": "java.time.Year"
+    },
+    {
+      "type": "java.time.YearMonth"
+    },
+    {
+      "type": "java.time.ZoneId"
+    },
+    {
+      "type": "java.time.ZoneOffset"
+    },
+    {
+      "type": "java.time.ZonedDateTime"
+    },
+    {
+      "type": "me.bechberger.check.Main",
+      "fields": [
+        {
+          "name": "files"
+        },
+        {
+          "name": "json"
+        },
+        {
+          "name": "summary"
+        },
+        {
+          "name": "verbose"
+        }
+      ]
+    },
+    {
+      "type": "me.bechberger.check.SummaryCommand"
+    },
+    {
+      "type": "me.bechberger.check.model.FileInfo",
+      "methods": [
+        {
+          "name": "java",
+          "parameterTypes": []
+        },
+        {
+          "name": "lines",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "me.bechberger.check.model.JsonOutput",
+      "methods": [
+        {
+          "name": "files",
+          "parameterTypes": []
+        },
+        {
+          "name": "unparsable_files",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "me.bechberger.check.model.UnparsableFileInfo",
+      "methods": [
+        {
+          "name": "lines",
+          "parameterTypes": []
+        }
+      ]
+    },
+    {
+      "type": "picocli.CommandLine$AutoHelpMixin",
+      "fields": [
+        {
+          "name": "helpRequested"
+        },
+        {
+          "name": "versionRequested"
+        }
+      ]
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en"
+    },
+    {
+      "type": "sun.text.resources.cldr.FormatData_en_US"
+    },
+    {
+      "type": "sun.util.resources.cldr.CalendarData"
+    },
+    {
+      "type": "tools.jackson.databind.deser.Deserializers[]"
+    },
+    {
+      "type": "tools.jackson.databind.deser.KeyDeserializers[]"
+    },
+    {
+      "type": "tools.jackson.databind.deser.ValueInstantiators[]"
+    },
+    {
+      "type": "tools.jackson.databind.ser.Serializers[]"
+    }
+  ]
+}
