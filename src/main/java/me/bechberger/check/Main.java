@@ -43,6 +43,10 @@ public class Main implements Callable<Integer> {
             description = "Output results in JSON format")
     private boolean json = false;
 
+    @Option(names = {"-i", "--ignore-errors"},
+            description = "Ignore files with parsing errors (do not log them)")
+    private boolean ignoreErrors = false;
+
     @Override
     public Integer call() throws Exception {
         if (files.isEmpty()) {
@@ -79,7 +83,7 @@ public class Main implements Callable<Integer> {
                 String filePath = file.getPath();
 
                 if (version == -1) {
-                    if (!json) {
+                    if (!json && !ignoreErrors) {
                         System.err.println("Error parsing: " + file);
                     }
                     unparsableFiles.put(filePath, new FileResult(lineCount, null));
@@ -93,7 +97,7 @@ public class Main implements Callable<Integer> {
                     maxVersion = Math.max(maxVersion, version);
                 }
             } catch (Exception e) {
-                if (!json) {
+                if (!json && !ignoreErrors) {
                     System.err.println("Error processing " + file + ": " + e.getMessage());
                     if (verbose) {
                         e.printStackTrace();
