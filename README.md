@@ -40,6 +40,13 @@ Or with GraalVM native image support:
 ./build-native-image.sh
 ```
 
+Visualization
+-------------
+
+```bash
+python3 visualize.py output.json bla.json --output-dir test_split_bars --open
+```
+
 License
 -------
 MIT
