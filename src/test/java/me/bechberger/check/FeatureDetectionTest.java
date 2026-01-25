@@ -169,8 +169,6 @@ public class FeatureDetectionTest {
 
         // Skip files that JavaParser cannot parse due to unsupported features
         Set<String> skipFiles = Set.of(
-            "Java16_LocalEnums.java",
-            "Tiny_LocalEnum_Java16.java"
         );
         Assumptions.assumeFalse(skipFiles.contains(spec.file.getName()),
             "Skipping " + spec.file.getName() + " due to JavaParser parsing limitations");

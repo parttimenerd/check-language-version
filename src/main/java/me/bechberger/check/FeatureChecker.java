@@ -599,25 +599,273 @@ public class FeatureChecker {
     private static final Pattern YIELD_PATTERN = Pattern.compile("\\byield\\s+");
 
     /**
-     * Result of preprocessing source code to handle yield statements.
+     * Pattern to detect local enum declarations inside method bodies.
+     * Matches enum declarations that appear inside braces (method bodies).
+     * Captures: the enum declaration including its body.
      */
-    private record PreprocessResult(String processedSource, boolean hasYield) {}
+    private static final Pattern LOCAL_ENUM_PATTERN = Pattern.compile(
+            "(\\benum\\s+\\w+\\s*\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})"
+    );
 
     /**
-     * Preprocess source code to replace "yield " with "return " for JavaParser compatibility.
-     * JavaParser doesn't fully support the yield keyword, so we replace it but track its usage.
+     * Result of preprocessing source code to handle unsupported syntax.
+     */
+    private record PreprocessResult(String processedSource, boolean hasYield, boolean hasLocalEnum) {}
+
+    /**
+     * Preprocess source code to handle syntax that JavaParser doesn't support.
+     * - Replaces "yield " with "return " for JavaParser compatibility
+     * - Moves local enums outside of method bodies
      *
      * @param source The original source code
-     * @return PreprocessResult containing the modified source and whether yield was detected
+     * @return PreprocessResult containing the modified source and detected features
      */
-    private static PreprocessResult preprocessYield(String source) {
-        Matcher matcher = YIELD_PATTERN.matcher(source);
-        boolean hasYield = matcher.find();
-        if (hasYield) {
-            String processed = matcher.replaceAll("return ");
-            return new PreprocessResult(processed, true);
+    private static PreprocessResult preprocess(String source) {
+        boolean hasYield = false;
+        boolean hasLocalEnum = false;
+
+        // Step 1: Handle yield statements
+        Matcher yieldMatcher = YIELD_PATTERN.matcher(source);
+        if (yieldMatcher.find()) {
+            hasYield = true;
+            source = yieldMatcher.replaceAll("return ");
         }
-        return new PreprocessResult(source, false);
+
+        // Step 2: Handle local enums - try to detect and fix them
+        // We look for enum declarations that are inside method bodies
+        // A simple heuristic: if parsing fails and we find enum patterns, try to move them
+
+        return new PreprocessResult(source, hasYield, hasLocalEnum);
+    }
+
+    /**
+     * Attempt to fix local enums by moving them outside method bodies.
+     * This is called when initial parsing fails.
+     *
+     * Strategy: Find enum declarations inside method-like contexts and move them out.
+     * Transform:
+     *   void method() { enum E { A, B } ... }
+     * Into:
+     *   void method() { ... }
+     *   enum E { A, B }
+     *   void __localEnumPlaceholder__() {}
+     *
+     * @param source The source code that failed to parse
+     * @return FixResult with the fixed source and whether local enums were found
+     */
+    private static PreprocessResult fixLocalEnums(String source) {
+        List<int[]> localEnumRanges = new ArrayList<>();
+        List<String> extractedEnums = new ArrayList<>();
+        int enumCounter = 0;
+
+        // Track brace depth to identify when we're inside a method body
+        int braceDepth = 0;
+        int i = 0;
+        int len = source.length();
+
+        while (i < len) {
+            char c = source.charAt(i);
+
+            // Skip string literals
+            if (c == '"') {
+                i++;
+                // Check for text block
+                if (i + 1 < len && source.charAt(i) == '"' && source.charAt(i + 1) == '"') {
+                    // Text block
+                    i += 2;
+                    while (i + 2 < len) {
+                        if (source.charAt(i) == '"' && source.charAt(i + 1) == '"' && source.charAt(i + 2) == '"') {
+                            i += 3;
+                            break;
+                        }
+                        i++;
+                    }
+                } else {
+                    // Regular string
+                    while (i < len) {
+                        char sc = source.charAt(i);
+                        if (sc == '\\' && i + 1 < len) {
+                            i += 2;
+                            continue;
+                        }
+                        if (sc == '"') {
+                            i++;
+                            break;
+                        }
+                        i++;
+                    }
+                }
+                continue;
+            }
+
+            // Skip character literals
+            if (c == '\'') {
+                i++;
+                while (i < len) {
+                    char sc = source.charAt(i);
+                    if (sc == '\\' && i + 1 < len) {
+                        i += 2;
+                        continue;
+                    }
+                    if (sc == '\'') {
+                        i++;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Skip line comments
+            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '/') {
+                while (i < len && source.charAt(i) != '\n') {
+                    i++;
+                }
+                continue;
+            }
+
+            // Skip block comments
+            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '*') {
+                i += 2;
+                while (i + 1 < len) {
+                    if (source.charAt(i) == '*' && source.charAt(i + 1) == '/') {
+                        i += 2;
+                        break;
+                    }
+                    i++;
+                }
+                continue;
+            }
+
+            // Track brace depth
+            if (c == '{') {
+                braceDepth++;
+                i++;
+                continue;
+            }
+
+            if (c == '}') {
+                braceDepth--;
+                i++;
+                continue;
+            }
+
+            // Look for 'enum' keyword when inside a method body (braceDepth >= 2)
+            if (braceDepth >= 2 && c == 'e' && i + 4 <= len) {
+                // Check if this is "enum" keyword
+                if (source.startsWith("enum", i) &&
+                    (i == 0 || !Character.isJavaIdentifierPart(source.charAt(i - 1))) &&
+                    (i + 4 >= len || !Character.isJavaIdentifierPart(source.charAt(i + 4)))) {
+
+                    // Found local enum - extract it
+                    int enumStart = i;
+
+                    // Find the enum name and opening brace
+                    i += 4; // skip "enum"
+                    while (i < len && Character.isWhitespace(source.charAt(i))) i++;
+
+                    // Skip enum name
+                    while (i < len && Character.isJavaIdentifierPart(source.charAt(i))) i++;
+
+                    // Skip to opening brace (might have implements clause)
+                    while (i < len && source.charAt(i) != '{') i++;
+
+                    if (i < len) {
+                        // Find matching closing brace
+                        int enumBraceDepth = 0;
+                        while (i < len) {
+                            char ec = source.charAt(i);
+
+                            // Skip strings in enum body
+                            if (ec == '"') {
+                                i++;
+                                while (i < len) {
+                                    if (source.charAt(i) == '\\' && i + 1 < len) {
+                                        i += 2;
+                                        continue;
+                                    }
+                                    if (source.charAt(i) == '"') {
+                                        i++;
+                                        break;
+                                    }
+                                    i++;
+                                }
+                                continue;
+                            }
+
+                            // Skip char literals
+                            if (ec == '\'') {
+                                i++;
+                                while (i < len) {
+                                    if (source.charAt(i) == '\\' && i + 1 < len) {
+                                        i += 2;
+                                        continue;
+                                    }
+                                    if (source.charAt(i) == '\'') {
+                                        i++;
+                                        break;
+                                    }
+                                    i++;
+                                }
+                                continue;
+                            }
+
+                            if (ec == '{') {
+                                enumBraceDepth++;
+                            } else if (ec == '}') {
+                                enumBraceDepth--;
+                                if (enumBraceDepth == 0) {
+                                    i++; // include closing brace
+                                    break;
+                                }
+                            }
+                            i++;
+                        }
+
+                        // Record this enum's location and content
+                        String enumDecl = source.substring(enumStart, i);
+                        localEnumRanges.add(new int[]{enumStart, i});
+                        extractedEnums.add(enumDecl + "\nvoid __localEnumPlaceholder" + enumCounter++ + "__() {}\n");
+                        continue;
+                    }
+                }
+            }
+
+            i++;
+        }
+
+        if (localEnumRanges.isEmpty()) {
+            return new PreprocessResult(source, false, false);
+        }
+
+        // Build result by removing local enums and inserting them at class level
+        StringBuilder result = new StringBuilder();
+        int lastEnd = 0;
+
+        // Find the first class-level closing brace to insert enums before it
+        // We'll insert the extracted enums right before the final closing brace of the outermost class
+
+        // First, build the source without the local enums
+        for (int[] range : localEnumRanges) {
+            result.append(source, lastEnd, range[0]);
+            lastEnd = range[1];
+        }
+        result.append(source.substring(lastEnd));
+
+        // Now find the last '}' and insert extracted enums before it
+        String withoutEnums = result.toString();
+        int lastBrace = withoutEnums.lastIndexOf('}');
+        if (lastBrace > 0) {
+            StringBuilder finalResult = new StringBuilder();
+            finalResult.append(withoutEnums, 0, lastBrace);
+            for (String extracted : extractedEnums) {
+                finalResult.append("\n").append(extracted);
+            }
+            finalResult.append(withoutEnums.substring(lastBrace));
+            return new PreprocessResult(finalResult.toString(), false, true);
+        }
+
+        return new PreprocessResult(withoutEnums, false, true);
     }
 
     /**
@@ -643,7 +891,7 @@ public class FeatureChecker {
         }
 
         // Preprocess to handle yield statements (replace with return for JavaParser compatibility)
-        PreprocessResult preprocessResult = preprocessYield(sourceCode);
+        PreprocessResult preprocessResult = preprocess(sourceCode);
 
         ParseResult<CompilationUnit> parseResult;
         try {
@@ -651,6 +899,27 @@ public class FeatureChecker {
             parseResult = parser.parse(new java.io.StringReader(preprocessResult.processedSource()));
         } catch (StackOverflowError e) {
             return null;
+        }
+
+        // If parsing failed, try to fix local enums and retry
+        if (!parseResult.isSuccessful() || parseResult.getResult().isEmpty()) {
+            PreprocessResult localEnumFix = fixLocalEnums(preprocessResult.processedSource());
+            if (localEnumFix.hasLocalEnum()) {
+                // Retry parsing with fixed source
+                try {
+                    parseResult = parser.parse(new java.io.StringReader(localEnumFix.processedSource()));
+                } catch (StackOverflowError e) {
+                    return null;
+                }
+                if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
+                    // Update preprocessResult to include local enum detection
+                    preprocessResult = new PreprocessResult(
+                            localEnumFix.processedSource(),
+                            preprocessResult.hasYield(),
+                            true
+                    );
+                }
+            }
         }
 
         if (!parseResult.isSuccessful() || parseResult.getResult().isEmpty()) {
@@ -663,6 +932,11 @@ public class FeatureChecker {
         // Add YIELD feature if yield statements were detected during preprocessing
         if (preprocessResult.hasYield()) {
             features.add(JavaFeature.YIELD);
+        }
+
+        // Add LOCAL_ENUMS feature if local enums were detected during preprocessing
+        if (preprocessResult.hasLocalEnum()) {
+            features.add(JavaFeature.LOCAL_ENUMS);
         }
 
         FeatureVisitor visitor = new FeatureVisitor(features::add);

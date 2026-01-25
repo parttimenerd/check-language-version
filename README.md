@@ -29,8 +29,8 @@ Commands:
 
 Known Limitations
 -----------------
-JavaParser fails to parse some valid Java files:
-- local enums are not supported
+JavaParser fails to parse some valid Java files.
+It's all just an approximation.
 
 Building
 --------
@@ -56,6 +56,22 @@ License
 -------
 Apache License 2.0
 
-TODO
-----
-Maybe rewrite using internal Java compiler APIs for better accuracy. Or just maybe not.
+Game idea
+---------
+I have in the tests a lot of tiny Java files with different language features
+and different Java versions.
+Maybe create a game where you have to guess the Java version
+based on the code snippet?
+
+create a self-contained python script in a game folder
+that generates a quiz from these files (embed all files in the JS
+with the language features that define the version and the minimum version required
+as the answer).
+The user is shown a code snippet and has to select the correct Java version
+from multiple choices (auto-generate four random wrong answers and add correct
+answer).
+The game keeps track of score (sum of absolute differences to actual version) and time.
+Use now web framework in the backend and pure vanilla JS in the frontend.
+keep it simple.
+
+the python script should generate a simple HTML file with embedded JS and CSS.
