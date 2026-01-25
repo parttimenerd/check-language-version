@@ -1,5 +1,5 @@
-// Tiny: IO API (Java 1)
-// Expected Version: 1
+// Tiny: IO API (Java 1.0)
+// Expected Version: 0
 // Required Features: IO_API
 
 import java.io.*;

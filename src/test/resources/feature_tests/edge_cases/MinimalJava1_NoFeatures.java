@@ -1,5 +1,5 @@
 // Edge case: Minimal Java 1.0 code with no special features
-// Expected Version: 1
+// Expected Version: 0
 // Required Features: NONE
 public class MinimalJava1_NoFeatures {
 

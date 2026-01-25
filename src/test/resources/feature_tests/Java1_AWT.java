@@ -1,5 +1,5 @@
-// Java 1.0 feature: Abstract Window Toolkit (AWT)
-// Expected Version: 1
+// Java 1.1 feature test: AWT (Java 1.0) with Inner Classes (Java 1.1)
+// Expected Version: 1 (due to anonymous inner class for ActionListener)
 // Required Features: AWT, INNER_CLASSES
 import java.awt.Frame;
 import java.awt.Button;

@@ -156,9 +156,17 @@
                 return arr;
             }
 
+            // Format Java version for display (0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
+            function formatVersion(version) {
+                if (version <= 4) {
+                    return "1." + version;
+                }
+                return String(version);
+            }
+
             // Generate wrong answers for a given correct version
             function generateWrongAnswers(correct) {
-                var MIN_VERSION = 1;
+                var MIN_VERSION = 0;
                 var MAX_VERSION = 25;
                 var wrong = [];
                 while (wrong.length < 4) {
@@ -213,7 +221,7 @@
                                     cls = 'wrong';
                                 }
                             }
-                            return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${opt}</button>`;
+                            return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
                         }).join('');
                     }
 
@@ -232,12 +240,12 @@
                                 const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
                                 featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
                                     sortedFeatures.map(f =>
-                                        `<div class="feature-item">${f.label} (Java ${f.version})</div>`
+                                        `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
                                     ).join('') + '</div>';
                             }
 
                             self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
-                                <strong>${resultText}</strong> It is Java ${self.currentQuestion.correct}.
+                                <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
                                 ${featuresHtml}
                                 <button class="next-btn" onclick="quizNext()" title="Press Enter">Next Question</button>
                             </div>`;

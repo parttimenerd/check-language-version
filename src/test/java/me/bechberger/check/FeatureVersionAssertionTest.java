@@ -29,7 +29,7 @@ public class FeatureVersionAssertionTest {
         int maxFeatureVersion = result.features().stream()
                 .mapToInt(FeatureChecker.JavaFeature::getJavaVersion)
                 .max()
-                .orElse(1);
+                .orElse(0);
 
         assertEquals(maxFeatureVersion, result.requiredJavaVersion(),
                 String.format("Required Java version (%d) should match highest feature version (%d). Features: %s",
@@ -60,7 +60,7 @@ public class FeatureVersionAssertionTest {
                 int maxFeatureVersion = result.features().stream()
                         .mapToInt(FeatureChecker.JavaFeature::getJavaVersion)
                         .max()
-                        .orElse(1);
+                        .orElse(0);
 
                 assertEquals(maxFeatureVersion, result.requiredJavaVersion(),
                         String.format("File %s: Required Java version (%d) should match highest feature version (%d)",

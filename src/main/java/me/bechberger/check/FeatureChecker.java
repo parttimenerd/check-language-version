@@ -42,10 +42,10 @@ public class FeatureChecker {
      * These are detected via import statements and marked with isLibraryFeature=true.
      */
     public enum JavaFeature {
-        // Java 1.0 features - core language and libraries
-        AWT(1, true, "java.awt"),
-        APPLET(1, true, "java.applet"),
-        IO_API(1, true, "java.io"),
+        // Java 1.0 features - core language and libraries (version 0 = Java 1.0)
+        AWT(0, true, "java.awt"),
+        APPLET(0, true, "java.applet"),
+        IO_API(0, true, "java.io"),
 
         // Java 1.1 features (Java1_1Validator: remove noInnerClasses, noReflection)
         INNER_CLASSES(1, false, "Inner classes"),
@@ -234,7 +234,8 @@ public class FeatureChecker {
 
         @Override
         public String toString() {
-            return name() + " (Java " + javaVersion + (libraryFeature ? ", API" : "") + "): " + description;
+            String versionStr = javaVersion <= 4 ? "1." + javaVersion : String.valueOf(javaVersion);
+            return name() + " (Java " + versionStr + (libraryFeature ? ", API" : "") + "): " + description;
         }
     }
 
@@ -537,7 +538,7 @@ public class FeatureChecker {
             int maxFeatureVersion = features.stream()
                     .mapToInt(JavaFeature::getJavaVersion)
                     .max()
-                    .orElse(1);
+                    .orElse(0);
             if (requiredJavaVersion != maxFeatureVersion) {
                 throw new IllegalStateException(
                         String.format("Required Java version (%d) does not match highest feature version (%d) for file %s. Features: %s",
@@ -969,7 +970,7 @@ public class FeatureChecker {
         int maxVersion = features.stream()
                 .mapToInt(JavaFeature::getJavaVersion)
                 .max()
-                .orElse(1);
+                .orElse(0);
 
         return new FeatureCheckResult(file, features, maxVersion);
     }

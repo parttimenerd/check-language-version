@@ -14,7 +14,7 @@ OUTPUT_DEPS_JS = os.path.join(OUTPUT_DIR, 'deps.js')
 OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
 MIN_LINES = 1
 MAX_LINES = 20
-MIN_VERSION = 1
+MIN_VERSION = 0
 MAX_VERSION = 25
 LEMONADE_URL = 'https://lemonadejs.com/v5/lemonade.js'
 PRISM_CSS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css'
@@ -60,12 +60,13 @@ def parse_feature_enum(checker_path):
 
 def remove_comments(source):
     """
-    Removes // comments and /* ... */ comments from Java source.
+    Removes // comments and /* ... */ comments from Java source,
+    but preserves markdown doc comments (/// ...).
     """
     # Regex for block comments /* ... */
     source = re.sub(r'/\*[\s\S]*?\*/', '', source)
-    # Regex for single line comments // ...
-    source = re.sub(r'//.*', '', source)
+    # Regex for single line comments // ... but NOT markdown doc comments /// ...
+    source = re.sub(r'(?<!/)//((?!//).*)$', '', source, flags=re.MULTILINE)
     return source
 
 def sanitize_code(code):
@@ -119,7 +120,10 @@ def sanitize_code(code):
         # Ensure empty line between imports and class definition
         code_pre = re.sub(r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )', r'\1\n\n\2', code_pre)
 
-        # Collapse multiple empty lines into one
+        # Collapse multiple empty/whitespace-only lines into one empty line
+        # First, convert whitespace-only lines to pure empty lines
+        code_pre = re.sub(r'\n[ \t]+\n', '\n\n', code_pre)
+        # Then collapse multiple consecutive newlines (2+ empty lines) into single empty line
         code_pre = re.sub(r'\n{3,}', '\n\n', code_pre)
 
         # Remove leading and trailing empty lines
@@ -129,7 +133,10 @@ def sanitize_code(code):
     # Ensure empty line between imports and class definition
     cleaned_code = re.sub(r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )', r'\1\n\n\2', cleaned_code)
 
-    # Collapse multiple empty lines into one
+    # Collapse multiple empty/whitespace-only lines into one empty line
+    # First, convert whitespace-only lines to pure empty lines
+    cleaned_code = re.sub(r'\n[ \t]+\n', '\n\n', cleaned_code)
+    # Then collapse multiple consecutive newlines (2+ empty lines) into single empty line
     cleaned_code = re.sub(r'\n{3,}', '\n\n', cleaned_code)
 
     # Remove leading and trailing empty lines
