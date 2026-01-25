@@ -170,16 +170,7 @@ public class FeatureDetectionTest {
         // Skip files that JavaParser cannot parse due to unsupported features
         Set<String> skipFiles = Set.of(
             "Java16_LocalEnums.java",
-            "Tiny_LocalEnum_Java16.java",
-            "Java14_Yield.java",
-            "SwitchEdgeCases_Java21.java",
-            "Edge_ComplexSwitchAllFeatures.java",
-            "Edge_YieldNested_Java14.java",
-            "Edge_YieldNested.java",
-            "Edge_ComplexSwitchAllFeatures_Java21.java",
-            "Combo_SwitchYieldMultiLabel_Java14.java",
-            "Combo_SwitchYieldEnumMulti.java",
-            "Tiny_Yield_Java14.java"
+            "Tiny_LocalEnum_Java16.java"
         );
         Assumptions.assumeFalse(skipFiles.contains(spec.file.getName()),
             "Skipping " + spec.file.getName() + " due to JavaParser parsing limitations");

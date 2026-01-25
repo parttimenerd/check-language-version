@@ -17,8 +17,11 @@ import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.github.javaparser.FixValidators.fixJavaValidator;
 
@@ -589,6 +592,35 @@ public class FeatureChecker {
     }
 
     /**
+     * Pattern to detect yield statements in switch expressions.
+     * Matches "yield" followed by whitespace (not followed by letters/digits which would make it an identifier).
+     * This pattern is designed to match yield statements like "yield x;" or "yield getSomething();"
+     */
+    private static final Pattern YIELD_PATTERN = Pattern.compile("\\byield\\s+");
+
+    /**
+     * Result of preprocessing source code to handle yield statements.
+     */
+    private record PreprocessResult(String processedSource, boolean hasYield) {}
+
+    /**
+     * Preprocess source code to replace "yield " with "return " for JavaParser compatibility.
+     * JavaParser doesn't fully support the yield keyword, so we replace it but track its usage.
+     *
+     * @param source The original source code
+     * @return PreprocessResult containing the modified source and whether yield was detected
+     */
+    private static PreprocessResult preprocessYield(String source) {
+        Matcher matcher = YIELD_PATTERN.matcher(source);
+        boolean hasYield = matcher.find();
+        if (hasYield) {
+            String processed = matcher.replaceAll("return ");
+            return new PreprocessResult(processed, true);
+        }
+        return new PreprocessResult(source, false);
+    }
+
+    /**
      * Default minimum Java version to consider. Features from versions below this are ignored.
      * By default, Java 5 and lower features are ignored as they're ubiquitous in modern Java code.
      */
@@ -602,9 +634,21 @@ public class FeatureChecker {
      * @return FeatureCheckResult containing all detected features, or null if parsing failed
      */
     public static FeatureCheckResult check(File file) throws FileNotFoundException {
+        // Read file content for preprocessing
+        String sourceCode;
+        try {
+            sourceCode = Files.readString(file.toPath());
+        } catch (java.io.IOException e) {
+            throw new FileNotFoundException("Could not read file: " + file.getAbsolutePath());
+        }
+
+        // Preprocess to handle yield statements (replace with return for JavaParser compatibility)
+        PreprocessResult preprocessResult = preprocessYield(sourceCode);
+
         ParseResult<CompilationUnit> parseResult;
         try {
-            parseResult = parser.parse(file);
+            // Parse the preprocessed source code
+            parseResult = parser.parse(new java.io.StringReader(preprocessResult.processedSource()));
         } catch (StackOverflowError e) {
             return null;
         }
@@ -616,20 +660,21 @@ public class FeatureChecker {
         CompilationUnit cu = parseResult.getResult().get();
         Set<JavaFeature> features = EnumSet.noneOf(JavaFeature.class);
 
+        // Add YIELD feature if yield statements were detected during preprocessing
+        if (preprocessResult.hasYield()) {
+            features.add(JavaFeature.YIELD);
+        }
+
         FeatureVisitor visitor = new FeatureVisitor(features::add);
         visitor.visit(cu, null);
 
         // Java 23: Check for Markdown documentation comments (/// style)
-        try (var reader = new java.io.BufferedReader(new java.io.FileReader(file))) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                if (line.trim().startsWith("///")) {
-                    features.add(JavaFeature.MARKDOWN_DOC_COMMENTS);
-                    break;
-                }
+        // Use original source code for this check
+        for (String line : sourceCode.split("\n")) {
+            if (line.trim().startsWith("///")) {
+                features.add(JavaFeature.MARKDOWN_DOC_COMMENTS);
+                break;
             }
-        } catch (java.io.IOException e) {
-            // Ignore - just skip markdown detection
         }
 
         // Don't filter features - include all detected features regardless of minVersion

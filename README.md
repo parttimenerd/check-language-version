@@ -30,8 +30,6 @@ Commands:
 Known Limitations
 -----------------
 JavaParser fails to parse some valid Java files:
-- `yield` is not recognized as a keyword in switch expressions
-  - but it this seems to really rarely used in practice (only five files in Quarkus seem to contain it for example)
 - local enums are not supported
 
 Building
