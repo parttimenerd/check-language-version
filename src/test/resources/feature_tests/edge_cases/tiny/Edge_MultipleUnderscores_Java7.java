@@ -1,7 +1,7 @@
 // Java 7 edge case: Multiple underscores in all positions
 // Test: Testing underscores in various numeric literal positions
 // Expected Version: 7
-// Required Features: UNDERSCORES_IN_LITERALS
+// Required Features: BINARY_LITERALS, UNDERSCORES_IN_LITERALS
 public class Edge_MultipleUnderscores_Java7 {
     long creditCard = 1234_5678_9012_3456L;
     int binary = 0b1111_0000_1010_0101;

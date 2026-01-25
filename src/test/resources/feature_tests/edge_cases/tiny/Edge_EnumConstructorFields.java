@@ -2,7 +2,7 @@
 // Test: Testing enums with constructors, fields, and methods
 // Expected Version: 5
 // Required Features: ENUMS
-public class Edge_EnumConstructorFields_Java5 {
+public class Edge_EnumConstructorFields {
     enum Planet {
         EARTH(5.976e+24, 6.37814e6),
         MARS(6.421e+23, 3.3972e6);

@@ -1,9 +1,9 @@
 // Java 9 edge case: Anonymous class with diamond
 // Test: Testing diamond operator with anonymous class instantiation
 // Expected Version: 9
-// Required Features: DIAMOND_WITH_ANONYMOUS
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES
 import java.util.*;
-public class Edge_AnonymousDiamond_Java9 {
+public class Edge_AnonymousDiamond {
     List<String> list = new ArrayList<>() {
         { add("initial"); }
     };

@@ -1,6 +1,6 @@
 // Edge case: Static imports
 // Expected Version: 5
-// Required Features: STATIC_IMPORT
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, STATIC_IMPORT
 import static java.lang.Math.*;
 import static java.util.Collections.*;
 

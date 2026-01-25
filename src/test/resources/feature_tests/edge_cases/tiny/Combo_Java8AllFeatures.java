@@ -1,12 +1,12 @@
 // Java 8 combination: All major features
 // Test: Combination of lambdas, method references, default/static interface methods, streams, Optional, and date/time API
 // Expected Version: 8
-// Required Features: LAMBDAS, METHOD_REFERENCES, DEFAULT_INTERFACE_METHODS, STATIC_INTERFACE_METHODS, STREAM_API, OPTIONAL, DATE_TIME_API
+// Required Features: COLLECTIONS_FRAMEWORK, DATE_TIME_API, DEFAULT_INTERFACE_METHODS, GENERICS, INNER_CLASSES, LAMBDAS, METHOD_REFERENCES, OPTIONAL, STATIC_INTERFACE_METHODS, STREAM_API
 import java.util.*;
 import java.util.stream.Stream;
 import java.time.*;
 
-public class Combo_Java8AllFeatures_Java8 {
+public class Combo_Java8AllFeatures {
     interface Processor {
         default void process() {
             run(() -> System.out.println("processing"));

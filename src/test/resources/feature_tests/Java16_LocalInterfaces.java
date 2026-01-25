@@ -1,6 +1,6 @@
 // Java 16 feature: Local interfaces
 // Expected Version: 16
-// Required Features: LOCAL_INTERFACES
+// Required Features: INNER_CLASSES, LAMBDAS, LOCAL_INTERFACES, RECORDS
 public class Java16_LocalInterfaces {
     public void method() {
         // Local interface (allowed since Java 16)

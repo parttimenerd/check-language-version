@@ -1,6 +1,6 @@
 // Tiny: Stream gatherers (Java 24)
 // Expected Version: 24
-// Required Features: STREAM_GATHERERS
+// Required Features: STREAM_API, STREAM_GATHERERS
 
 import java.util.stream.*;
 

@@ -4,7 +4,7 @@
 
 import java.io.*;
 
-public class Tiny_IO_Java1 {
+public class Tiny_IOApi_Java1 {
     void test() throws IOException {
         InputStream is = new FileInputStream("test");
     }

@@ -1,6 +1,6 @@
 // Test: Multi-catch (Java 7)
 // Expected Version: 7
-// Required Features: MULTI_CATCH
+// Required Features: IO_API, JDBC, MULTI_CATCH
 import java.io.*;
 import java.sql.*;
 public class Tiny_MultiCatch_Java7 {

@@ -1,6 +1,6 @@
 // Edge case: Switch expression variations
 // Expected Version: 21
-// Required Features: SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING, SWITCH_NULL_DEFAULT
+// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_MULTIPLE_LABELS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING, YIELD
 public class SwitchEdgeCases_Java21 {
 
     public int basicSwitchExpression(String day) {

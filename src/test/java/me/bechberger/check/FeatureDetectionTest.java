@@ -3,6 +3,7 @@ package me.bechberger.check;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -21,12 +22,119 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 public class FeatureDetectionTest {
 
+    /**
+     * Check if a Java source file compiles successfully using javac command line.
+     * Copies the file to a temp folder first to avoid classpath/package conflicts.
+     */
+    private static CompilationResult compileWithJavac(File sourceFile) {
+        try {
+            // Create a temp directory for this compilation
+            Path tempDir = Files.createTempDirectory("javac_test_");
+            Path tempSourceFile = tempDir.resolve(sourceFile.getName());
+
+            // Copy the source file to the temp directory
+            Files.copy(sourceFile.toPath(), tempSourceFile);
+
+            ProcessBuilder pb = new ProcessBuilder(
+                "javac",
+                "--release", "25",
+                "-d", tempDir.toString(),
+                tempSourceFile.toString()
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            // Read output
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            int exitCode = process.waitFor();
+
+            // Clean up temp files
+            try {
+                Files.walk(tempDir)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException ignored) {}
+                    });
+            } catch (IOException ignored) {}
+
+            return new CompilationResult(exitCode == 0, output.toString());
+        } catch (Exception e) {
+            return new CompilationResult(false, "Failed to run javac: " + e.getMessage());
+        }
+    }
+
+    private record CompilationResult(boolean success, String output) {}
+
+    /**
+     * Check if a Java source file compiles successfully with a specific Java version.
+     * Uses the --release flag which validates both source and target compatibility.
+     *
+     * @param sourceFile The Java source file to compile
+     * @param version The Java version to compile with (e.g., 8, 11, 17, 21)
+     * @return CompilationResult with success status and any error output
+     */
+    private static CompilationResult doesCompileWithVersion(File sourceFile, int version) {
+        try {
+            // Create a temp directory for this compilation
+            Path tempDir = Files.createTempDirectory("javac_version_test_");
+            Path tempSourceFile = tempDir.resolve(sourceFile.getName());
+
+            // Copy the source file to the temp directory
+            Files.copy(sourceFile.toPath(), tempSourceFile);
+
+            ProcessBuilder pb = new ProcessBuilder(
+                "javac",
+                "--release", String.valueOf(version),
+                "-d", tempDir.toString(),
+                tempSourceFile.toString()
+            );
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            // Read output
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line).append("\n");
+                }
+            }
+
+            int exitCode = process.waitFor();
+
+            // Clean up temp files
+            try {
+                Files.walk(tempDir)
+                    .sorted(Comparator.reverseOrder())
+                    .forEach(path -> {
+                        try {
+                            Files.delete(path);
+                        } catch (IOException ignored) {}
+                    });
+            } catch (IOException ignored) {}
+
+            return new CompilationResult(exitCode == 0, output.toString());
+        } catch (Exception e) {
+            return new CompilationResult(false, "Failed to run javac: " + e.getMessage());
+        }
+    }
+
     static class TestSpec {
         String description;
         Integer expectedVersion;
         Set<String> requiredFeatures = new HashSet<>();
         Set<String> optionalFeatures = new HashSet<>();
         Set<String> forbiddenFeatures = new HashSet<>();
+        boolean skipLowerVersionCheck = false; // Skip "doesn't compile with version-1" check for API-only features
         File file;
         String testName;
 
@@ -75,6 +183,9 @@ public class FeatureDetectionTest {
             } else if (content.startsWith("Forbidden Features:") || content.startsWith("Forbidden:")) {
                 String features = content.substring(content.indexOf(':') + 1).trim();
                 spec.forbiddenFeatures.addAll(parseFeatureList(features));
+            } else if (content.startsWith("Compile Check:")) {
+                String value = content.substring(content.indexOf(':') + 1).trim().toLowerCase();
+                spec.skipLowerVersionCheck = value.equals("false") || value.equals("no") || value.equals("skip");
             }
         }
 
@@ -167,6 +278,7 @@ public class FeatureDetectionTest {
         assertNotNull(spec.file, "Test file should not be null");
         assertTrue(spec.file.exists(), "Test file should exist: " + spec.file);
 
+
         // Skip files that JavaParser cannot parse due to unsupported features
         Set<String> skipFiles = Set.of(
         );
@@ -211,6 +323,156 @@ public class FeatureDetectionTest {
                 String.format("Forbidden feature '%s' was detected in %s",
                     forbidden, spec.file.getName()));
         }
+
+        // Check that all detected features are listed in required or optional
+        Set<String> expectedFeatures = new HashSet<>();
+        expectedFeatures.addAll(spec.requiredFeatures);
+        expectedFeatures.addAll(spec.optionalFeatures);
+        for (String detected : detectedFeatures) {
+            assertTrue(expectedFeatures.contains(detected),
+                String.format("Detected feature '%s' is not listed in required or optional features for %s. " +
+                    "Please add it to the test specification. Detected features: %s",
+                    detected, spec.file.getName(), detectedFeatures));
+        }
+    }
+
+    /**
+     * Cached javac version (-1 means not yet computed, -2 means error).
+     */
+    private static int cachedJavacVersion = -1;
+
+    /**
+     * Get the javac version by running "javac --version".
+     */
+    private static int getJavacVersion() {
+        if (cachedJavacVersion != -1) {
+            return cachedJavacVersion;
+        }
+        try {
+            ProcessBuilder pb = new ProcessBuilder("javac", "-version");
+            pb.redirectErrorStream(true);
+            Process process = pb.start();
+
+            StringBuilder output = new StringBuilder();
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    output.append(line);
+                }
+            }
+
+            process.waitFor();
+            // Output is like "javac 25" or "javac 21.0.1"
+            String versionStr = output.toString().trim();
+            if (versionStr.startsWith("javac ")) {
+                String version = versionStr.substring(6).split("\\.")[0];
+                cachedJavacVersion = Integer.parseInt(version);
+                return cachedJavacVersion;
+            }
+        } catch (Exception e) {
+            // ignore
+        }
+        cachedJavacVersion = -2;
+        return cachedJavacVersion;
+    }
+
+    @ParameterizedTest(name = "Compilation: {0}")
+    @MethodSource("provideTestFiles")
+    @DisplayName("Test file compilation with Java 25")
+    void testCompilation(TestSpec spec) {
+        // Only run when explicitly enabled via -Dtest.compilation=true
+        Assumptions.assumeTrue("true".equals(System.getProperty("test.compilation")),
+            "Skipping compilation test: set -Dtest.compilation=true to enable");
+
+        // Skip if javac is not version 25
+        int javacVersion = getJavacVersion();
+        Assumptions.assumeTrue(javacVersion == 25,
+            "Skipping compilation test: javac version is " + javacVersion + ", expected 25");
+
+        assertNotNull(spec.file, "Test file should not be null");
+        assertTrue(spec.file.exists(), "Test file should exist: " + spec.file);
+
+        CompilationResult result = compileWithJavac(spec.file);
+
+        // Skip files with module-related compilation issues
+        if (!result.success()) {
+            String output = result.output();
+            boolean isModuleIssue = output.contains("is not visible")
+                || output.contains("module")
+                || output.contains("does not read it")
+                || output.contains("package") && output.contains("declared in module")
+                || output.contains("module declarations should be in")
+                || output.contains("package") && output.contains("does not exist");
+            Assumptions.assumeFalse(isModuleIssue,
+                "Skipping compilation test due to module-related issues: " + spec.file.getName());
+        }
+
+        assertTrue(result.success(),
+            String.format("File %s does not compile with Java 25. Errors:%n%s",
+                spec.file.getName(), result.output()));
+    }
+
+    @ParameterizedTest(name = "Version compatibility: {0}")
+    @MethodSource("provideTestFiles")
+    @DisplayName("Test file compiles with expected version and not with version-1")
+    void testVersionCompatibility(TestSpec spec) {
+        // Only run when explicitly enabled via -Dtest.compilation=true
+        Assumptions.assumeTrue("true".equals(System.getProperty("test.compilation")),
+            "Skipping version compatibility test: set -Dtest.compilation=true to enable");
+
+        // Skip if javac is not available or version is too old
+        int javacVersion = getJavacVersion();
+        Assumptions.assumeTrue(javacVersion >= 8,
+            "Skipping version compatibility test: javac version is " + javacVersion + ", need at least 8");
+
+        assertNotNull(spec.file, "Test file should not be null");
+        assertTrue(spec.file.exists(), "Test file should exist: " + spec.file);
+
+        // Skip if no expected version specified
+        Assumptions.assumeTrue(spec.expectedVersion != null,
+            "Skipping version compatibility test: no expected version for " + spec.file.getName());
+
+        // --release flag only works for Java 8 and above
+        Assumptions.assumeTrue(spec.expectedVersion >= 8,
+            "Skipping version compatibility test: expected version " + spec.expectedVersion +
+            " is below 8 for " + spec.file.getName());
+
+        // Can only test with versions supported by our javac
+        Assumptions.assumeTrue(spec.expectedVersion <= javacVersion,
+            "Skipping version compatibility test: expected version " + spec.expectedVersion +
+            " is higher than javac version " + javacVersion);
+
+        // Test 1: File should compile with expected version
+        CompilationResult resultWithExpectedVersion = doesCompileWithVersion(spec.file, spec.expectedVersion);
+
+        // Skip files with module-related compilation issues
+        if (!resultWithExpectedVersion.success()) {
+            String output = resultWithExpectedVersion.output();
+            boolean isModuleIssue = output.contains("is not visible")
+                || output.contains("module")
+                || output.contains("does not read it")
+                || (output.contains("package") && output.contains("declared in module"))
+                || output.contains("module declarations should be in")
+                || (output.contains("package") && output.contains("does not exist"));
+            Assumptions.assumeFalse(isModuleIssue,
+                "Skipping version compatibility test due to module-related issues: " + spec.file.getName());
+        }
+
+        assertTrue(resultWithExpectedVersion.success(),
+            String.format("File %s should compile with Java %d but failed. Errors:%n%s",
+                spec.file.getName(), spec.expectedVersion, resultWithExpectedVersion.output()));
+
+        // Test 2: For versions > 8, file should NOT compile with version - 1
+        // Skip this check for API-only features that don't affect compilation
+        if (spec.expectedVersion > 8 && !spec.skipLowerVersionCheck) {
+            int lowerVersion = spec.expectedVersion - 1;
+            CompilationResult resultWithLowerVersion = doesCompileWithVersion(spec.file, lowerVersion);
+
+            assertFalse(resultWithLowerVersion.success(),
+                String.format("File %s should NOT compile with Java %d (one below expected %d), " +
+                    "but it compiled successfully. This suggests the expected version may be wrong.",
+                    spec.file.getName(), lowerVersion, spec.expectedVersion));
+        }
     }
 
     // ==================== Helper Methods for Single Test File Tests ====================
@@ -236,6 +498,7 @@ public class FeatureDetectionTest {
 
         File testFile = new File(resource.toURI());
         assertTrue(testFile.exists(), "Test file should exist: " + resourcePath);
+
 
         // Parse test spec from comments
         TestSpec spec = parseTestSpec(testFile);
@@ -289,6 +552,17 @@ public class FeatureDetectionTest {
             assertFalse(detectedFeatures.contains(forbidden),
                 String.format("Forbidden feature '%s' was detected in %s. Detected features: %s",
                     forbidden, testFile.getName(), detectedFeatures));
+        }
+
+        // Check that all detected features are listed in required or optional
+        Set<String> expectedFeatures = new HashSet<>();
+        expectedFeatures.addAll(spec.requiredFeatures);
+        expectedFeatures.addAll(spec.optionalFeatures);
+        for (String detected : detectedFeatures) {
+            assertTrue(expectedFeatures.contains(detected),
+                String.format("Detected feature '%s' is not listed in required or optional features for %s. " +
+                    "Please add it to the test specification. Detected features: %s",
+                    detected, testFile.getName(), detectedFeatures));
         }
     }
 

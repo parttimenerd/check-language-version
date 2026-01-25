@@ -1,7 +1,7 @@
 // Java 8 combination: Lambda + Method reference + Stream
 // Test: Combination of lambdas with method references and streams
 // Expected Version: 8
-// Required Features: LAMBDAS, METHOD_REFERENCES, STREAM_API
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, LAMBDAS, METHOD_REFERENCES, STREAM_API
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;

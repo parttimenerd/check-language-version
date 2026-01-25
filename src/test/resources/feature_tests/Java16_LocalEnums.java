@@ -1,6 +1,6 @@
 // Java 16 feature: Local enums (defined inside methods)
 // Expected Version: 16
-// Required Features: LOCAL_ENUMS
+// Required Features: ENUMS, LOCAL_ENUMS, SWITCH_EXPRESSIONS
 
 public class Java16_LocalEnums {
 

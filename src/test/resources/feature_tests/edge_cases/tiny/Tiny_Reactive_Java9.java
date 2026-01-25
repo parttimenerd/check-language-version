@@ -1,6 +1,6 @@
 // Tiny: Reactive streams (Java 9)
 // Expected Version: 9
-// Required Features: REACTIVE_STREAMS
+// Required Features: CONCURRENT_API, GENERICS, REACTIVE_STREAMS
 
 import java.util.concurrent.*;
 

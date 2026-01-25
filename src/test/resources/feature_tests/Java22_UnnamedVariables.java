@@ -1,6 +1,6 @@
 // Java 22 feature: Unnamed variables (_)
 // Expected Version: 22
-// Required Features: UNNAMED_VARIABLES
+// Required Features: COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, DIAMOND_OPERATOR, FOR_EACH, GENERICS, LAMBDAS, PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, UNNAMED_VARIABLES
 import java.util.*;
 
 public class Java22_UnnamedVariables {

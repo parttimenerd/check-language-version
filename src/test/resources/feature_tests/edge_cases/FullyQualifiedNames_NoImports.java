@@ -1,6 +1,6 @@
 // Edge case: Fully qualified names without any imports
 // Expected Version: 11
-// Required Features: HTTP_CLIENT, STREAM_API, DATE_TIME_API, OPTIONAL
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, DATE_TIME_API, GENERICS, HTTP_CLIENT, OPTIONAL, STREAM_API
 public class FullyQualifiedNames_NoImports {
 
     public void testFullyQualifiedTypes() {

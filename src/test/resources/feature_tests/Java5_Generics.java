@@ -1,6 +1,6 @@
 // Java 5 feature: Generics
 // Expected Version: 5
-// Required Features: GENERICS
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.List;
 import java.util.ArrayList;
 

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Java Version Quiz</title>
+    <style>
+        {%prism_css%}
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        #app {
+            max-width: 800px;
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 24px;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .stats {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+            font-size: 0.9em;
+        }
+        .code-container {
+            /* background: #2b2b2b; Removed as prism handles it */
+            overflow: hidden; /* Let prism handle scroll */
+            border-radius: 6px;
+            margin-bottom: 24px;
+            font-size: 14px;
+        }
+        /* Override prism margin */
+        pre[class*="language-"] {
+            margin: 0 !important;
+            border-radius: 6px;
+            height: calc(15 * 1.5em + 2em); /* Fixed height: 15 lines * line-height + padding */
+            overflow-y: auto;
+        }
+        .options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+        button {
+            padding: 12px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+        button.correct {
+            background-color: #28a745 !important;
+        }
+        button.wrong {
+            background-color: #dc3545 !important;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 4px;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .feedback.wrong {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .feature-list {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .feature-item {
+            margin: 4px 0;
+            padding: 4px 8px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 3px;
+        }
+        .next-btn {
+            display: block;
+            width: 100%;
+            margin-top: 20px;
+            background-color: #6c757d;
+        }
+        .next-btn:hover {
+            background-color: #5a6268;
+        }
+        .disclaimer {
+            margin-top: 30px;
+            padding: 10px;
+            font-size: 0.8em;
+            color: #6c757d;
+            text-align: center;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <!-- Load dependencies (LemonadeJS + PrismJS) -->
+    <script src="deps.js"></script>
+
+    <!-- Load quiz data -->
+    <script>
+        let quizData = [];
+        fetch('code.json')
+            .then(response => response.json())
+            .then(data => {
+                quizData = data;
+                initQuiz();
+            })
+            .catch(err => {
+                console.error('Failed to load quiz data:', err);
+                document.getElementById('app').innerHTML = '<p>Error loading quiz data. Make sure code.json exists.</p>';
+            });
+
+        function initQuiz() {
+            const { onload } = lemonade;
+
+            // Fisher-Yates shuffle
+            function shuffleArray(array) {
+                var arr = array.slice();
+                for (var i = arr.length - 1; i > 0; i--) {
+                    var j = Math.floor(Math.random() * (i + 1));
+                    var temp = arr[i];
+                    arr[i] = arr[j];
+                    arr[j] = temp;
+                }
+                return arr;
+            }
+
+            // Generate wrong answers for a given correct version
+            function generateWrongAnswers(correct) {
+                var MIN_VERSION = 1;
+                var MAX_VERSION = 25;
+                var wrong = [];
+                while (wrong.length < 4) {
+                    var r = Math.floor(Math.random() * (MAX_VERSION - MIN_VERSION + 1)) + MIN_VERSION;
+                    if (r !== correct && wrong.indexOf(r) === -1) {
+                        wrong.push(r);
+                    }
+                }
+                return wrong;
+            }
+
+            // Generate options (correct + 4 wrong, shuffled)
+            function generateOptions(correct) {
+                var wrong = generateWrongAnswers(correct);
+                var options = wrong.concat([correct]);
+                return shuffleArray(options);
+            }
+
+            // Shuffle questions at start
+            quizData = shuffleArray(quizData);
+
+            function Quiz() {
+                const self = this;
+
+                // State
+                self.currentIndex = 0;
+                self.currentQuestion = quizData[0];
+                self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
+                self.answered = false;
+                self.selectedOption = null;
+                self.questionsCount = quizData.length;
+
+                // Function to update the UI
+                const updateUI = () => {
+
+                    // Update code
+                    if (self.codeEl) {
+                        self.codeEl.textContent = self.currentQuestion.code;
+                        setTimeout(() => Prism.highlightAll(), 10);
+                    }
+
+                    // Update options
+                    if (self.optionsEl) {
+                        self.optionsEl.innerHTML = self.options.map((opt, index) => {
+                            let cls = '';
+                            let disabled = '';
+                            if (self.answered) {
+                                disabled = 'disabled';
+                                if (opt === self.currentQuestion.correct) {
+                                    cls = 'correct';
+                                } else if (opt === self.selectedOption) {
+                                    cls = 'wrong';
+                                }
+                            }
+                            return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${opt}</button>`;
+                        }).join('');
+                    }
+
+                    // Update feedback
+                    if (self.feedbackEl) {
+                        if (!self.answered) {
+                            self.feedbackEl.innerHTML = '';
+                        } else {
+                            const isCorrect = self.selectedOption === self.currentQuestion.correct;
+                            const resultText = isCorrect ? 'Correct!' : 'Wrong!';
+                            const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
+
+                            let featuresHtml = '';
+                            if (self.currentQuestion.features && self.currentQuestion.features.length) {
+                                // Sort features by version (highest to lowest)
+                                const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
+                                featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
+                                    sortedFeatures.map(f =>
+                                        `<div class="feature-item">${f.label} (Java ${f.version})</div>`
+                                    ).join('') + '</div>';
+                            }
+
+                            self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
+                                <strong>${resultText}</strong> It is Java ${self.currentQuestion.correct}.
+                                ${featuresHtml}
+                                <button class="next-btn" onclick="quizNext()" title="Press Enter">Next Question</button>
+                            </div>`;
+                        }
+                    }
+                };
+
+                onload(() => {
+                    updateUI();
+                });
+
+                // Select an option
+                window.quizSelect = (option) => {
+                    if (self.answered) return;
+                    self.answered = true;
+                    self.selectedOption = option;
+                    updateUI();
+                };
+
+                // Go to next question
+                window.quizNext = () => {
+                    if (self.currentIndex < self.questionsCount - 1) {
+                        self.currentIndex++;
+                    } else {
+                        self.currentIndex = 0;
+                    }
+                    self.currentQuestion = quizData[self.currentIndex];
+                    self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
+                    self.answered = false;
+                    self.selectedOption = null;
+                    updateUI();
+                };
+
+                // Keyboard navigation
+                document.addEventListener('keydown', (e) => {
+                    // Keys 1-5 to select options
+                    if (e.key >= '1' && e.key <= '5' && !self.answered) {
+                        const index = parseInt(e.key) - 1;
+                        if (index < self.options.length) {
+                            window.quizSelect(self.options[index]);
+                        }
+                    }
+                    // Enter to go to next question
+                    if (e.key === 'Enter' && self.answered) {
+                        window.quizNext();
+                    }
+                });
+
+                return render => render`<div>
+                    <h1>Java Version Quiz</h1>
+                    <div class="code-container">
+                        <pre><code class="language-java" :ref="self.codeEl"></code></pre>
+                    </div>
+                    <div class="options" :ref="self.optionsEl"></div>
+                    <div :ref="self.feedbackEl"></div>
+                    <div class="disclaimer">Note: This is just a fun quiz and may contain errors.</div>
+                </div>`;
+            }
+
+            lemonade.render(Quiz, document.getElementById('app'));
+        }
+    </script>
+</body>
+</html>

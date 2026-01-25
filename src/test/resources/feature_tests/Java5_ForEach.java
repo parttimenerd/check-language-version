@@ -1,6 +1,6 @@
 // Java 5 feature: Enhanced for loop (for-each)
 // Expected Version: 5
-// Required Features: FOR_EACH
+// Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS
 import java.util.List;
 import java.util.Arrays;
 

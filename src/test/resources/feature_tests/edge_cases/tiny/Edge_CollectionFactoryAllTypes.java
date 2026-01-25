@@ -1,10 +1,10 @@
 // Java 9 edge case: Collection factory methods for all types
 // Test: Testing List.of, Set.of, and Map.of factory methods
 // Expected Version: 9
-// Required Features: COLLECTION_FACTORY_METHODS
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, GENERICS
 import java.util.*;
 
-public class Edge_CollectionFactoryAllTypes_Java9 {
+public class Edge_CollectionFactoryAllTypes {
     void test() {
         List<String> list = List.of("a", "b", "c");
         Set<Integer> set = Set.of(1, 2, 3);

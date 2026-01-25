@@ -1,6 +1,6 @@
 // Tiny: For-each looks like stream (Java 5)
 // Expected Version: 5
-// Required Features: FOR_EACH
+// Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS
 
 import java.util.*;
 

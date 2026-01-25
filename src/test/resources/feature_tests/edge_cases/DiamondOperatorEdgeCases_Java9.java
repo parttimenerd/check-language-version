@@ -1,6 +1,6 @@
 // Edge case: Diamond operator edge cases
 // Expected Version: 9
-// Required Features: DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS
+// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES, METHOD_REFERENCES
 import java.util.*;
 import java.util.function.*;
 

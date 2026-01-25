@@ -1,6 +1,6 @@
 // Test file for fully qualified name detection
 // Expected Version: 21
-// Required Features: VIRTUAL_THREADS, HTTP_CLIENT, HEX_FORMAT, STREAM_API
+// Required Features: AUTOBOXING, AWT, BASE64_API, COLLECTIONS_FRAMEWORK, CONCURRENT_API, DATE_TIME_API, DIAMOND_OPERATOR, GENERICS, HEX_FORMAT, HTTP_CLIENT, LAMBDAS, NIO, NIO2, OPTIONAL, REGEX, STREAM_API, SWING, VIRTUAL_THREADS
 // This file uses fully qualified class names without imports
 
 public class TestFullyQualifiedNames {

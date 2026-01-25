@@ -1,6 +1,6 @@
 // Java 25 feature: Scoped Values (JEP 506)
 // Expected Version: 25
-// Required Features: SCOPED_VALUES
+// Required Features: GENERICS, LAMBDAS, SCOPED_VALUES
 // Scoped Values enable sharing of immutable data within and across threads
 import java.lang.ScopedValue;
 

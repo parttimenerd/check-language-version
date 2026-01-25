@@ -4,9 +4,6 @@
 // This file demonstrates a compact/implicit class with just a main method
 void main() {
     System.out.println("Hello from a compact class!");
-
-    String message = "This is Java 25";
-    print(message);
 }
 
 void print(String s) {

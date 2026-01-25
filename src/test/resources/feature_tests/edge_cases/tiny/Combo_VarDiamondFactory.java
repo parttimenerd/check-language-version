@@ -1,9 +1,9 @@
 // Java 10 combination: Var + Diamond + Collection factory
 // Test: Combination of var with diamond operator and collection factory methods
 // Expected Version: 10
-// Required Features: VAR, DIAMOND_OPERATOR, COLLECTION_FACTORY_METHODS
+// Required Features: COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, DIAMOND_OPERATOR, GENERICS, VAR
 import java.util.*;
-public class Combo_VarDiamondFactory_Java10 {
+public class Combo_VarDiamondFactory {
     public void test() {
         // Diamond operator requires explicit type on left side
         List<String> list = new ArrayList<>();

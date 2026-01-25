@@ -1,6 +1,6 @@
 // Java 16 feature: Complex local enums with various edge cases
 // Expected Version: 16
-// Required Features: LOCAL_ENUMS
+// Required Features: ANNOTATIONS, DIAMOND_OPERATOR, ENUMS, FOR_EACH, GENERICS, INNER_CLASSES, LAMBDAS, LOCAL_ENUMS, LOCAL_INTERFACES, SWITCH_EXPRESSIONS, COLLECTIONS_FRAMEWORK
 
 public class LocalEnumEdgeCases_Java16 {
 

@@ -1,6 +1,6 @@
 // Tiny: Diamond in return (Java 7)
 // Expected Version: 7
-// Required Features: DIAMOND_OPERATOR
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS
 
 import java.util.*;
 

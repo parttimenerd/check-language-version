@@ -1,7 +1,7 @@
 // Java 24 combination: Stream gatherers + Collectors teeing
 // Test: Combination of stream gatherers with collectors teeing
 // Expected Version: 24
-// Required Features: STREAM_GATHERERS, COLLECTORS_TEEING
+// Required Features: AUTOBOXING, COLLECTORS_TEEING, LAMBDAS, STREAM_API, STREAM_GATHERERS
 import java.util.stream.*;
 import java.util.stream.Gatherers;
 public class Combo_GatherersTeeing_Java24 {

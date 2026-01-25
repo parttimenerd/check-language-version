@@ -1,6 +1,6 @@
 // Edge case: Var keyword in different contexts (includes Java 11 var in lambda)
 // Expected Version: 11
-// Required Features: VAR, VAR_IN_LAMBDA
+// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, DATE_TIME_API, FOR_EACH, GENERICS, IO_API, LAMBDAS, TRY_WITH_RESOURCES, VAR, VAR_IN_LAMBDA
 import java.util.*;
 import java.util.function.*;
 

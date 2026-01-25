@@ -1,6 +1,6 @@
 // Edge case: HTTP Client API usage (Java 11)
 // Expected Version: 11
-// Required Features: HTTP_CLIENT
+// Required Features: DATE_TIME_API, GENERICS, HTTP_CLIENT
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;

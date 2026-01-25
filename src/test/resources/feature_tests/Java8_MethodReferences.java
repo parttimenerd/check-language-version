@@ -1,6 +1,6 @@
 // Java 8 feature: Method references
 // Expected Version: 8
-// Required Features: METHOD_REFERENCES
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, METHOD_REFERENCES
 import java.util.function.*;
 import java.util.*;
 public class Java8_MethodReferences {

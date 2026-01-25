@@ -1,6 +1,6 @@
 // Tiny: Collectors.teeing (Java 12)
 // Expected Version: 12
-// Required Features: COLLECTORS_TEEING
+// Required Features: AUTOBOXING, COLLECTION_FACTORY_METHODS, COLLECTORS_TEEING, LAMBDAS, STREAM_API, VAR
 
 import java.util.stream.*;
 import java.util.*;

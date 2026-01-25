@@ -1,6 +1,6 @@
 // Java 5 feature: Autoboxing and unboxing
 // Expected Version: 5
-// Required Features: AUTOBOXING
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.ArrayList;
 import java.util.List;
 

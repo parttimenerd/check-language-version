@@ -1,6 +1,6 @@
 // Tiny: Method ref in annotation (Java 8)
 // Expected Version: 8
-// Required Features: METHOD_REFERENCES
+// Required Features: GENERICS, METHOD_REFERENCES
 
 import java.util.function.*;
 

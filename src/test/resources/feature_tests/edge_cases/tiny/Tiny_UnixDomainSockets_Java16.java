@@ -1,6 +1,6 @@
 // Test: Unix Domain Sockets (Java 16)
 // Expected Version: 16
-// Required Features: UNIX_DOMAIN_SOCKETS
+// Required Features: NIO, UNIX_DOMAIN_SOCKETS
 import java.nio.channels.SocketChannel;
 import java.net.UnixDomainSocketAddress;
 public class Tiny_UnixDomainSockets_Java16 {

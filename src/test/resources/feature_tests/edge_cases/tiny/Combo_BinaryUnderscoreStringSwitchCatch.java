@@ -2,7 +2,7 @@
 // Test: Combination of binary literals, underscores in literals, strings in switch, and multi-catch
 // Expected Version: 7
 // Required Features: BINARY_LITERALS, UNDERSCORES_IN_LITERALS, STRINGS_IN_SWITCH, MULTI_CATCH
-public class Combo_BinaryUnderscoreStringSwitchCatch_Java7 {
+public class Combo_BinaryUnderscoreStringSwitchCatch {
     void test(String s) {
         int binary = 0b1010_1010;
         int hex = 0xFF_FF_FF_FF;

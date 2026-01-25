@@ -1,6 +1,6 @@
 // Java 8 feature: NIO.2 API
 // Expected Version: 8
-// Required Features: NIO2
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, IO_API, METHOD_REFERENCES, NIO2, TRY_WITH_RESOURCES
 import java.nio.file.*;
 import java.nio.charset.*;
 import java.io.*;

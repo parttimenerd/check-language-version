@@ -1,6 +1,6 @@
 // Java 14 feature: Switch expressions (JEP 361)
 // Expected Version: 14
-// Required Features: SWITCH_EXPRESSIONS
+// Required Features: SWITCH_EXPRESSIONS, SWITCH_MULTIPLE_LABELS
 public class Java14_SwitchExpressions {
     public String getDayType(String day) {
         // Switch expression with arrow syntax

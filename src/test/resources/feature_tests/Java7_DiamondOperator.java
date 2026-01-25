@@ -1,6 +1,6 @@
 // Java 7 feature: Diamond operator
 // Expected Version: 7
-// Required Features: DIAMOND_OPERATOR
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;

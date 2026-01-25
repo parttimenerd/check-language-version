@@ -1,7 +1,7 @@
 // Java 7 combination: Multi-catch + Try-with-resources + Diamond
 // Test: Combination of multi-catch with try-with-resources and diamond operator
 // Expected Version: 7
-// Required Features: MULTI_CATCH, TRY_WITH_RESOURCES, DIAMOND_OPERATOR
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, IO_API, MULTI_CATCH, TRY_WITH_RESOURCES
 import java.io.*;
 import java.util.*;
 public class Combo_MultiCatchTryDiamond_Java7 {

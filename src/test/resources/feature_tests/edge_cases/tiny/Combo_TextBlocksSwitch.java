@@ -2,7 +2,7 @@
 // Test: Combination of text blocks with switch expressions
 // Expected Version: 15
 // Required Features: TEXT_BLOCKS, SWITCH_EXPRESSIONS
-public class Combo_TextBlocksSwitch_Java15 {
+public class Combo_TextBlocksSwitch {
     public String test(String type) {
         return switch (type) {
             case "json" -> """

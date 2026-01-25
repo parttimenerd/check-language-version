@@ -1,6 +1,6 @@
 // Java 9 feature: Try-with-resources on effectively final variables
 // Expected Version: 9
-// Required Features: TRY_WITH_EFFECTIVELY_FINAL
+// Required Features: IO_API, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES
 import java.io.*;
 
 public class Java9_TryWithEffectivelyFinal {

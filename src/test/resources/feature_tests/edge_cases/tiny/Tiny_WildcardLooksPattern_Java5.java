@@ -1,6 +1,6 @@
 // Tiny: Generic wildcard looks like pattern (Java 5)
 // Expected Version: 5
-// Required Features: GENERICS
+// Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS
 
 import java.util.*;
 

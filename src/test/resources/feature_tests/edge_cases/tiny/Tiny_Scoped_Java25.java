@@ -1,6 +1,6 @@
 // Tiny: Scoped values (Java 25)
 // Expected Version: 25
-// Required Features: SCOPED_VALUES
+// Required Features: GENERICS, LAMBDAS, SCOPED_VALUES
 
 import java.lang.*;
 

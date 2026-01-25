@@ -1,6 +1,6 @@
 // Tiny: Generics looks like var (Java 5)
 // Expected Version: 5
-// Required Features: GENERICS
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS
 
 import java.util.*;
 

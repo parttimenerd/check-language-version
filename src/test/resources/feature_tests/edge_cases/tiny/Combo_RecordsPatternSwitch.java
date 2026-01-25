@@ -1,8 +1,8 @@
 // Java 21 combination: Records + Pattern matching + Switch
 // Test: Combination of records with pattern matching in switch statements
 // Expected Version: 21
-// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_PATTERN_MATCHING, SWITCH_NULL_DEFAULT
-public class Combo_RecordsPatternSwitch_Java21 {
+// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING
+public class Combo_RecordsPatternSwitch {
     record Point(int x, int y) {}
 
     public String test(Object o) {

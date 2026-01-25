@@ -1,6 +1,6 @@
 // Edge case: Record variations
 // Expected Version: 16
-// Required Features: RECORDS
+// Required Features: DIAMOND_OPERATOR, GENERICS, RECORDS
 public class RecordEdgeCases_Java16 {
 
     record Point(int x, int y) {}

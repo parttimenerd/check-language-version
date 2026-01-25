@@ -1,6 +1,6 @@
 // Java 11 feature: Flight Recorder API (JEP 328)
 // Expected Version: 11
-// Required Features: FLIGHT_RECORDER
+// Required Features: ANNOTATIONS, FLIGHT_RECORDER, NIO, NIO2, TRY_WITH_RESOURCES
 import jdk.jfr.*;
 import jdk.jfr.consumer.*;
 

@@ -1,6 +1,6 @@
 // Test: WatchService (Java 7)
 // Expected Version: 7
-// Required Features: WATCH_SERVICE
+// Required Features: NIO2, WATCH_SERVICE
 import java.nio.file.*;
 public class Tiny_WatchService_Java7 {
     public void test() throws Exception {

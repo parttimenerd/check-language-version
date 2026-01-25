@@ -1,6 +1,6 @@
 // Edge case: Virtual Threads API usage
 // Expected Version: 21
-// Required Features: VIRTUAL_THREADS
+// Required Features: COLLECTIONS_FRAMEWORK, CONCURRENT_API, DATE_TIME_API, DIAMOND_OPERATOR, FOR_EACH, GENERICS, LAMBDAS, TRY_WITH_RESOURCES, VAR, VIRTUAL_THREADS
 import java.util.concurrent.*;
 import java.time.*;
 import java.util.*;

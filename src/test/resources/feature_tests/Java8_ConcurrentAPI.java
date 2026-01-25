@@ -1,6 +1,6 @@
 // Java 8 feature: Concurrency utilities
 // Expected Version: 8
-// Required Features: CONCURRENT_API
+// Required Features: AUTOBOXING, CONCURRENT_API, DIAMOND_OPERATOR, GENERICS, LAMBDAS
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Java5_ConcurrentAPI {
+public class Java8_ConcurrentAPI {
     public void testConcurrentAPI() throws Exception {
         // ExecutorService
         ExecutorService executor = Executors.newFixedThreadPool(4);

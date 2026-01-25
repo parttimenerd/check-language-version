@@ -2,7 +2,7 @@
 // Test: Testing deeply nested record patterns in instanceof
 // Expected Version: 21
 // Required Features: RECORD_PATTERNS, PATTERN_MATCHING_INSTANCEOF, RECORDS
-public class Edge_NestedRecordPattern_Java21 {
+public class Edge_NestedRecordPattern {
     record Point(int x, int y) {}
     record Line(Point start, Point end) {}
 

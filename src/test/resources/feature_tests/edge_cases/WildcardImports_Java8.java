@@ -1,6 +1,6 @@
 // Edge case: Wildcard imports should detect all features from the package
 // Expected Version: 8
-// Required Features: STREAM_API, DATE_TIME_API, OPTIONAL, DIAMOND_OPERATOR
+// Required Features: COLLECTIONS_FRAMEWORK, DATE_TIME_API, DIAMOND_OPERATOR, GENERICS, OPTIONAL, STREAM_API
 import java.util.stream.*;
 import java.time.*;
 import java.util.*;

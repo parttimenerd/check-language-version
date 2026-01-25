@@ -1,6 +1,6 @@
 // Edge case: Interface method variations
 // Expected Version: 9
-// Required Features: DEFAULT_INTERFACE_METHODS, STATIC_INTERFACE_METHODS, PRIVATE_INTERFACE_METHODS
+// Required Features: DATE_TIME_API, DEFAULT_INTERFACE_METHODS, INNER_CLASSES, PRIVATE_INTERFACE_METHODS, STATIC_INTERFACE_METHODS
 public class InterfaceMethodEdgeCases_Java9 {
 
     // Interface with default methods (Java 8)

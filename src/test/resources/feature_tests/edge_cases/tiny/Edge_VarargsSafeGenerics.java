@@ -1,10 +1,10 @@
 // Java 5 edge case: Varargs with @SafeVarargs and generics
 // Test: Testing varargs with @SafeVarargs annotation and generic types
 // Expected Version: 5
-// Required Features: VARARGS, GENERICS, ANNOTATIONS
+// Required Features: ANNOTATIONS, AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS, VARARGS
 import java.util.*;
 
-public class Edge_VarargsSafeGenerics_Java5 {
+public class Edge_VarargsSafeGenerics {
     @SafeVarargs
     final <T> List<T> asList(T... elements) {
         return Arrays.asList(elements);

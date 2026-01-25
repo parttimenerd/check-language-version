@@ -1,6 +1,6 @@
 // Tiny: Diamond anonymous (Java 9)
 // Expected Version: 9
-// Required Features: DIAMOND_WITH_ANONYMOUS
+// Required Features: DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES
 
 import java.util.*;
 

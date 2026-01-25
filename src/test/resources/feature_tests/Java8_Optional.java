@@ -1,6 +1,6 @@
 // Java 8 feature: Optional class
 // Expected Version: 8
-// Required Features: OPTIONAL
+// Required Features: AUTOBOXING, GENERICS, LAMBDAS, METHOD_REFERENCES, OPTIONAL
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;

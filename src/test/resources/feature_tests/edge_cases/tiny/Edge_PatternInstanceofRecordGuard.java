@@ -2,7 +2,7 @@
 // Test: Testing pattern matching for instanceof with record patterns and guards
 // Expected Version: 21
 // Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS
-public class Edge_PatternInstanceofRecordGuard_Java21 {
+public class Edge_PatternInstanceofRecordGuard {
     record Point(int x, int y) {}
 
     void test(Object obj) {

@@ -1,6 +1,6 @@
 // Java 9 feature: Diamond operator with anonymous classes
 // Expected Version: 9
-// Required Features: DIAMOND_WITH_ANONYMOUS
+// Required Features: ANNOTATIONS, CONCURRENT_API, DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 

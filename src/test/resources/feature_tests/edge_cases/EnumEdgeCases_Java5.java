@@ -1,6 +1,6 @@
 // Edge case: Enum features across Java versions (uses diamond operator = Java 7)
 // Expected Version: 7
-// Required Features: ENUMS, DIAMOND_OPERATOR
+// Required Features: ANNOTATIONS, DIAMOND_OPERATOR, ENUMS, FOR_EACH, GENERICS, INNER_CLASSES, REFLECTION
 import java.util.*;
 
 public class EnumEdgeCases_Java5 {

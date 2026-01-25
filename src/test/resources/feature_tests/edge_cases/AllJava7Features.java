@@ -1,6 +1,6 @@
 // Edge case: All Java 7 syntax features in one file
 // Expected Version: 7
-// Required Features: DIAMOND_OPERATOR, TRY_WITH_RESOURCES, MULTI_CATCH, BINARY_LITERALS, UNDERSCORES_IN_LITERALS, STRINGS_IN_SWITCH
+// Required Features: BINARY_LITERALS, COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, IO_API, MULTI_CATCH, NIO2, STRINGS_IN_SWITCH, TRY_WITH_RESOURCES, UNDERSCORES_IN_LITERALS
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;

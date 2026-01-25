@@ -1,10 +1,10 @@
 // Java 21 edge case: Virtual threads with executor
 // Test: Testing virtual threads created through Executors and Thread.ofVirtual()
 // Expected Version: 21
-// Required Features: VIRTUAL_THREADS
+// Required Features: CONCURRENT_API, LAMBDAS, TRY_WITH_RESOURCES, VAR, VIRTUAL_THREADS
 import java.util.concurrent.*;
 
-public class Edge_VirtualThreadsExecutor_Java21 {
+public class Edge_VirtualThreadsExecutor {
     void test() throws Exception {
         // Virtual thread factory
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {

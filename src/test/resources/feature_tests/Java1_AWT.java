@@ -1,6 +1,6 @@
 // Java 1.0 feature: Abstract Window Toolkit (AWT)
 // Expected Version: 1
-// Required Features: AWT
+// Required Features: AWT, INNER_CLASSES
 import java.awt.Frame;
 import java.awt.Button;
 import java.awt.Panel;

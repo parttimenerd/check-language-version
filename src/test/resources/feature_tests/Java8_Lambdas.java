@@ -1,6 +1,6 @@
 // Test: Lambda expressions (Java 8)
 // Expected Version: 8
-// Required Features: LAMBDAS
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, LAMBDAS
 import java.util.function.*;
 import java.util.*;
 

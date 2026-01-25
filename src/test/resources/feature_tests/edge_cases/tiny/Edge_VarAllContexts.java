@@ -1,9 +1,9 @@
 // Java 10 edge case: Var in all supported contexts
 // Test: Testing var keyword in all supported contexts (local vars, for loops, try-with-resources)
 // Expected Version: 10
-// Required Features: VAR
+// Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, IO_API, TRY_WITH_RESOURCES, VAR
 import java.util.*;
-public class Edge_VarAllContexts_Java10 {
+public class Edge_VarAllContexts {
     void test() {
         var x = 10;
         var s = "hello";

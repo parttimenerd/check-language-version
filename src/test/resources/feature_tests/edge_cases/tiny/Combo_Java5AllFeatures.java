@@ -1,7 +1,7 @@
 // Java 5 combination: All major features
 // Test: Combination of generics, enums, annotations, varargs, for-each, static imports, and autoboxing
 // Expected Version: 5
-// Required Features: GENERICS, ENUMS, ANNOTATIONS, VARARGS, FOR_EACH, AUTOBOXING
+// Required Features: ANNOTATIONS, AUTOBOXING, COLLECTIONS_FRAMEWORK, ENUMS, FOR_EACH, GENERICS, VARARGS
 import java.util.*;
 public class Combo_Java5AllFeatures {
     enum Priority { LOW, MEDIUM, HIGH }

@@ -1,7 +1,7 @@
 // Java 17 feature: Sealed classes
 // Test: Sealed classes (Java 17)
 // Expected Version: 17
-// Required Features: SEALED_CLASSES, RECORDS
+// Required Features: INNER_CLASSES, PATTERN_MATCHING_INSTANCEOF, RECORDS, SEALED_CLASSES
 
 public class Java17_SealedClasses {
 

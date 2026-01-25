@@ -1,6 +1,6 @@
 // Edge case: Optional API evolution across Java versions (uses Java 16 features)
 // Expected Version: 16
-// Required Features: OPTIONAL, RECORDS
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, GENERICS, LAMBDAS, METHOD_REFERENCES, OPTIONAL, RECORDS, STREAM_API
 import java.util.*;
 import java.util.stream.*;
 import java.util.function.*;

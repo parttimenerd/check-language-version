@@ -1,6 +1,6 @@
 // Java 11 feature: Var in lambda parameters
 // Expected Version: 11
-// Required Features: VAR_IN_LAMBDA
+// Required Features: GENERICS, LAMBDAS, VAR_IN_LAMBDA
 import java.util.function.*;
 public class Java11_VarInLambda {
     public void method() {

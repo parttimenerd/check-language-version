@@ -1,6 +1,6 @@
 // Tiny: Inner class static (Java 16)
 // Expected Version: 16
-// Required Features: LOCAL_INTERFACES
+// Required Features: INNER_CLASSES, LOCAL_INTERFACES
 
 public class Tiny_LocalIfaceNested_Java16 {
     void test() {

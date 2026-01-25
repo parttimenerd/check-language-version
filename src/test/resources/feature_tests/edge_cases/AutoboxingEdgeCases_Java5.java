@@ -1,6 +1,6 @@
 // Edge case: Autoboxing variations
 // Expected Version: 5
-// Required Features: AUTOBOXING
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.*;
 
 public class AutoboxingEdgeCases_Java5 {

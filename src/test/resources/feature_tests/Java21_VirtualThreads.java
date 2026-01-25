@@ -1,6 +1,6 @@
 // Java 21 feature: Virtual Threads (JEP 444)
 // Expected Version: 21
-// Required Features: VIRTUAL_THREADS
+// Required Features: LAMBDAS, VAR, VIRTUAL_THREADS
 public class Java21_VirtualThreads {
     public void method() throws Exception {
         // Create virtual thread using Thread.ofVirtual()

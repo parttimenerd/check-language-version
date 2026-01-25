@@ -1,6 +1,6 @@
 // Tiny: Serialization (Java 1)
 // Expected Version: 1
-// Required Features: SERIALIZATION
+// Required Features: IO_API, SERIALIZATION
 
 import java.io.*;
 

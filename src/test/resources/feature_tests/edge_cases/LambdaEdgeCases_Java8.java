@@ -1,6 +1,6 @@
 // Edge case: Lambda variations
 // Expected Version: 8
-// Required Features: LAMBDAS, METHOD_REFERENCES
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS, LAMBDAS, METHOD_REFERENCES, STREAM_API
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;

@@ -1,6 +1,6 @@
 // Edge case: Try-with-resources variations
 // Expected Version: 9
-// Required Features: TRY_WITH_RESOURCES, TRY_WITH_EFFECTIVELY_FINAL
+// Required Features: ANNOTATIONS, INNER_CLASSES, IO_API, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES
 import java.io.*;
 import java.net.*;
 import java.util.zip.*;

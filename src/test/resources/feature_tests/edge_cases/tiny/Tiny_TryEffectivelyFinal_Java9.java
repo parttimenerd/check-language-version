@@ -1,6 +1,6 @@
 // Test: Try with effectively final (Java 9)
 // Expected Version: 9
-// Required Features: TRY_WITH_EFFECTIVELY_FINAL
+// Required Features: IO_API, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES
 import java.io.*;
 public class Tiny_TryEffectivelyFinal_Java9 {
     public void test() throws IOException {

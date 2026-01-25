@@ -1,6 +1,6 @@
 // Edge case: Generics variations (uses features up to Java 8)
 // Expected Version: 8
-// Required Features: GENERICS, STREAM_API, DIAMOND_OPERATOR
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, INNER_CLASSES, STREAM_API
 import java.util.*;
 import java.util.function.*;
 import java.util.stream.Stream;

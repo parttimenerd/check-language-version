@@ -1,6 +1,6 @@
 // Java 7 feature: Try-with-resources
 // Expected Version: 7
-// Required Features: TRY_WITH_RESOURCES
+// Required Features: IO_API, TRY_WITH_RESOURCES
 import java.io.*;
 
 public class Java7_TryWithResources {

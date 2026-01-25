@@ -1,6 +1,6 @@
 // Java 14 feature: Yield statement
 // Expected Version: 14
-// Required Features: YIELD
+// Required Features: SWITCH_EXPRESSIONS, YIELD
 public class Java14_Yield {
     public int calculate(String operation, int a, int b) {
         return switch (operation) {

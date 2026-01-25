@@ -1,6 +1,6 @@
 // Java 8 feature: Stream API
 // Expected Version: 8
-// Required Features: STREAM_API
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS, LAMBDAS, METHOD_REFERENCES, STREAM_API
 import java.util.stream.*;
 import java.util.*;
 

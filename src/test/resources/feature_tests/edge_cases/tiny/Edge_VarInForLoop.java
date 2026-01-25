@@ -1,8 +1,8 @@
 // Java 10 edge case: Var in for loop
 // Test: Testing var keyword in traditional and enhanced for loops
 // Expected Version: 10
-// Required Features: VAR
-public class Edge_VarInForLoop_Java10 {
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, FOR_EACH, VAR
+public class Edge_VarInForLoop {
     public void test() {
         for (var i = 0; i < 10; i++) {
             System.out.println(i);

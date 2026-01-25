@@ -1,6 +1,6 @@
 // Tiny: Static import looks like module (Java 5)
 // Expected Version: 5
-// Required Features: STATIC_IMPORT
+// Required Features: AUTOBOXING, STATIC_IMPORT
 
 import static java.lang.System.out;
 import static java.util.Arrays.asList;

@@ -2,7 +2,7 @@
 // Test: Testing assert statements with and without messages
 // Expected Version: 4
 // Required Features: ASSERT
-public class Edge_AssertWithMessage_Java4 {
+public class Edge_AssertWithMessage {
     void test(int x) {
         assert x > 0 : "x must be positive";
         assert x < 100;

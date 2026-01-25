@@ -2,7 +2,7 @@
 // Test: Records with compact constructor, accessors, and custom methods
 // Expected Version: 16
 // Required Features: RECORDS
-public class Combo_RecordAllFeatures_Java16 {
+public class Combo_RecordAllFeatures {
     record Person(String name, int age) {
         // Compact constructor
         public Person {

@@ -2,7 +2,7 @@
 // Test: Combination of switch expressions with yield, enums, and multiple case labels
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS, YIELD, ENUMS, SWITCH_MULTIPLE_LABELS
-public class Combo_SwitchYieldEnumMulti_Java14 {
+public class Combo_SwitchYieldEnumMulti {
     enum Day { MON, TUE, WED, THU, FRI, SAT, SUN }
 
     int getDayType(Day day) {

@@ -1,6 +1,6 @@
 // Java 1.1 feature: JavaBeans API
 // Expected Version: 1
-// Required Features: JAVABEANS
+// Required Features: JAVABEANS, REFLECTION
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.beans.PropertyChangeEvent;

@@ -1,6 +1,6 @@
 // Java 24 feature: Stream Gatherers (JEP 485)
 // Expected Version: 24
-// Required Features: STREAM_GATHERERS
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, GENERICS, LAMBDAS, METHOD_REFERENCES, STREAM_API, STREAM_GATHERERS, VAR
 // Gatherers allow creating custom intermediate operations for streams
 import java.util.stream.Gatherer;
 import java.util.stream.Gatherers;

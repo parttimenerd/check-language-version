@@ -1,6 +1,6 @@
 // Tiny: Private interface helper (Java 9)
 // Expected Version: 9
-// Required Features: PRIVATE_INTERFACE_METHODS
+// Required Features: DEFAULT_INTERFACE_METHODS, PRIVATE_INTERFACE_METHODS
 
 interface I {
     private void h() {}

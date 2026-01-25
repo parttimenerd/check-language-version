@@ -1,7 +1,7 @@
 // Java 10 combination: Generics + Var + Diamond
 // Test: Combination of generics with var and diamond operator
 // Expected Version: 10
-// Required Features: GENERICS, VAR, DIAMOND_OPERATOR
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, VAR
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;

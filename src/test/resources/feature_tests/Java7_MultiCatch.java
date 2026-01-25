@@ -1,6 +1,6 @@
 // Java 7 feature: Multi-catch
 // Expected Version: 7
-// Required Features: MULTI_CATCH
+// Required Features: IO_API, MULTI_CATCH
 import java.io.*;
 
 public class Java7_MultiCatch {

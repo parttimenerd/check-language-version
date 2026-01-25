@@ -1,6 +1,6 @@
 // Tiny: Switch null default (Java 21)
 // Expected Version: 21
-// Required Features: SWITCH_NULL_DEFAULT
+// Required Features: STRINGS_IN_SWITCH, SWITCH_NULL_DEFAULT
 
 public class Tiny_SwitchNull_Java21 {
     void test(String s) {

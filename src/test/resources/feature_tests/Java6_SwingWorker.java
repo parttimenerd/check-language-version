@@ -1,6 +1,6 @@
 // Java 6 feature: SwingWorker API (but file also uses Java 8 lambdas)
 // Expected Version: 8
-// Required Features: SWING_WORKER, LAMBDAS, MULTI_CATCH
+// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, CONCURRENT_API, FOR_EACH, GENERICS, INNER_CLASSES, LAMBDAS, MULTI_CATCH, SWING, SWING_WORKER
 import javax.swing.SwingWorker;
 import javax.swing.JProgressBar;
 import javax.swing.JFrame;

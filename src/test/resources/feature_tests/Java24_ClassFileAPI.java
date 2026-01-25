@@ -1,6 +1,6 @@
 // Java 24 feature: Class-File API (JEP 484)
 // Expected Version: 24
-// Required Features: CLASS_FILE_API
+// Required Features: CLASS_FILE_API, FOR_EACH, LAMBDAS
 import java.lang.classfile.ClassFile;
 import java.lang.classfile.ClassModel;
 import java.lang.classfile.MethodModel;

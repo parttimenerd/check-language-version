@@ -1,7 +1,7 @@
 // Java 5 edge case: Autoboxing in collections
 // Test: Testing autoboxing and unboxing with generic collections
 // Expected Version: 5
-// Required Features: AUTOBOXING, GENERICS
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.*;
 public class Edge_AutoboxingCollections_Java5 {
     void test() {

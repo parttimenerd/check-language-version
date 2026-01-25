@@ -1,6 +1,6 @@
 // Tiny: Repeating anno (Java 8)
 // Expected Version: 8
-// Required Features: REPEATING_ANNOTATIONS
+// Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS
 
 import java.lang.annotation.*;
 @Repeatable(As.class) @interface A { int value(); }

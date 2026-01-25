@@ -2,7 +2,7 @@
 // Test: Combination of unnamed variables with records, pattern matching, and switch
 // Expected Version: 22
 // Required Features: UNNAMED_VARIABLES, RECORDS, RECORD_PATTERNS, SWITCH_PATTERN_MATCHING
-public class Combo_UnnamedRecordsPatternSwitch_Java22 {
+public class Combo_UnnamedRecordsPatternSwitch {
     record Point(int x, int y) {}
     record Point3D(int x, int y, int z) {}
 

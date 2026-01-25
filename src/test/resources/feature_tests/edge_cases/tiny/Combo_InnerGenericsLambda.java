@@ -3,7 +3,7 @@
 // Expected Version: 8
 // Required Features: INNER_CLASSES, GENERICS, LAMBDAS
 import java.util.function.*;
-public class Combo_InnerGenericsLambda_Java8 {
+public class Combo_InnerGenericsLambda {
     class Inner<T> {
         Function<T, String> f = t -> t.toString();
     }

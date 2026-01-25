@@ -1,6 +1,6 @@
 // Tiny: Module imports (Java 25)
 // Expected Version: 25
-// Required Features: MODULE_IMPORTS
+// Required Features: COLLECTION_FACTORY_METHODS, GENERICS, MODULE_IMPORTS
 
 import module java.base;
 

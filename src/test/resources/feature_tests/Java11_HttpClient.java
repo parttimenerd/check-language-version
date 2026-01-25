@@ -1,6 +1,6 @@
 // Java 11 feature: HTTP Client API (JEP 321)
 // Expected Version: 11
-// Required Features: HTTP_CLIENT
+// Required Features: GENERICS, HTTP_CLIENT
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;

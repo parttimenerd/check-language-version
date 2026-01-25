@@ -1,6 +1,6 @@
 // Tiny: Yield (Java 14)
 // Expected Version: 14
-// Required Features: YIELD
+// Required Features: SWITCH_EXPRESSIONS, YIELD
 
 public class Tiny_YieldSimple_Java14 {
     int test(int x) {

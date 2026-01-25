@@ -2,6 +2,7 @@
 // Expected Version: 5
 // Required Features: CONCURRENT_API
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 public class Tiny_Concurrent_Java5 {
     ExecutorService executor = Executors.newFixedThreadPool(4);
     AtomicInteger counter = new AtomicInteger(0);

@@ -1,6 +1,6 @@
 // Edge case: Varargs in different contexts
 // Expected Version: 5
-// Required Features: VARARGS
+// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, INNER_CLASSES, VARARGS
 import java.util.*;
 
 public class VarargsEdgeCases_Java5 {

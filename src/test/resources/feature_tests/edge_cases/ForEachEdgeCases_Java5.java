@@ -1,6 +1,6 @@
 // Edge case: For-each loop variations
 // Expected Version: 5
-// Required Features: FOR_EACH
+// Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, VARARGS
 import java.util.*;
 
 public class ForEachEdgeCases_Java5 {

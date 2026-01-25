@@ -1,7 +1,7 @@
 // Java 8 combination: Default and static interface methods + Lambda
 // Test: Combination of default and static interface methods with lambdas
 // Expected Version: 8
-// Required Features: DEFAULT_INTERFACE_METHODS, STATIC_INTERFACE_METHODS, LAMBDAS
+// Required Features: DEFAULT_INTERFACE_METHODS, INNER_CLASSES, LAMBDAS, STATIC_INTERFACE_METHODS
 public class Combo_InterfaceMethodsLambda_Java8 {
     interface MyInterface {
         default void defaultMethod() {

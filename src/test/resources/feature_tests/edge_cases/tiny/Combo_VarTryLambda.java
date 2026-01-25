@@ -1,9 +1,9 @@
 // Java 10 combination: Var + Try-with-resources + Lambda
 // Test: Combination of var with try-with-resources and lambdas
 // Expected Version: 10
-// Required Features: VAR, TRY_WITH_RESOURCES, LAMBDAS
+// Required Features: IO_API, LAMBDAS, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES, VAR
 import java.io.*;
-public class Combo_VarTryLambda_Java10 {
+public class Combo_VarTryLambda {
     public void test() throws IOException {
         var r = new FileInputStream("f.txt");
         try (r) {

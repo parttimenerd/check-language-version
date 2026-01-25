@@ -1,6 +1,6 @@
 // Test: Record patterns (Java 21)
 // Expected Version: 21
-// Required Features: RECORD_PATTERNS
+// Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS
 public class Tiny_RecordPattern_Java21 {
     record Point(int x, int y) {}
     public void test(Object o) {

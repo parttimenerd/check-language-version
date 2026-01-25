@@ -1,6 +1,6 @@
 // Edge case: Sealed class variations (uses Java 21 switch pattern matching)
 // Expected Version: 21
-// Required Features: SEALED_CLASSES, SWITCH_PATTERN_MATCHING
+// Required Features: INNER_CLASSES, RECORDS, SEALED_CLASSES, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING, SWITCH_NULL_DEFAULT
 public class SealedClassEdgeCases_Java17 {
 
     sealed class Shape permits Circle, Rectangle {}
@@ -27,6 +27,7 @@ public class SealedClassEdgeCases_Java17 {
         return switch (shape) {
             case Circle c -> "Circle";
             case Rectangle r -> "Rectangle";
+            case null -> "null";
         };
     }
 }

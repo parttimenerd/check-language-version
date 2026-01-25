@@ -1,6 +1,6 @@
 // Java 21 feature: Record patterns
 // Expected Version: 21
-// Required Features: RECORD_PATTERNS
+// Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
 public class Java21_RecordPatterns {
     record Point(int x, int y) {}
     record Rectangle(Point topLeft, Point bottomRight) {}

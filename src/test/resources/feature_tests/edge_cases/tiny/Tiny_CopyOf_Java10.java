@@ -1,6 +1,6 @@
 // Tiny: Collection.copyOf (Java 10)
 // Expected Version: 10
-// Required Features: COLLECTION_COPY_OF
+// Required Features: COLLECTION_COPY_OF, COLLECTION_FACTORY_METHODS, VAR
 
 import java.util.*;
 

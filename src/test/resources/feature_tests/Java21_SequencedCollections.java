@@ -1,6 +1,6 @@
 // Java 21 feature: Sequenced Collections (JEP 431)
 // Expected Version: 21
-// Required Features: SEQUENCED_COLLECTIONS
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, SEQUENCED_COLLECTIONS
 import java.util.SequencedCollection;
 import java.util.SequencedSet;
 import java.util.SequencedMap;

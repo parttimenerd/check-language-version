@@ -1,6 +1,7 @@
 // Java 23 feature: Markdown Documentation Comments (JEP 467)
 // Expected Version: 23
 // Required Features: MARKDOWN_DOC_COMMENTS
+// Compile Check: false
 // This file demonstrates the new Markdown syntax in Javadoc comments
 
 /// This is a class that demonstrates **Markdown** in documentation.

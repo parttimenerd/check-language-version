@@ -1,12 +1,12 @@
 // Java 10 combination: Diamond + Try-with-resources + Var + Stream
 // Test: Combination of diamond operator, try-with-resources, var, and streams
 // Expected Version: 10
-// Required Features: DIAMOND_OPERATOR, TRY_WITH_RESOURCES, VAR, STREAM_API
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, IO_API, LAMBDAS, METHOD_REFERENCES, STREAM_API, TRY_WITH_RESOURCES, VAR
 import java.io.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class Combo_DiamondTryVarStream_Java10 {
+public class Combo_DiamondTryVarStream {
     void test() throws IOException {
         // Diamond operator requires explicit type on left side
         List<String> list = new ArrayList<>();

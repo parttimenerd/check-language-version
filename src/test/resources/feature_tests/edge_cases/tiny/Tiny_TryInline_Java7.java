@@ -1,6 +1,6 @@
 // Tiny: Try resource inline (Java 7)
 // Expected Version: 7
-// Required Features: TRY_WITH_RESOURCES
+// Required Features: IO_API, TRY_WITH_RESOURCES
 
 public class Tiny_TryInline_Java7 {
     void test() throws Exception {

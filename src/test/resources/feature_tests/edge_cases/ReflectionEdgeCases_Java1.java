@@ -1,7 +1,8 @@
 // Edge case: Reflection API usage (Java 1.1+, but file uses features up to Java 16)
 // Expected Version: 16
-// Required Features: REFLECTION, PATTERN_MATCHING_INSTANCEOF
+// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, GENERICS, INNER_CLASSES, LAMBDAS, PATTERN_MATCHING_INSTANCEOF, REFLECTION
 import java.lang.reflect.*;
+import java.lang.annotation.Annotation;
 import java.util.*;
 
 public class ReflectionEdgeCases_Java1 {

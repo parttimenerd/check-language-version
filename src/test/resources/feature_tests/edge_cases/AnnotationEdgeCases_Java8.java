@@ -1,6 +1,6 @@
 // Edge case: Annotation variations
 // Expected Version: 8
-// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS
+// Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS
 // Note: TYPE_ANNOTATIONS detection is complex as it depends on how JavaParser parses annotations on types
 import java.lang.annotation.*;
 import java.util.*;

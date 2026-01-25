@@ -1,6 +1,6 @@
 // Java 10 feature: Local variable type inference (var)
 // Expected Version: 10
-// Required Features: VAR
+// Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, VAR
 import java.util.*;
 public class Java10_Var {
     public void method() {

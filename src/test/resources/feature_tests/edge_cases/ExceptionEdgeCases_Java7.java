@@ -1,6 +1,6 @@
 // Edge case: Exception handling evolution
 // Expected Version: 7
-// Required Features: MULTI_CATCH, TRY_WITH_RESOURCES
+// Required Features: IO_API, JDBC, MULTI_CATCH, TRY_WITH_RESOURCES
 import java.io.*;
 import java.sql.*;
 

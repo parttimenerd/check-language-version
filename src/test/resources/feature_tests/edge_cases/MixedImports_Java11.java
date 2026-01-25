@@ -1,6 +1,6 @@
 // Edge case: Mix of explicit imports and wildcard imports
 // Expected Version: 11
-// Required Features: HTTP_CLIENT, STREAM_API
+// Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, HTTP_CLIENT, METHOD_REFERENCES, OPTIONAL, STREAM_API
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.util.stream.*;

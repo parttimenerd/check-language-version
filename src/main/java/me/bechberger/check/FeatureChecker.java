@@ -164,10 +164,13 @@ public class FeatureChecker {
         SEALED_CLASSES(17, false, "Sealed classes"),
         RANDOM_GENERATOR(17, true, "java.util.random"),
         HEX_FORMAT(17, true, "java.util.HexFormat"),
-        DESERIALIZATION_FILTERS(17, true, "Deserialization filters"),
+        DESERIALIZATION_FILTERS(9, true, "Deserialization filters"),
+
+        // Java 6 features
+        HTTP_SERVER(6, true, "com.sun.net.httpserver.HttpServer"),
 
         // Java 18 features
-        SIMPLE_WEB_SERVER(18, true, "com.sun.net.httpserver"),
+        SIMPLE_WEB_SERVER(18, true, "com.sun.net.httpserver.SimpleFileServer"),
         INET_ADDRESS_RESOLVER(18, true, "java.net.spi.InetAddressResolverProvider"),
 
         // Java 21 features - Record Patterns, Pattern Matching for switch
@@ -334,17 +337,21 @@ public class FeatureChecker {
 
         /**
          * Check if a fully qualified type name matches this rule.
-         * @param fqn The fully qualified name (e.g., "java.util.Optional")
+         * @param fqn The fully qualified name (e.g., "java.util.Optional" or "java.util.List<Integer>")
          * @return true if this FQN triggers the feature
          */
         public boolean matchesFQN(String fqn) {
+            // Strip type parameters if present (e.g., "java.util.List<Integer>" -> "java.util.List")
+            int angleBracketIndex = fqn.indexOf('<');
+            String baseFqn = angleBracketIndex > 0 ? fqn.substring(0, angleBracketIndex) : fqn;
+
             if (packageLevelMatch) {
-                return fqn.startsWith(packageName + ".") || fqn.equals(packageName);
+                return baseFqn.startsWith(packageName + ".") || baseFqn.equals(packageName);
             } else {
                 if (typeNames == null) return false;
                 for (String typeName : typeNames) {
                     String fullName = packageName + "." + typeName;
-                    if (fqn.equals(fullName) || fqn.startsWith(fullName + ".") || fqn.startsWith(fullName + "$")) {
+                    if (baseFqn.equals(fullName) || baseFqn.startsWith(fullName + ".") || baseFqn.startsWith(fullName + "$")) {
                         return true;
                     }
                 }
@@ -440,7 +447,9 @@ public class FeatureChecker {
         TypeFeatureRule.types("java.text", JavaFeature.COMPACT_NUMBER_FORMAT, "CompactNumberFormat"),
 
         // === Java 15 ===
-        TypeFeatureRule.types("java.lang.invoke", JavaFeature.HIDDEN_CLASSES, "MethodHandles"),
+        // ClassOption enum was introduced in Java 15 for defineHiddenClass
+        TypeFeatureRule.types("java.lang.invoke", JavaFeature.HIDDEN_CLASSES,
+            "MethodHandles$Lookup$ClassOption", "MethodHandles.Lookup.ClassOption"),
         TypeFeatureRule.types("java.security.spec", JavaFeature.EDDSA,
             "EdECPublicKeySpec", "EdECPrivateKeySpec", "EdECPoint", "NamedParameterSpec"),
         TypeFeatureRule.types("java.security.interfaces", JavaFeature.EDDSA,
@@ -456,7 +465,12 @@ public class FeatureChecker {
         TypeFeatureRule.types("java.io", JavaFeature.DESERIALIZATION_FILTERS, "ObjectInputFilter"),
 
         // === Java 18 ===
-        TypeFeatureRule.pkg("com.sun.net.httpserver", JavaFeature.SIMPLE_WEB_SERVER),
+        // SimpleFileServer, HttpHandlers, and Request are the Java 18 Simple Web Server (JEP 408)
+        TypeFeatureRule.types("com.sun.net.httpserver", JavaFeature.SIMPLE_WEB_SERVER,
+            "SimpleFileServer", "HttpHandlers", "Request"),
+        // HttpServer, HttpHandler etc. are Java 6
+        TypeFeatureRule.types("com.sun.net.httpserver", JavaFeature.HTTP_SERVER,
+            "HttpServer", "HttpsServer", "HttpHandler", "HttpExchange", "HttpContext"),
         TypeFeatureRule.pkg("java.net.spi", JavaFeature.INET_ADDRESS_RESOLVER),
 
         // === Java 21 ===

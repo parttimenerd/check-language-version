@@ -47,6 +47,19 @@ Or with GraalVM native image support:
 ./build-native-image.sh
 ```
 
+Testing
+-------
+
+```shell
+mvn test
+```
+
+To test also test that the test Java files compile, run:
+
+```shell
+mvn test -Dtest=FeatureDetectionTest -Dtest.compilation=true
+```
+
 Visualization
 -------------
 
@@ -57,28 +70,3 @@ python3 visualize.py output.json bla.json --output-dir test_split_bars --open
 License
 -------
 Apache License 2.0
-
-Game idea
----------
-I have in the test resources a lot of tiny Java files with different language features
-and different Java versions.
-Maybe create a game where you have to guess the Java version
-based on the code snippet?
-
-create a self-contained python script in a game folder (with an index.html as the)
-that generates a quiz from these files (embed all files in the JS
-with the language features that define the version and the minimum version required
-as the answer).
-The user is shown a code snippet and has to select the correct Java version
-from multiple choices (auto-generate four random wrong answers and add correct
-answer).
-The game keeps track of score (sum of absolute differences to actual version) and time.
-Use now web framework in the backend and pure vanilla JS in the frontend.
-keep it simple.
-
-ignore example files over 1 lines, remove comments, replace class name with "Quiz"
-(have no class names that give away the version).
-
-use <script src="https://lemonadejs.com/v5/lemonade.js"></script> for the reactive ness
-
-the python script should generate a simple HTML file with embedded JS and CSS.
