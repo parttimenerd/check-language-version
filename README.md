@@ -50,3 +50,7 @@ python3 visualize.py output.json bla.json --output-dir test_split_bars --open
 License
 -------
 MIT
+
+TODO
+----
+ensure that the Java version in the test file names match the detected version

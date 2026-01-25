@@ -1,0 +1,17 @@
+// Java 22 combination: Unnamed variables + Records + Pattern matching + Switch
+// Test: Combination of unnamed variables with records, pattern matching, and switch
+// Expected Version: 22
+// Required Features: UNNAMED_VARIABLES, RECORDS, RECORD_PATTERNS, SWITCH_PATTERN_MATCHING
+public class Combo_UnnamedRecordsPatternSwitch_Java22 {
+    record Point(int x, int y) {}
+    record Point3D(int x, int y, int z) {}
+
+    void test(Object obj) {
+        switch (obj) {
+            case Point(int x, int _) -> System.out.println("x=" + x);
+            case Point3D(int x, int _, int _) -> System.out.println("x=" + x);
+            case String _ -> System.out.println("string");
+            default -> {}
+        }
+    }
+}

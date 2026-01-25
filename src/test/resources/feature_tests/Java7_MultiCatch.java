@@ -1,0 +1,14 @@
+// Java 7 feature: Multi-catch
+// Expected Version: 7
+// Required Features: MULTI_CATCH
+import java.io.*;
+
+public class Java7_MultiCatch {
+    public void method() {
+        try {
+            throw new IOException("test");
+        } catch (IOException | RuntimeException e) {
+            System.out.println("Caught: " + e.getMessage());
+        }
+    }
+}

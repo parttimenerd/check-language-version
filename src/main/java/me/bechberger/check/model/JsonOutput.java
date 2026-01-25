@@ -6,6 +6,7 @@ import java.util.Map;
  * Root model for JSON output
  */
 public record JsonOutput(
+        Map<String, FeatureInfo> featureLabels,
         Map<String, FileInfo> files,
         Map<String, UnparsableFileInfo> unparsable_files
 ) {

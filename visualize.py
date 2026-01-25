@@ -55,7 +55,7 @@ from plotly.subplots import make_subplots
 import plotly.io as pio
 
 # LTS versions in order
-LTS_VERSIONS = [8, 11, 17, 21, 25]
+LTS_VERSIONS = [5, 6, 7, 8, 11, 17, 21, 25]
 
 def map_to_lts(version):
     """Map a Java version to its corresponding LTS version."""
@@ -100,6 +100,33 @@ def extract_version_stats(data, use_lts=False):
         version_stats[java_version]['lines'] += lines
 
     return version_stats
+
+def extract_feature_stats(data):
+    """Extract feature usage statistics from JSON data."""
+    files = data.get('files', {})
+    feature_labels = data.get('featureLabels', {})
+
+    # Count feature occurrences across all files
+    feature_counts = {}
+
+    for filename, info in files.items():
+        features = info.get('features', [])
+        for feature in features:
+            if feature not in feature_counts:
+                feature_counts[feature] = {'files': 0, 'label': '', 'java': 0}
+            feature_counts[feature]['files'] += 1
+
+    # Add labels and Java versions from feature metadata
+    for feature_name, count_info in feature_counts.items():
+        if feature_name in feature_labels:
+            feature_info = feature_labels[feature_name]
+            count_info['label'] = feature_info.get('label', feature_name)
+            count_info['java'] = feature_info.get('java', 0)
+        else:
+            count_info['label'] = feature_name
+            count_info['java'] = 0
+
+    return feature_counts
 
 def combine_stats(stats_list):
     """Combine multiple statistics dictionaries."""
@@ -300,6 +327,60 @@ def create_percentage_bar_charts(datasets, combined=False):
 
     return fig_files, fig_lines
 
+def create_feature_bar_chart(feature_stats):
+    """Create bar chart showing feature usage sorted by Java version."""
+    if not feature_stats:
+        return None
+
+    # Sort features by Java version (ascending), then by file count (descending)
+    sorted_features = sorted(
+        feature_stats.items(),
+        key=lambda x: (x[1]['java'], -x[1]['files'])
+    )
+
+    # Create labels with "label (Java X)" format
+    labels = [f"{info['label']} (Java {info['java']})" for _, info in sorted_features]
+    file_counts = [info['files'] for _, info in sorted_features]
+    java_versions = [info['java'] for _, info in sorted_features]
+
+    # Create color scale based on Java version
+    # Use a color gradient from blue (old) to red (new)
+    max_version = max(java_versions) if java_versions else 1
+    min_version = min(java_versions) if java_versions else 1
+    version_range = max_version - min_version if max_version > min_version else 1
+
+    colors = []
+    for version in java_versions:
+        # Normalize to 0-1 range
+        normalized = (version - min_version) / version_range if version_range > 0 else 0.5
+        # Create color from blue (old) to red (new)
+        r = int(normalized * 255)
+        b = int((1 - normalized) * 255)
+        colors.append(f'rgb({r}, 100, {b})')
+
+    fig = go.Figure()
+
+    fig.add_trace(
+        go.Bar(
+            y=labels,  # Horizontal bar chart
+            x=file_counts,
+            orientation='h',
+            marker_color=colors,
+            hovertemplate='<b>%{y}</b><br>Files: %{x}<extra></extra>'
+        )
+    )
+
+    fig.update_layout(
+        title_text='Java Features Usage (sorted by Java version)',
+        xaxis_title='Number of Files',
+        yaxis_title='Feature',
+        height=max(600, len(labels) * 25),  # Dynamic height based on number of features
+        showlegend=False,
+        yaxis={'categoryorder': 'array', 'categoryarray': labels}  # Preserve our sort order
+    )
+
+    return fig
+
 @click.command()
 @click.argument('json_files', nargs=-1, type=click.Path(exists=True), required=True)
 @click.option('--combined', is_flag=True, help='Combine all JSON files into one visualization')
@@ -326,6 +407,7 @@ def main(json_files, combined, open_browser, output_dir, output_format):
     # Load and process data for exact versions
     datasets = []
     datasets_lts = []
+    feature_datasets = []
 
     for json_file in json_files:
         filepath = Path(json_file)
@@ -342,9 +424,14 @@ def main(json_files, combined, open_browser, output_dir, output_format):
         stats_lts = extract_version_stats(data, use_lts=True)
         datasets_lts.append((label, stats_lts))
 
+        # Extract feature stats
+        feature_stats = extract_feature_stats(data)
+        feature_datasets.append((label, feature_stats))
+
         click.echo(f'  Found {sum(s["files"] for s in stats.values())} files '
                   f'across {len(stats)} Java versions')
         click.echo(f'  LTS grouping: {len(stats_lts)} LTS versions')
+        click.echo(f'  Detected {len(feature_stats)} unique features')
 
     # Generate visualizations
     all_figures = []
@@ -366,6 +453,21 @@ def main(json_files, combined, open_browser, output_dir, output_format):
         pct_bar_fig_files, pct_bar_fig_lines = create_percentage_bar_charts(datasets, combined=True)
         all_figures.append(('combined_bars_percentage_files', pct_bar_fig_files))
         all_figures.append(('combined_bars_percentage_lines', pct_bar_fig_lines))
+
+        # Combined feature chart
+        if feature_datasets:
+            click.echo('Generating feature distribution chart...')
+            # Combine all feature datasets
+            combined_features = {}
+            for _, features in feature_datasets:
+                for feature_name, info in features.items():
+                    if feature_name not in combined_features:
+                        combined_features[feature_name] = {'files': 0, 'label': info['label'], 'java': info['java']}
+                    combined_features[feature_name]['files'] += info['files']
+
+            feature_fig = create_feature_bar_chart(combined_features)
+            if feature_fig:
+                all_figures.append(('features_distribution', feature_fig))
 
         # Combined LTS visualizations
         click.echo('Generating LTS visualizations...')
@@ -406,6 +508,14 @@ def main(json_files, combined, open_browser, output_dir, output_format):
             pct_bar_fig_files, pct_bar_fig_lines = create_percentage_bar_charts(datasets, combined=False)
             all_figures.append((f'{datasets[0][0]}_bars_percentage_files', pct_bar_fig_files))
             all_figures.append((f'{datasets[0][0]}_bars_percentage_lines', pct_bar_fig_lines))
+
+        # Feature distribution charts
+        if feature_datasets:
+            click.echo('\nGenerating feature distribution charts...')
+            for label, feature_stats in feature_datasets:
+                feature_fig = create_feature_bar_chart(feature_stats)
+                if feature_fig:
+                    all_figures.append((f'{label}_features', feature_fig))
 
         # LTS visualizations
         click.echo('\nGenerating LTS visualizations...')

@@ -78,21 +78,29 @@ public class Main implements Callable<Integer> {
 
         for (File file : javaFiles) {
             try {
-                int version = LanguageLevelChecker.parse(file);
                 int lineCount = countLines(file);
                 String filePath = file.getPath();
 
-                if (version == -1) {
+                // Use FeatureChecker for detailed feature detection
+                FeatureChecker.FeatureCheckResult checkResult = FeatureChecker.check(file);
+
+                if (checkResult == null) {
                     if (!json && !ignoreErrors) {
                         System.err.println("Error parsing: " + file);
                     }
-                    unparsableFiles.put(filePath, new FileResult(lineCount, null));
+                    unparsableFiles.put(filePath, new FileResult(lineCount, null, null));
                     errorCount++;
                 } else {
+                    int version = checkResult.requiredJavaVersion();
+                    List<String> features = checkResult.features().stream()
+                        .map(FeatureChecker.JavaFeature::name)
+                        .sorted()
+                        .toList();
+
                     if (verbose || (!summary && !json)) {
                         System.out.println(file + ", " + version + ", " + lineCount);
                     }
-                    parsableFiles.put(filePath, new FileResult(lineCount, version));
+                    parsableFiles.put(filePath, new FileResult(lineCount, version, features));
                     versionCounts.merge(version, 1, Integer::sum);
                     maxVersion = Math.max(maxVersion, version);
                 }
@@ -103,7 +111,7 @@ public class Main implements Callable<Integer> {
                         e.printStackTrace();
                     }
                 }
-                unparsableFiles.put(file.getPath(), new FileResult(0, null));
+                unparsableFiles.put(file.getPath(), new FileResult(0, null, null));
                 errorCount++;
             }
         }
@@ -127,13 +135,20 @@ public class Main implements Callable<Integer> {
     }
 
     private void printJsonOutput(Map<String, FileResult> parsableFiles, Map<String, FileResult> unparsableFiles) throws IOException {
+        // Create feature labels map (enum name -> FeatureInfo with label and Java version)
+        Map<String, me.bechberger.check.model.FeatureInfo> featureLabels = new LinkedHashMap<>();
+        for (FeatureChecker.JavaFeature feature : FeatureChecker.JavaFeature.values()) {
+            featureLabels.put(feature.name(),
+                new me.bechberger.check.model.FeatureInfo(feature.getDescription(), feature.getJavaVersion()));
+        }
+
         Map<String, FileInfo> filesMap = new LinkedHashMap<>();
         Map<String, UnparsableFileInfo> unparsableMap = new LinkedHashMap<>();
 
         // Convert parsableFiles
         for (Map.Entry<String, FileResult> entry : parsableFiles.entrySet()) {
             filesMap.put(entry.getKey(),
-                new FileInfo(entry.getValue().lines, entry.getValue().javaVersion));
+                new FileInfo(entry.getValue().lines, entry.getValue().javaVersion, entry.getValue().features));
         }
 
         // Convert unparsableFiles
@@ -142,7 +157,7 @@ public class Main implements Callable<Integer> {
                 new UnparsableFileInfo(entry.getValue().lines));
         }
 
-        JsonOutput output = new JsonOutput(filesMap, unparsableMap);
+        JsonOutput output = new JsonOutput(featureLabels, filesMap, unparsableMap);
 
         ObjectMapper mapper = JsonMapper.builder()
                 .configure(SerializationFeature.INDENT_OUTPUT, true)
@@ -153,10 +168,12 @@ public class Main implements Callable<Integer> {
     private static class FileResult {
         final int lines;
         final Integer javaVersion;
+        final List<String> features;
 
-        FileResult(int lines, Integer javaVersion) {
+        FileResult(int lines, Integer javaVersion, List<String> features) {
             this.lines = lines;
             this.javaVersion = javaVersion;
+            this.features = features;
         }
     }
 
