@@ -106,10 +106,10 @@
             display: block;
             width: 100%;
             margin-top: 20px;
-            background-color: #6c757d;
+            background-color: #495057;
         }
         .next-btn:hover {
-            background-color: #5a6268;
+            background-color: #343a40;
         }
         .disclaimer {
             margin-top: 30px;
@@ -118,6 +118,13 @@
             color: #6c757d;
             text-align: center;
             border-top: 1px solid #dee2e6;
+        }
+        .disclaimer a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .disclaimer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
@@ -156,8 +163,14 @@
                 return arr;
             }
 
-            // Format Java version for display (0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
+            // Format Java version for display (-2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
             function formatVersion(version) {
+                if (version === -2) {
+                    return "1.0-α2";
+                }
+                if (version === -1) {
+                    return "1.0-α3";
+                }
                 if (version <= 4) {
                     return "1." + version;
                 }
@@ -165,13 +178,28 @@
             }
 
             // Generate wrong answers for a given correct version
+            // Lower versions (< Java 9) have 60% higher probability of being chosen
             function generateWrongAnswers(correct) {
-                var MIN_VERSION = 0;
+                var MIN_VERSION = -2;
                 var MAX_VERSION = 25;
+                var LOWER_VERSION_THRESHOLD = 9;
+                var LOWER_VERSION_WEIGHT = 1.6; // 60% higher probability
+
+                // Build weighted pool of versions
+                var weightedPool = [];
+                for (var v = MIN_VERSION; v <= MAX_VERSION; v++) {
+                    if (v === correct) continue;
+                    // Add version to pool, with more entries for lower versions
+                    var count = v < LOWER_VERSION_THRESHOLD ? Math.ceil(LOWER_VERSION_WEIGHT * 10) : 10;
+                    for (var i = 0; i < count; i++) {
+                        weightedPool.push(v);
+                    }
+                }
+
                 var wrong = [];
                 while (wrong.length < 4) {
-                    var r = Math.floor(Math.random() * (MAX_VERSION - MIN_VERSION + 1)) + MIN_VERSION;
-                    if (r !== correct && wrong.indexOf(r) === -1) {
+                    var r = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                    if (wrong.indexOf(r) === -1) {
                         wrong.push(r);
                     }
                 }
@@ -198,9 +226,19 @@
                 self.answered = false;
                 self.selectedOption = null;
                 self.questionsCount = quizData.length;
+                self.correctCount = 0;
+                self.incorrectCount = 0;
 
                 // Function to update the UI
                 const updateUI = () => {
+
+                    // Update scores in footer
+                    if (self.correctEl) {
+                        self.correctEl.textContent = self.correctCount;
+                    }
+                    if (self.incorrectEl) {
+                        self.incorrectEl.textContent = self.incorrectCount;
+                    }
 
                     // Update code
                     if (self.codeEl) {
@@ -262,6 +300,11 @@
                     if (self.answered) return;
                     self.answered = true;
                     self.selectedOption = option;
+                    if (option === self.currentQuestion.correct) {
+                        self.correctCount++;
+                    } else {
+                        self.incorrectCount++;
+                    }
                     updateUI();
                 };
 
@@ -301,12 +344,17 @@
                     </div>
                     <div class="options" :ref="self.optionsEl"></div>
                     <div :ref="self.feedbackEl"></div>
-                    <div class="disclaimer">Note: This is just a fun quiz and may contain errors.</div>
+                    <div class="disclaimer">
+                        Score: <span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span>
+                        <span style="padding-left: 1em">Note: This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
+                        <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
+                    </div>
                 </div>`;
             }
 
             lemonade.render(Quiz, document.getElementById('app'));
         }
     </script>
+    {%goatcounter_script%}
 </body>
 </html>

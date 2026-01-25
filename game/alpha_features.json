@@ -1,0 +1,463 @@
+[
+  {
+    "code": "public class Quiz {\n    int[] numbers;\n    String[] names;\n\n    int[] getNumbers() {\n        return numbers;\n    }\n\n    String[] getNames() {\n        return names;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void process() {\n        try {\n            riskyOperation();\n        } catch (Exception e) {\n            handleError(e);\n        } finally {\n            cleanup();\n        }\n    }\n\n    void riskyOperation() {}\n    void handleError(Exception e) {}\n    void cleanup() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    double[][] matrix;\n\n    double[][] getMatrix() {\n        return matrix;\n    }\n\n    void setMatrix(double[][] m) {\n        this.matrix = m;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void loadFile() {\n        try {\n            openFile();\n            readData();\n        } catch (Exception e) {\n            logError(e);\n        } finally {\n            closeFile();\n        }\n    }\n\n    void openFile() {}\n    void readData() {}\n    void logError(Exception e) {}\n    void closeFile() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    short[] convert(int[] input) {\n        short[] result = new short[input.length];\n        for (int i = 0; i < input.length; i++) {\n            result[i] = (short) input[i];\n        }\n        return result;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void connect() {\n        try {\n            openConnection();\n            sendData();\n            receiveData();\n        } catch (Exception e) {\n            handleNetworkError(e);\n        } finally {\n            closeConnection();\n        }\n    }\n\n    void openConnection() {}\n    void sendData() {}\n    void receiveData() {}\n    void handleNetworkError(Exception e) {}\n    void closeConnection() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void transaction() {\n        try {\n            beginTransaction();\n            executeQuery();\n            commitTransaction();\n        } catch (Exception e) {\n            rollbackTransaction();\n        } finally {\n            releaseConnection();\n        }\n    }\n\n    void beginTransaction() {}\n    void executeQuery() {}\n    void commitTransaction() {}\n    void rollbackTransaction() {}\n    void releaseConnection() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void processResource() {\n        try {\n            acquireLock();\n            doWork();\n        } catch (Exception e) {\n            handleException(e);\n        } finally {\n            releaseLock();\n        }\n    }\n\n    void acquireLock() {}\n    void doWork() {}\n    void handleException(Exception e) {}\n    void releaseLock() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    byte[] toBytes(String s) {\n        byte[] result = new byte[s.length()];\n        for (int i = 0; i < s.length(); i++) {\n            result[i] = (byte) s.charAt(i);\n        }\n        return result;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    char[] getChars(String s) {\n        char[] result = new char[s.length()];\n        s.getChars(0, s.length(), result, 0);\n        return result;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void safeOperation() {\n        try {\n            init();\n            execute();\n            complete();\n        } catch (Exception e) {\n            abort(e);\n        } finally {\n            shutdown();\n        }\n    }\n\n    void init() {}\n    void execute() {}\n    void complete() {}\n    void abort(Exception e) {}\n    void shutdown() {}\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TRY_CATCH_FINALLY",
+        "label": "Combined try-catch-finally statement",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    String[][][] cube;\n\n    String[][][] getCube() {\n        return cube;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ARRAY_SYNTAX",
+        "label": "New array declaration syntax (int[] i)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    int numbers[];\n    String names[];\n\n    int getNumber()[] {\n        return numbers;\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_ARRAY_SYNTAX",
+        "label": "Old array declaration syntax (int i[])",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void process() {\n        try {\n            riskyOperation();\n        } catch (Exception e) {\n            handleError(e);\n        }\n    }\n\n    void riskyOperation() {}\n    void handleError(Exception e) {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_CATCH",
+        "label": "try-catch without finally (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void cleanup() {\n        try {\n            releaseResources();\n        } finally {\n            reset();\n        }\n    }\n\n    void releaseResources() {}\n    void reset() {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_FINALLY",
+        "label": "try-finally without catch (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    double matrix[][];\n\n    double getMatrix()[][] {\n        return matrix;\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_ARRAY_SYNTAX",
+        "label": "Old array declaration syntax (int i[])",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void loadData() {\n        try {\n            openFile();\n            readData();\n        } catch (Exception e) {\n            logError(e);\n        }\n    }\n\n    void openFile() {}\n    void readData() {}\n    void logError(Exception e) {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_CATCH",
+        "label": "try-catch without finally (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void connect() {\n        try {\n            openConnection();\n            sendData();\n        } catch (Exception e) {\n            handleNetworkError(e);\n        }\n    }\n\n    void openConnection() {}\n    void sendData() {}\n    void handleNetworkError(Exception e) {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_CATCH",
+        "label": "try-catch without finally (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    short convert(int input[])[] {\n        short result[] = new short[input.length];\n        for (int i = 0; i < input.length; i++) {\n            result[i] = (short) input[i];\n        }\n        return result;\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_ARRAY_SYNTAX",
+        "label": "Old array declaration syntax (int i[])",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void ensureCleanup() {\n        try {\n            allocateMemory();\n        } finally {\n            freeMemory();\n        }\n    }\n\n    void allocateMemory() {}\n    void freeMemory() {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_FINALLY",
+        "label": "try-finally without catch (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void safeClose() {\n        try {\n            flushBuffer();\n        } finally {\n            closeStream();\n        }\n    }\n\n    void flushBuffer() {}\n    void closeStream() {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_FINALLY",
+        "label": "try-finally without catch (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void guardedOperation() {\n        try {\n            enterCriticalSection();\n        } finally {\n            exitCriticalSection();\n        }\n    }\n\n    void enterCriticalSection() {}\n    void exitCriticalSection() {}\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_TRY_FINALLY",
+        "label": "try-finally without catch (no combined form yet)",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    String cube[][][];\n\n    String getCube()[][][] {\n        return cube;\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_ARRAY_SYNTAX",
+        "label": "Old array declaration syntax (int i[])",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    byte data[];\n    char text[];\n\n    byte getData()[] {\n        return data;\n    }\n\n    char getText()[] {\n        return text;\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_ARRAY_SYNTAX",
+        "label": "Old array declaration syntax (int i[])",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void example() {\n        int[] unused = {1, 2, 3};\n        String[] alsoUnused = {\"a\", \"b\"};\n        System.out.println(\"Array variables declared but not used\");\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_UNUSED_ARRAY_INIT",
+        "label": "Unused variables with array initializers (compiler fix)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    String buildMessage() {\n        String msg = \"Count: \";\n        Integer count = new Integer(42);\n        msg += count;\n        msg += new Object();\n        return msg;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_STRING_PLUS_OBJECT",
+        "label": "String += object concatenation (compiler fix)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    int getHexValues() {\n        int upperX = 0X1;\n        int upperXBig = 0XFF;\n        long lowerXLong = 0x1L;\n        long anotherLong = 0xABCDL;\n        return upperX + upperXBig;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_HEX_LITERALS",
+        "label": "Hex literals with uppercase X (0X1) or L suffix (0x1L)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void bitwiseShifts() {\n        long value = 0xFFFFFFFFL;\n        value >>= 4;\n        value <<= 2;\n        value >>>= 1;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_LONG_SHIFT_ASSIGN",
+        "label": "Shift-assignment operators on longs (>>=, <<=, >>>=)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void processFlags() {\n        long flags = 0xFF00FF00FF00FF00L;\n        flags >>= 8;\n        flags <<= 16;\n        flags >>>= 4;\n        System.out.println(flags);\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_LONG_SHIFT_ASSIGN",
+        "label": "Shift-assignment operators on longs (>>=, <<=, >>>=)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    void logInfo() {\n        String log = \"Error at \";\n        log += new java.util.Date();\n        log += \" in \";\n        log += Thread.currentThread();\n        System.out.println(log);\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_STRING_PLUS_OBJECT",
+        "label": "String += object concatenation (compiler fix)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    long parseHex() {\n        int mask = 0XFF;\n        int value = 0XABCD;\n        long bigValue = 0xCAFEBABEL;\n        long maxInt = 0xFFFFFFFFL;\n        return bigValue & maxInt;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_HEX_LITERALS",
+        "label": "Hex literals with uppercase X (0X1) or L suffix (0x1L)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "import net.InetAddress;\n\npublic class Quiz {\n    void connect() {\n        InetAddress addr = new InetAddress(\"localhost\");\n        System.out.println(addr);\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_INET_ADDRESS",
+        "label": "InetAddress class for network addresses",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "import net.Socket;\nimport net.ProtocolException;\n\npublic class Quiz {\n    void openSocket() throws ProtocolException {\n        Socket s = new Socket();\n        s.connect();\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_SOCKET",
+        "label": "Socket class for network connections",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "import net.InetAddress;\nimport net.Socket;\n\npublic class Quiz {\n    void bindToAny() {\n        InetAddress anyAddr = new InetAddress(null);\n        Socket s = new Socket();\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_INET_ADDRESS",
+        "label": "InetAddress class for network addresses",
+        "version": -2
+      },
+      {
+        "name": "ALPHA2_SOCKET",
+        "label": "Socket class for network connections",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "import net.ProtocolException;\n\npublic class Quiz {\n    void handleProtocol() throws ProtocolException {\n        throw new ProtocolException(\"Invalid protocol\");\n    }\n}",
+    "correct": -2,
+    "features": [
+      {
+        "name": "ALPHA2_PROTOCOL_EXCEPTION",
+        "label": "ProtocolException for network protocol errors",
+        "version": -2
+      }
+    ]
+  },
+  {
+    "code": "import java.io.StringBufferPrintStream;\n\npublic class Quiz {\n    String capture() {\n        StringBufferPrintStream out = new StringBufferPrintStream();\n        out.println(\"Hello\");\n        out.println(42);\n        return out.toString();\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_STRING_BUFFER_PRINT_STREAM",
+        "label": "StringBufferPrintStream for capturing output",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "import java.io.StringInputStream;\n\npublic class Quiz {\n    void readFromString() {\n        String data = \"Hello World\";\n        StringInputStream in = new StringInputStream(data);\n        int ch = in.read();\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_STRING_INPUT_STREAM",
+        "label": "StringInputStream for reading from strings",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "import java.io.TextInputStream;\n\npublic class Quiz {\n    void parseText() {\n        TextInputStream text = new TextInputStream(System.in);\n        String line = text.readLine();\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_TEXT_INPUT_STREAM",
+        "label": "TextInputStream for reading text",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "import java.io.StringInputStream;\nimport java.io.TextInputStream;\n\npublic class Quiz {\n    void processLines() {\n        String data = \"line1\\nline2\\nline3\";\n        StringInputStream strIn = new StringInputStream(data);\n        TextInputStream textIn = new TextInputStream(strIn);\n        String line = textIn.readLine();\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_STRING_INPUT_STREAM",
+        "label": "StringInputStream for reading from strings",
+        "version": -1
+      },
+      {
+        "name": "ALPHA3_TEXT_INPUT_STREAM",
+        "label": "TextInputStream for reading text",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    double computeNaN() {\n        double result = 0.0 / 0.0;\n        return result;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ZERO_DIV_ZERO",
+        "label": "0.0/0.0 division (compiler fix)",
+        "version": -1
+      }
+    ]
+  },
+  {
+    "code": "public class Quiz {\n    boolean isNaN(double value) {\n        double nan = 0.0 / 0.0;\n        return value != value;\n    }\n}",
+    "correct": -1,
+    "features": [
+      {
+        "name": "ALPHA3_ZERO_DIV_ZERO",
+        "label": "0.0/0.0 division (compiler fix)",
+        "version": -1
+      }
+    ]
+  }
+]

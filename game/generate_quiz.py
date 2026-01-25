@@ -4,6 +4,10 @@ import json
 import random
 import urllib.request
 import ssl
+import argparse
+import tempfile
+import subprocess
+import shutil
 
 # Configuration
 SOURCE_DIR = 'src/test/resources'
@@ -14,7 +18,7 @@ OUTPUT_DEPS_JS = os.path.join(OUTPUT_DIR, 'deps.js')
 OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
 MIN_LINES = 1
 MAX_LINES = 20
-MIN_VERSION = 0
+MIN_VERSION = -2
 MAX_VERSION = 25
 LEMONADE_URL = 'https://lemonadejs.com/v5/lemonade.js'
 PRISM_CSS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css'
@@ -100,6 +104,24 @@ def sanitize_code(code):
     cleaned_code = re.sub(r'\bCombo_\w*', 'Example', cleaned_code)
     cleaned_code = re.sub(r'\bMinimal\w*', 'Example', cleaned_code)
 
+    def normalize_empty_lines(code):
+        """Remove excessive empty lines, keeping at most one empty line between code blocks."""
+        # Split into lines
+        lines = code.split('\n')
+        result = []
+        prev_empty = False
+        for line in lines:
+            is_empty = line.strip() == ''
+            if is_empty:
+                if not prev_empty:
+                    result.append('')
+                prev_empty = True
+            else:
+                result.append(line)
+                prev_empty = False
+        # Join and strip leading/trailing empty lines
+        return '\n'.join(result).strip()
+
     # Find top-level type definition (class, interface, enum, record)
     type_pattern = re.compile(r'(public\s+|private\s+|protected\s+)?(class|interface|enum|record)\s+(\w+)')
     match = type_pattern.search(cleaned_code)
@@ -120,27 +142,14 @@ def sanitize_code(code):
         # Ensure empty line between imports and class definition
         code_pre = re.sub(r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )', r'\1\n\n\2', code_pre)
 
-        # Collapse multiple empty/whitespace-only lines into one empty line
-        # First, convert whitespace-only lines to pure empty lines
-        code_pre = re.sub(r'\n[ \t]+\n', '\n\n', code_pre)
-        # Then collapse multiple consecutive newlines (2+ empty lines) into single empty line
-        code_pre = re.sub(r'\n{3,}', '\n\n', code_pre)
-
-        # Remove leading and trailing empty lines
-        code_pre = code_pre.strip()
-        return code_pre
+        # Normalize empty lines
+        return normalize_empty_lines(code_pre)
 
     # Ensure empty line between imports and class definition
     cleaned_code = re.sub(r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )', r'\1\n\n\2', cleaned_code)
 
-    # Collapse multiple empty/whitespace-only lines into one empty line
-    # First, convert whitespace-only lines to pure empty lines
-    cleaned_code = re.sub(r'\n[ \t]+\n', '\n\n', cleaned_code)
-    # Then collapse multiple consecutive newlines (2+ empty lines) into single empty line
-    cleaned_code = re.sub(r'\n{3,}', '\n\n', cleaned_code)
-
-    # Remove leading and trailing empty lines
-    return cleaned_code.strip()
+    # Normalize empty lines
+    return normalize_empty_lines(cleaned_code)
 
 def scan_files():
     feature_map = parse_feature_enum(FEATURE_CHECKER_PATH)
@@ -228,6 +237,106 @@ def scan_files():
 
     return questions
 
+
+def load_alpha_questions():
+    """
+    Loads hand-crafted alpha version questions from alpha_features.json.
+    These are historical Java 1.0-alpha2 (-2) and 1.0-alpha3 (-1) examples.
+    """
+    alpha_path = os.path.join(os.path.dirname(__file__), 'alpha_features.json')
+    if not os.path.exists(alpha_path):
+        print(f"Warning: {alpha_path} not found. Alpha questions will not be included.")
+        return []
+
+    with open(alpha_path, 'r', encoding='utf-8') as f:
+        questions = json.load(f)
+
+    print(f"Loaded {len(questions)} alpha version questions.")
+    return questions
+
+
+def test_alpha_questions():
+    """
+    Test compiles all alpha_feature tests via javac in temporary folders.
+    Returns True if all tests pass, False otherwise.
+    """
+    alpha_qs = load_alpha_questions()
+    if not alpha_qs:
+        print("No alpha questions to test.")
+        return True
+
+    # Check if javac is available
+    try:
+        result = subprocess.run(['javac', '-version'], capture_output=True, text=True)
+        print(f"Using {result.stderr.strip() or result.stdout.strip()}")
+    except FileNotFoundError:
+        print("Error: javac not found. Please install JDK.")
+        return False
+
+    passed = 0
+    failed = 0
+    failures = []
+
+    print(f"\nTesting {len(alpha_qs)} alpha questions...\n")
+
+    for i, question in enumerate(alpha_qs):
+        code = question['code']
+        version = question['correct']
+        features = [f['label'] for f in question.get('features', [])]
+
+        # Create a temporary directory for this test
+        temp_dir = tempfile.mkdtemp(prefix=f'alpha_test_{i}_')
+
+        try:
+            # Write the Java file
+            java_file = os.path.join(temp_dir, 'Quiz.java')
+            with open(java_file, 'w', encoding='utf-8') as f:
+                f.write(code)
+
+            # Compile with javac
+            # Use source/target 1.8 as minimum that supports all the alpha syntax
+            result = subprocess.run(
+                ['javac', '-source', '1.8', '-target', '1.8', '-Xlint:-options', java_file],
+                capture_output=True,
+                text=True,
+                cwd=temp_dir
+            )
+
+            if result.returncode == 0:
+                passed += 1
+                version_str = "1.0-α3" if version == -1 else "1.0-α2" if version == -2 else str(version)
+                print(f"  ✓ Test {i+1}: {version_str} - {', '.join(features)}")
+            else:
+                failed += 1
+                version_str = "1.0-α3" if version == -1 else "1.0-α2" if version == -2 else str(version)
+                failures.append({
+                    'index': i + 1,
+                    'version': version_str,
+                    'features': features,
+                    'error': result.stderr,
+                    'code': code
+                })
+                print(f"  ✗ Test {i+1}: {version_str} - {', '.join(features)}")
+        finally:
+            # Clean up the temporary directory
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
+    print(f"\n{'='*50}")
+    print(f"Results: {passed} passed, {failed} failed out of {len(alpha_qs)} tests")
+
+    if failures:
+        print(f"\n{'='*50}")
+        print("FAILURES:\n")
+        for f in failures:
+            print(f"Test {f['index']} ({f['version']}):")
+            print(f"  Features: {', '.join(f['features'])}")
+            print(f"  Error:\n{f['error']}")
+            print(f"  Code:\n{f['code']}\n")
+            print("-" * 40)
+
+    return failed == 0
+
+
 def download_lemonade():
     print(f"Downloading LemonadeJS from {LEMONADE_URL}...")
     try:
@@ -266,7 +375,7 @@ def render_template(template, **kwargs):
 
 
 
-def generate_html(questions):
+def generate_html(questions, goatcounter_url=None):
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
@@ -302,9 +411,17 @@ def generate_html(questions):
     with open('game/template.html', 'r', encoding='utf-8') as f:
         html_template = f.read()
 
+    # Generate GoatCounter script if URL provided
+    if goatcounter_url:
+        goatcounter_script = f'''<script data-goatcounter="{goatcounter_url}"
+        async src="{goatcounter_url.replace('/count', '/count.js')}"></script>'''
+    else:
+        goatcounter_script = ''
+
     html = render_template(
         html_template,
-        prism_css=prism_css
+        prism_css=prism_css,
+        goatcounter_script=goatcounter_script
     )
 
     with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
@@ -312,11 +429,35 @@ def generate_html(questions):
     print(f"Generated {OUTPUT_HTML}")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate Java Version Quiz')
+    parser.add_argument('--alpha-weight', type=int, default=1, metavar='N',
+                        help='Weight multiplier for alpha version questions (default: 1). '
+                             'Use 0 to exclude alpha questions, >1 to increase their frequency.')
+    parser.add_argument('--test', action='store_true',
+                        help='Test compile all alpha_feature tests via javac (in temporary folders).')
+    parser.add_argument('--goatcounter', type=str, metavar='URL',
+                        help='GoatCounter URL for analytics (e.g., https://example.goatcounter.com/count).')
+    args = parser.parse_args()
+
+    # If --test is specified, run tests and exit
+    if args.test:
+        success = test_alpha_questions()
+        exit(0 if success else 1)
+
     if not os.path.exists(SOURCE_DIR):
         print(f"Error: {SOURCE_DIR} does not exist.")
     else:
         qs = scan_files()
+
+        # Load and merge alpha questions with weight
+        if args.alpha_weight > 0:
+            alpha_qs = load_alpha_questions()
+            # Duplicate alpha questions based on weight
+            for _ in range(args.alpha_weight):
+                qs.extend(alpha_qs)
+            print(f"Added {len(alpha_qs) * args.alpha_weight} alpha questions (weight={args.alpha_weight})")
+
         if not qs:
             print("No valid questions found.")
         else:
-            generate_html(qs)
+            generate_html(qs, goatcounter_url=args.goatcounter)
