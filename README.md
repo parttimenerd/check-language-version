@@ -31,6 +31,8 @@ Known Limitations
 -----------------
 JavaParser fails to parse some valid Java files.
 It's all just an approximation.
+The matching of library features is limited, as we can only
+do type based checking, as we're not doing any semantic analysis.
 
 Building
 --------
@@ -58,12 +60,12 @@ Apache License 2.0
 
 Game idea
 ---------
-I have in the tests a lot of tiny Java files with different language features
+I have in the test resources a lot of tiny Java files with different language features
 and different Java versions.
 Maybe create a game where you have to guess the Java version
 based on the code snippet?
 
-create a self-contained python script in a game folder
+create a self-contained python script in a game folder (with an index.html as the)
 that generates a quiz from these files (embed all files in the JS
 with the language features that define the version and the minimum version required
 as the answer).
@@ -73,5 +75,10 @@ answer).
 The game keeps track of score (sum of absolute differences to actual version) and time.
 Use now web framework in the backend and pure vanilla JS in the frontend.
 keep it simple.
+
+ignore example files over 1 lines, remove comments, replace class name with "Quiz"
+(have no class names that give away the version).
+
+use <script src="https://lemonadejs.com/v5/lemonade.js"></script> for the reactive ness
 
 the python script should generate a simple HTML file with embedded JS and CSS.

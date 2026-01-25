@@ -1,7 +1,11 @@
-// Test: CORBA API (Java 1.2)
+// Tiny: CORBA (Java 2)
 // Expected Version: 2
 // Required Features: CORBA
-import org.omg.CORBA.ORB;
+
+import org.omg.CORBA.*;
+
 public class Tiny_CORBA_Java2 {
-    ORB orb;
+    void test() {
+        ORB orb = null;
+    }
 }

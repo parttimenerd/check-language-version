@@ -1,0 +1,7 @@
+// Tiny: Generic method (Java 5)
+// Expected Version: 5
+// Required Features: GENERICS
+
+public class Tiny_GenericMethod_Java5 {
+    <T> T id(T t) { return t; }
+}

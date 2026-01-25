@@ -74,7 +74,6 @@ public class FeatureChecker {
         XML_API(4, true, "javax.xml"),
         PREFERENCES(4, true, "java.util.prefs"),
         IMAGE_IO(4, true, "javax.imageio"),
-        EXCEPTION_CHAINING(4, true, "Exception chaining"),
 
         // Java 5 features (Java5Validator: remove noGenerics, noAnnotations, noEnums, noVarargs, noForEach, noStaticImports)
         GENERICS(5, false, "Generics"),
@@ -1136,15 +1135,14 @@ public class FeatureChecker {
         private void detectFeaturesFromName(String name, boolean isWildcardImport) {
             if (name == null || name.isEmpty()) return;
 
-            // IMPORTANT: Wildcard imports do NOT trigger features directly!
-            // They only register the package so that later type usage can be matched.
-            // Features are only detected when:
-            // 1. Direct/explicit imports are used (e.g., import java.util.Optional;)
-            // 2. Types are actually used in code (detected via ClassOrInterfaceType visitor)
-            // 3. Fully qualified names are used in code
+            // For wildcard imports, only trigger package-level features
+            // (e.g., import java.lang.classfile.* should trigger CLASS_FILE_API)
             if (isWildcardImport) {
-                // Don't add any features for wildcard imports
-                // The wildcard import is already tracked in wildcardImports set
+                for (TypeFeatureRule rule : TYPE_FEATURE_RULES) {
+                    if (rule.packageLevelMatch && rule.packageName.equals(name)) {
+                        addFeature(rule.feature);
+                    }
+                }
                 return;
             }
 
@@ -1833,8 +1831,12 @@ public class FeatureChecker {
                 if (label.isPatternExpr() || label.isTypePatternExpr() || label.isRecordPatternExpr()) {
                     addFeature(JavaFeature.SWITCH_PATTERN_MATCHING);
                 }
+                // Check for null literal in switch case (Java 21)
+                if (label.isNullLiteralExpr()) {
+                    addFeature(JavaFeature.SWITCH_NULL_DEFAULT);
+                }
             }
-            // Check for switch case null, default (Java 21)
+            // Check for switch case null, default (Java 21) - combined null/default label
             if (n.getLabels().isNonEmpty() && n.isDefault()) {
                 addFeature(JavaFeature.SWITCH_NULL_DEFAULT);
             }

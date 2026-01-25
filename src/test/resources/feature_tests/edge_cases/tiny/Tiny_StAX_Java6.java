@@ -1,7 +1,11 @@
-// Test: StAX API (Java 6)
+// Tiny: STAX (Java 6)
 // Expected Version: 6
 // Required Features: STAX
-import javax.xml.stream.XMLStreamReader;
+
+import javax.xml.stream.*;
+
 public class Tiny_StAX_Java6 {
-    XMLStreamReader reader;
+    void test() throws Exception {
+        XMLInputFactory f = XMLInputFactory.newInstance();
+    }
 }
