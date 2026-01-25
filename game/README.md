@@ -5,6 +5,8 @@ A simple game to learn and practice Java version features.
 
 Also includes Java 1.0-alpha2 and Java 1.0-alpha3 features for fun.
 
+You can find a version of the game online at [https://mostlynerdless.de/java-game](https://mostlynerdless.de/java-game).
+
 Build
 -----
 

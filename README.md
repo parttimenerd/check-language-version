@@ -11,6 +11,8 @@ which are good enough for a rough estimate.
 For simplicity, our lovest version is Java 8, as there were too many
 changes from Java 7 to Java 8.
 
+This is also the base for a [game](./game/README.md).
+
 Usage
 -----
 ```bash
