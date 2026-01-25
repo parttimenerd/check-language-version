@@ -19,6 +19,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.github.javaparser.FixValidators.fixJavaValidator;
+
 /**
  * Checks the required Java language level for a given Java source file.
  */
@@ -57,7 +59,9 @@ public class LanguageLevelChecker {
     }
 
     static JavaParser parser = new JavaParser(new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_25));
-
+    {
+        fixJavaValidator(parser);
+    }
     /**
      * Returns the lowest Java version that is required to compile the given file.
      * @param file The Java source file

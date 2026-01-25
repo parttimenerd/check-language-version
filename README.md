@@ -27,6 +27,13 @@ Commands:
   summary  Show a summary table of Java versions from JSON output files
 ```
 
+Known Limitations
+-----------------
+JavaParser fails to parse some valid Java files:
+- `yield` is not recognized as a keyword in switch expressions
+  - but it this seems to really rarely used in practice (only five files in Quarkus seem to contain it for example)
+- local enums are not supported
+
 Building
 --------
 
@@ -49,8 +56,8 @@ python3 visualize.py output.json bla.json --output-dir test_split_bars --open
 
 License
 -------
-MIT
+Apache License 2.0
 
 TODO
 ----
-ensure that the Java version in the test file names match the detected version
+Maybe rewrite using internal Java compiler APIs for better accuracy. Or just maybe not.

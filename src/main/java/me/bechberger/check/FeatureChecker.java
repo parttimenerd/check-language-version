@@ -20,6 +20,8 @@ import java.io.FileNotFoundException;
 import java.util.*;
 import java.util.function.Consumer;
 
+import static com.github.javaparser.FixValidators.fixJavaValidator;
+
 /**
  * Checks which Java language features are used in a given Java source file.
  * Features are mapped to the Java version that introduced them (as stable, ignoring preview features).
@@ -582,6 +584,9 @@ public class FeatureChecker {
     private static final JavaParser parser = new JavaParser(
             new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.BLEEDING_EDGE)
     );
+    static {
+        fixJavaValidator(parser);
+    }
 
     /**
      * Default minimum Java version to consider. Features from versions below this are ignored.
