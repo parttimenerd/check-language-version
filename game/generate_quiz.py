@@ -16,6 +16,7 @@ OUTPUT_DIR = 'game/dist'
 OUTPUT_HTML = os.path.join(OUTPUT_DIR, 'index.html')
 OUTPUT_DEPS_JS = os.path.join(OUTPUT_DIR, 'deps.js')
 OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
+OUTPUT_PRISM_CSS = os.path.join(OUTPUT_DIR, 'prism.css')
 MIN_LINES = 1
 MAX_LINES = 20
 MIN_VERSION = -2
@@ -375,18 +376,31 @@ def render_template(template, **kwargs):
 
 
 
-def generate_html(questions, goatcounter_url=None):
+def generate_html(questions, goatcounter_url=None, base_url=''):
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Download dependencies
-    lemonade_js = download_lemonade()
-    prism_css = download_url(PRISM_CSS_URL, "Error downloading Prism CSS")
-    prism_js = download_url(PRISM_JS_URL, "Error downloading Prism JS")
-    prism_java = download_url(PRISM_JAVA_URL, "Error downloading Prism Java")
+    # Normalize base_url: ensure empty string or ends with a single '/'
+    if base_url:
+        if not base_url.endswith('/'):
+            base_url = base_url + '/'
+    else:
+        base_url = ''
 
-    # Write deps.js (LemonadeJS + PrismJS)
-    deps_content = f"""// Dependencies: LemonadeJS + PrismJS
+    # === Dependencies: download once and cache in OUTPUT_DIR ===
+    # If deps.js already exists in OUTPUT_DIR, reuse it and don't re-download JS libs
+    deps_js_cached = os.path.exists(OUTPUT_DEPS_JS)
+
+    if deps_js_cached:
+        print(f"Using cached {OUTPUT_DEPS_JS}; skipping JS dependency downloads.")
+    else:
+        # Download dependencies
+        lemonade_js = download_lemonade()
+        prism_js = download_url(PRISM_JS_URL, "Error downloading Prism JS")
+        prism_java = download_url(PRISM_JAVA_URL, "Error downloading Prism Java")
+
+        # Write deps.js (LemonadeJS + PrismJS)
+        deps_content = f"""// Dependencies: LemonadeJS + PrismJS
 // Auto-generated - do not edit
 
 // === LemonadeJS ===
@@ -398,9 +412,38 @@ def generate_html(questions, goatcounter_url=None):
 // === PrismJS Java Language ===
 {prism_java}
 """
-    with open(OUTPUT_DEPS_JS, 'w', encoding='utf-8') as f:
-        f.write(deps_content)
-    print(f"Generated {OUTPUT_DEPS_JS}")
+        try:
+            with open(OUTPUT_DEPS_JS, 'w', encoding='utf-8') as f:
+                f.write(deps_content)
+            print(f"Generated {OUTPUT_DEPS_JS}")
+        except Exception as e:
+            print(f"Error writing {OUTPUT_DEPS_JS}: {e}")
+
+    # Prism CSS: cache separately (used in template <style>)
+    if os.path.exists(OUTPUT_PRISM_CSS):
+        try:
+            with open(OUTPUT_PRISM_CSS, 'r', encoding='utf-8') as f:
+                prism_css = f.read()
+            print(f"Using cached {OUTPUT_PRISM_CSS}; skipping Prism CSS download.")
+        except Exception as e:
+            print(f"Error reading cached Prism CSS: {e}. Falling back to download.")
+            prism_css = download_url(PRISM_CSS_URL, "Error downloading Prism CSS")
+            try:
+                with open(OUTPUT_PRISM_CSS, 'w', encoding='utf-8') as f:
+                    f.write(prism_css)
+                print(f"Cached Prism CSS to {OUTPUT_PRISM_CSS}")
+            except Exception as e2:
+                print(f"Error caching Prism CSS: {e2}")
+    else:
+        prism_css = download_url(PRISM_CSS_URL, "Error downloading Prism CSS")
+        try:
+            with open(OUTPUT_PRISM_CSS, 'w', encoding='utf-8') as f:
+                f.write(prism_css)
+            print(f"Cached Prism CSS to {OUTPUT_PRISM_CSS}")
+        except Exception as e:
+            print(f"Error caching Prism CSS: {e}")
+
+    # If deps.js was cached, we don't need to set lemonade_js/prism_js/prism_java variables here
 
     # Write code.json (quiz data)
     with open(OUTPUT_CODE_JSON, 'w', encoding='utf-8') as f:
@@ -421,12 +464,26 @@ def generate_html(questions, goatcounter_url=None):
     html = render_template(
         html_template,
         prism_css=prism_css,
-        goatcounter_script=goatcounter_script
+        goatcounter_script=goatcounter_script,
+        base_url=base_url
     )
 
     with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f"Generated {OUTPUT_HTML}")
+
+    # Copy screenshot image (if present) into dist/img/screenshot.png
+    src_img = os.path.join(os.path.dirname(__file__), 'img', 'screenshot.png')
+    dest_img_dir = os.path.join(OUTPUT_DIR, 'img')
+    if os.path.exists(src_img):
+        try:
+            os.makedirs(dest_img_dir, exist_ok=True)
+            shutil.copy2(src_img, os.path.join(dest_img_dir, 'screenshot.png'))
+            print(f"Copied screenshot to {os.path.join(dest_img_dir, 'screenshot.png')}")
+        except Exception as e:
+            print(f"Error copying screenshot: {e}")
+    else:
+        print(f"Warning: {src_img} not found. No screenshot copied.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Java Version Quiz')
@@ -435,6 +492,8 @@ if __name__ == "__main__":
                              'Use 0 to exclude alpha questions, >1 to increase their frequency.')
     parser.add_argument('--test', action='store_true',
                         help='Test compile all alpha_feature tests via javac (in temporary folders).')
+    parser.add_argument('--base-url', type=str, metavar='URL',
+                        help='Base URL to prefix to relative asset paths (e.g., https://example.com/).')
     parser.add_argument('--goatcounter', type=str, metavar='URL',
                         help='GoatCounter URL for analytics (e.g., https://example.goatcounter.com/count).')
     args = parser.parse_args()
@@ -460,4 +519,4 @@ if __name__ == "__main__":
         if not qs:
             print("No valid questions found.")
         else:
-            generate_html(qs, goatcounter_url=args.goatcounter)
+            generate_html(qs, goatcounter_url=args.goatcounter, base_url=(args.base_url or ''))

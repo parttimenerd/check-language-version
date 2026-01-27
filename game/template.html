@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta property="og:type"               content="website" />
+    <meta property="og:title"              content="Guess the Java version of a code snippet in this fun game" />
+    <meta property="og:description"        content="A game that let's you guess the Java version of snippets, from Java 1.0-alpha2 to Java 25" />
+    <meta property="og:image"              content="{%base_url%}img/screenshot.png" />
+    <meta property="og:url"                content="{%base_url%}" />
+    <meta name="twitter:card"              content="summary_large_image" />
+    <meta name="twitter:title"             content="Guess the Java version of a code snippet in this fun game" />
+    <meta name="twitter:description"       content="A game that let's you guess the Java version of snippets, from Java 1.0-alpha2 to Java 25" />
+    <meta name="twitter:image"             content="{%base_url%}img/screenshot.png" />
     <title>Java Version Quiz</title>
     <style>
         {%prism_css%}
@@ -163,6 +172,112 @@
                 return arr;
             }
 
+            // --- Deep link helpers (index.html#question=...) ---
+            function base64UrlEncodeFromBytes(bytes) {
+                var binary = '';
+                for (var i = 0; i < bytes.length; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                return btoa(binary)
+                    .replace(/\+/g, '-')
+                    .replace(/\//g, '_')
+                    .replace(/=+$/g, '');
+            }
+
+            function base64UrlDecodeToBytes(b64url) {
+                var b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
+                while (b64.length % 4 !== 0) {
+                    b64 += '=';
+                }
+                var binary = atob(b64);
+                var bytes = new Uint8Array(binary.length);
+                for (var i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
+            }
+
+            function encodeQuestionToHashPayload(question) {
+                // Keep payload compact but sufficient to find the question deterministically
+                var payload = {
+                    code: question.code,
+                    correct: question.correct
+                };
+                if (question.features && question.features.length) {
+                    payload.features = question.features;
+                }
+
+                var json = JSON.stringify(payload);
+                var bytes;
+                if (window.TextEncoder) {
+                    bytes = new TextEncoder().encode(json);
+                } else {
+                    // Fallback: btoa expects Latin-1; escape/unescape gives us a byte-ish string
+                    var latin1 = unescape(encodeURIComponent(json));
+                    bytes = new Uint8Array(latin1.length);
+                    for (var i = 0; i < latin1.length; i++) bytes[i] = latin1.charCodeAt(i);
+                }
+                return base64UrlEncodeFromBytes(bytes);
+            }
+
+            function decodeQuestionFromHashPayload(payload) {
+                try {
+                    var bytes = base64UrlDecodeToBytes(payload);
+                    var json;
+                    if (window.TextDecoder) {
+                        json = new TextDecoder().decode(bytes);
+                    } else {
+                        var latin1 = '';
+                        for (var i = 0; i < bytes.length; i++) latin1 += String.fromCharCode(bytes[i]);
+                        json = decodeURIComponent(escape(latin1));
+                    }
+                    var obj = JSON.parse(json);
+                    if (!obj || typeof obj.code !== 'string' || typeof obj.correct !== 'number') {
+                        return null;
+                    }
+                    return obj;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            function getQuestionFromHash() {
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#')) return null;
+                var params = new URLSearchParams(hash.slice(1));
+                var payload = params.get('question');
+                if (!payload) return null;
+                return decodeQuestionFromHashPayload(payload);
+            }
+
+            function setHashFromQuestion(question) {
+                var payload = encodeQuestionToHashPayload(question);
+                // Preserve other hash params if any
+                var hash = window.location.hash || '';
+                var params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+                params.set('question', payload);
+
+                var newHash = '#' + params.toString();
+                // Prefer replaceState to avoid polluting history while the user plays.
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', newHash);
+                } else {
+                    window.location.hash = params.toString();
+                }
+            }
+
+            function findQuestionIndex(q, list) {
+                if (!q) return -1;
+                // Prefer match on code + correct to avoid duplicates.
+                for (var i = 0; i < list.length; i++) {
+                    if (list[i].code === q.code && list[i].correct === q.correct) return i;
+                }
+                for (var j = 0; j < list.length; j++) {
+                    if (list[j].code === q.code) return j;
+                }
+                return -1;
+            }
+
             // Format Java version for display (-2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
             function formatVersion(version) {
                 if (version === -2) {
@@ -213,15 +328,35 @@
                 return shuffleArray(options);
             }
 
-            // Shuffle questions at start
-            quizData = shuffleArray(quizData);
+            // Shuffle questions at start, unless we start from a hash-question.
+            var hashQuestion = getQuestionFromHash();
+            if (!hashQuestion) {
+                quizData = shuffleArray(quizData);
+            }
 
             function Quiz() {
                 const self = this;
 
                 // State
+                self.startedFromHash = !!hashQuestion;
                 self.currentIndex = 0;
-                self.currentQuestion = quizData[0];
+                self.currentQuestionFromHashOnly = null;
+
+                if (hashQuestion) {
+                    var idx = findQuestionIndex(hashQuestion, quizData);
+                    if (idx >= 0) {
+                        self.currentIndex = idx;
+                        self.currentQuestion = quizData[self.currentIndex];
+                    } else {
+                        // Hash points to a question we don't have locally; still allow starting with it.
+                        // We'll treat it as a standalone question for the first round.
+                        self.currentQuestionFromHashOnly = hashQuestion;
+                        self.currentQuestion = self.currentQuestionFromHashOnly;
+                    }
+                } else {
+                    self.currentQuestion = quizData[self.currentIndex];
+                }
+
                 self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
                 self.answered = false;
                 self.selectedOption = null;
@@ -238,6 +373,18 @@
                     }
                     if (self.incorrectEl) {
                         self.incorrectEl.textContent = self.incorrectCount;
+                    }
+
+                    // Update share link (hidden after answering)
+                    if (self.shareLinkEl) {
+                        if (self.answered) {
+                            self.shareLinkEl.style.display = 'none';
+                        } else {
+                            self.shareLinkEl.style.display = '';
+                            // Update hash in-place, and set href to the full share URL.
+                            setHashFromQuestion(self.currentQuestion);
+                            self.shareLinkEl.href = window.location.href;
+                        }
                     }
 
                     // Update code
@@ -310,11 +457,19 @@
 
                 // Go to next question
                 window.quizNext = () => {
-                    if (self.currentIndex < self.questionsCount - 1) {
-                        self.currentIndex++;
-                    } else {
+                    // If we started on an "external" hash-only question, the next question should
+                    // fall back into the normal database.
+                    if (self.currentQuestionFromHashOnly) {
+                        self.currentQuestionFromHashOnly = null;
                         self.currentIndex = 0;
+                    } else {
+                        if (self.currentIndex < self.questionsCount - 1) {
+                            self.currentIndex++;
+                        } else {
+                            self.currentIndex = 0;
+                        }
                     }
+
                     self.currentQuestion = quizData[self.currentIndex];
                     self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
                     self.answered = false;
@@ -338,7 +493,7 @@
                 });
 
                 return render => render`<div>
-                    <h1>Java Version Quiz</h1>
+                    <h1>Guess the Java Version</h1>
                     <div class="code-container">
                         <pre><code class="language-java" :ref="self.codeEl"></code></pre>
                     </div>
@@ -346,6 +501,7 @@
                     <div :ref="self.feedbackEl"></div>
                     <div class="disclaimer">
                         Score: <span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span>
+                        <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
                         <span style="padding-left: 1em">Note: This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
                         <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
                     </div>
