@@ -1,6 +1,6 @@
 // Edge case: Minimal Java 1.0 code with no special features
-// Expected Version: 0
-// Required Features: NONE
+// Expected Version: -1
+// Required Features: ALPHA3_ARRAY_SYNTAX
 public class MinimalJava1_NoFeatures {
 
     private int value;

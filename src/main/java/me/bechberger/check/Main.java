@@ -47,6 +47,10 @@ public class Main implements Callable<Integer> {
             description = "Ignore files with parsing errors (do not log them)")
     private boolean ignoreErrors = false;
 
+    @Option(names = {"--include-alpha-features"},
+            description = "Include Java 1.0 alpha (-2/-1) features in JSON output")
+    private boolean includeAlphaFeatures = false;
+
     @Override
     public Integer call() throws Exception {
         if (files.isEmpty()) {
@@ -93,6 +97,7 @@ public class Main implements Callable<Integer> {
                 } else {
                     int version = checkResult.requiredJavaVersion();
                     List<String> features = checkResult.features().stream()
+                        .filter(f -> includeAlphaFeatures || f.getJavaVersion() >= 0)
                         .map(FeatureChecker.JavaFeature::name)
                         .sorted()
                         .toList();
@@ -138,6 +143,9 @@ public class Main implements Callable<Integer> {
         // Create feature labels map (enum name -> FeatureInfo with label and Java version)
         Map<String, me.bechberger.check.model.FeatureInfo> featureLabels = new LinkedHashMap<>();
         for (FeatureChecker.JavaFeature feature : FeatureChecker.JavaFeature.values()) {
+            if (!includeAlphaFeatures && feature.getJavaVersion() < 0) {
+                continue;
+            }
             featureLabels.put(feature.name(),
                 new me.bechberger.check.model.FeatureInfo(feature.getDescription(), feature.getJavaVersion()));
         }

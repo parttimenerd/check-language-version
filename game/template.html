@@ -173,6 +173,7 @@
             }
 
             // --- Deep link helpers (index.html#question=...) ---
+            // Payload format: base64url( gzip(JSON(question)) )
             function base64UrlEncodeFromBytes(bytes) {
                 var binary = '';
                 for (var i = 0; i < bytes.length; i++) {
@@ -197,8 +198,32 @@
                 return bytes;
             }
 
-            function encodeQuestionToHashPayload(question) {
-                // Keep payload compact but sufficient to find the question deterministically
+            function compress(string, encoding) {
+                if (!window.CompressionStream) {
+                    return Promise.resolve(new TextEncoder().encode(string).buffer);
+                }
+                const byteArray = new TextEncoder().encode(string);
+                const cs = new CompressionStream(encoding);
+                const writer = cs.writable.getWriter();
+                writer.write(byteArray);
+                writer.close();
+                return new Response(cs.readable).arrayBuffer();
+            }
+
+            function decompress(byteArray, encoding) {
+                if (!window.DecompressionStream) {
+                    return Promise.resolve(new TextDecoder().decode(byteArray));
+                }
+                const cs = new DecompressionStream(encoding);
+                const writer = cs.writable.getWriter();
+                writer.write(byteArray);
+                writer.close();
+                return new Response(cs.readable).arrayBuffer().then(function (arrayBuffer) {
+                    return new TextDecoder().decode(arrayBuffer);
+                });
+            }
+
+            async function encodeQuestionToHashPayload(question) {
                 var payload = {
                     code: question.code,
                     correct: question.correct
@@ -208,29 +233,14 @@
                 }
 
                 var json = JSON.stringify(payload);
-                var bytes;
-                if (window.TextEncoder) {
-                    bytes = new TextEncoder().encode(json);
-                } else {
-                    // Fallback: btoa expects Latin-1; escape/unescape gives us a byte-ish string
-                    var latin1 = unescape(encodeURIComponent(json));
-                    bytes = new Uint8Array(latin1.length);
-                    for (var i = 0; i < latin1.length; i++) bytes[i] = latin1.charCodeAt(i);
-                }
-                return base64UrlEncodeFromBytes(bytes);
+                var compressed = await compress(json, 'gzip');
+                return base64UrlEncodeFromBytes(new Uint8Array(compressed));
             }
 
-            function decodeQuestionFromHashPayload(payload) {
+            async function decodeQuestionFromHashPayload(payload) {
                 try {
                     var bytes = base64UrlDecodeToBytes(payload);
-                    var json;
-                    if (window.TextDecoder) {
-                        json = new TextDecoder().decode(bytes);
-                    } else {
-                        var latin1 = '';
-                        for (var i = 0; i < bytes.length; i++) latin1 += String.fromCharCode(bytes[i]);
-                        json = decodeURIComponent(escape(latin1));
-                    }
+                    var json = await decompress(bytes, 'gzip');
                     var obj = JSON.parse(json);
                     if (!obj || typeof obj.code !== 'string' || typeof obj.correct !== 'number') {
                         return null;
@@ -243,22 +253,18 @@
 
             function getQuestionFromHash() {
                 var hash = window.location.hash || '';
-                if (!hash.startsWith('#')) return null;
+                if (!hash.startsWith('#')) return Promise.resolve(null);
                 var params = new URLSearchParams(hash.slice(1));
                 var payload = params.get('question');
-                if (!payload) return null;
+                if (!payload) return Promise.resolve(null);
                 return decodeQuestionFromHashPayload(payload);
             }
 
-            function setHashFromQuestion(question) {
-                var payload = encodeQuestionToHashPayload(question);
-                // Preserve other hash params if any
+            function setHashFromQuestionPayload(payload) {
                 var hash = window.location.hash || '';
                 var params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
                 params.set('question', payload);
-
                 var newHash = '#' + params.toString();
-                // Prefer replaceState to avoid polluting history while the user plays.
                 if (window.history && window.history.replaceState) {
                     window.history.replaceState(null, '', newHash);
                 } else {
@@ -266,20 +272,25 @@
                 }
             }
 
-            function findQuestionIndex(q, list) {
-                if (!q) return -1;
-                // Prefer match on code + correct to avoid duplicates.
-                for (var i = 0; i < list.length; i++) {
-                    if (list[i].code === q.code && list[i].correct === q.correct) return i;
+            function clearQuestionFromHash() {
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#') || hash.length <= 1) return;
+                var params = new URLSearchParams(hash.slice(1));
+                params.delete('question');
+                var next = params.toString();
+                var newHash = next ? ('#' + next) : '';
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
+                } else {
+                    window.location.hash = next;
                 }
-                for (var j = 0; j < list.length; j++) {
-                    if (list[j].code === q.code) return j;
-                }
-                return -1;
             }
 
-            // Format Java version for display (-2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
+            // Format Java version for display (-3 → "1.0-α1", -2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
             function formatVersion(version) {
+                if (version === -3) {
+                    return "1.0-α1";
+                }
                 if (version === -2) {
                     return "1.0-α2";
                 }
@@ -292,32 +303,64 @@
                 return String(version);
             }
 
-            // Generate wrong answers for a given correct version
-            // Lower versions (< Java 9) have 60% higher probability of being chosen
+            // Generate wrong answers for a given correct version.
+            // Constraint: if correct is not the minimum or maximum version, ensure we include
+            // at least one lower and one higher wrong answer.
+            // Lower versions (< Java 9) have 60% higher probability of being chosen.
             function generateWrongAnswers(correct) {
-                var MIN_VERSION = -2;
+                var MIN_VERSION = -3;
                 var MAX_VERSION = 25;
                 var LOWER_VERSION_THRESHOLD = 9;
                 var LOWER_VERSION_WEIGHT = 1.6; // 60% higher probability
 
-                // Build weighted pool of versions
-                var weightedPool = [];
+                function weightFor(v) {
+                    return v < LOWER_VERSION_THRESHOLD ? Math.ceil(LOWER_VERSION_WEIGHT * 10) : 10;
+                }
+
+                function sampleFrom(list) {
+                    var weighted = [];
+                    for (var i = 0; i < list.length; i++) {
+                        var v = list[i];
+                        var w = weightFor(v);
+                        for (var k = 0; k < w; k++) weighted.push(v);
+                    }
+                    return weighted[Math.floor(Math.random() * weighted.length)];
+                }
+
+                var all = [];
+                var lower = [];
+                var higher = [];
                 for (var v = MIN_VERSION; v <= MAX_VERSION; v++) {
                     if (v === correct) continue;
-                    // Add version to pool, with more entries for lower versions
-                    var count = v < LOWER_VERSION_THRESHOLD ? Math.ceil(LOWER_VERSION_WEIGHT * 10) : 10;
-                    for (var i = 0; i < count; i++) {
-                        weightedPool.push(v);
-                    }
+                    all.push(v);
+                    if (v < correct) lower.push(v);
+                    if (v > correct) higher.push(v);
                 }
 
                 var wrong = [];
+
+                // Enforce at least one lower and one higher option when possible.
+                if (correct > MIN_VERSION && correct < MAX_VERSION) {
+                    if (lower.length) {
+                        wrong.push(sampleFrom(lower));
+                    }
+                    if (higher.length) {
+                        var h = sampleFrom(higher);
+                        if (wrong.indexOf(h) === -1) wrong.push(h);
+                    }
+                }
+
+                // Fill the rest from the full pool.
                 while (wrong.length < 4) {
-                    var r = weightedPool[Math.floor(Math.random() * weightedPool.length)];
+                    var r = sampleFrom(all);
                     if (wrong.indexOf(r) === -1) {
                         wrong.push(r);
                     }
                 }
+
+                // If we somehow overshot due to duplicates, trim.
+                while (wrong.length > 4) wrong.pop();
+
                 return wrong;
             }
 
@@ -329,186 +372,203 @@
             }
 
             // Shuffle questions at start, unless we start from a hash-question.
-            var hashQuestion = getQuestionFromHash();
-            if (!hashQuestion) {
-                quizData = shuffleArray(quizData);
-            }
-
-            function Quiz() {
-                const self = this;
-
-                // State
-                self.startedFromHash = !!hashQuestion;
-                self.currentIndex = 0;
-                self.currentQuestionFromHashOnly = null;
-
-                if (hashQuestion) {
-                    var idx = findQuestionIndex(hashQuestion, quizData);
-                    if (idx >= 0) {
-                        self.currentIndex = idx;
-                        self.currentQuestion = quizData[self.currentIndex];
-                    } else {
-                        // Hash points to a question we don't have locally; still allow starting with it.
-                        // We'll treat it as a standalone question for the first round.
-                        self.currentQuestionFromHashOnly = hashQuestion;
-                        self.currentQuestion = self.currentQuestionFromHashOnly;
-                    }
-                } else {
-                    self.currentQuestion = quizData[self.currentIndex];
+            // Hash decoding is async due to compression streams.
+            getQuestionFromHash().then(function(hashQuestion) {
+                if (!hashQuestion) {
+                    quizData = shuffleArray(quizData);
                 }
 
-                self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
-                self.answered = false;
-                self.selectedOption = null;
-                self.questionsCount = quizData.length;
-                self.correctCount = 0;
-                self.incorrectCount = 0;
+                function Quiz() {
+                    const self = this;
 
-                // Function to update the UI
-                const updateUI = () => {
+                    // State
+                    self.startedFromHash = !!hashQuestion;
+                    self.currentIndex = 0;
+                    self.currentQuestionFromHashOnly = null;
 
-                    // Update scores in footer
-                    if (self.correctEl) {
-                        self.correctEl.textContent = self.correctCount;
-                    }
-                    if (self.incorrectEl) {
-                        self.incorrectEl.textContent = self.incorrectCount;
-                    }
-
-                    // Update share link (hidden after answering)
-                    if (self.shareLinkEl) {
-                        if (self.answered) {
-                            self.shareLinkEl.style.display = 'none';
+                    if (hashQuestion) {
+                        var idx = findQuestionIndex(hashQuestion, quizData);
+                        if (idx >= 0) {
+                            self.currentIndex = idx;
+                            self.currentQuestion = quizData[self.currentIndex];
                         } else {
-                            self.shareLinkEl.style.display = '';
-                            // Update hash in-place, and set href to the full share URL.
-                            setHashFromQuestion(self.currentQuestion);
-                            self.shareLinkEl.href = window.location.href;
+                            self.currentQuestionFromHashOnly = hashQuestion;
+                            self.currentQuestion = self.currentQuestionFromHashOnly;
                         }
-                    }
-
-                    // Update code
-                    if (self.codeEl) {
-                        self.codeEl.textContent = self.currentQuestion.code;
-                        setTimeout(() => Prism.highlightAll(), 10);
-                    }
-
-                    // Update options
-                    if (self.optionsEl) {
-                        self.optionsEl.innerHTML = self.options.map((opt, index) => {
-                            let cls = '';
-                            let disabled = '';
-                            if (self.answered) {
-                                disabled = 'disabled';
-                                if (opt === self.currentQuestion.correct) {
-                                    cls = 'correct';
-                                } else if (opt === self.selectedOption) {
-                                    cls = 'wrong';
-                                }
-                            }
-                            return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
-                        }).join('');
-                    }
-
-                    // Update feedback
-                    if (self.feedbackEl) {
-                        if (!self.answered) {
-                            self.feedbackEl.innerHTML = '';
-                        } else {
-                            const isCorrect = self.selectedOption === self.currentQuestion.correct;
-                            const resultText = isCorrect ? 'Correct!' : 'Wrong!';
-                            const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
-
-                            let featuresHtml = '';
-                            if (self.currentQuestion.features && self.currentQuestion.features.length) {
-                                // Sort features by version (highest to lowest)
-                                const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
-                                featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
-                                    sortedFeatures.map(f =>
-                                        `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
-                                    ).join('') + '</div>';
-                            }
-
-                            self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
-                                <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
-                                ${featuresHtml}
-                                <button class="next-btn" onclick="quizNext()" title="Press Enter">Next Question</button>
-                            </div>`;
-                        }
-                    }
-                };
-
-                onload(() => {
-                    updateUI();
-                });
-
-                // Select an option
-                window.quizSelect = (option) => {
-                    if (self.answered) return;
-                    self.answered = true;
-                    self.selectedOption = option;
-                    if (option === self.currentQuestion.correct) {
-                        self.correctCount++;
                     } else {
-                        self.incorrectCount++;
-                    }
-                    updateUI();
-                };
-
-                // Go to next question
-                window.quizNext = () => {
-                    // If we started on an "external" hash-only question, the next question should
-                    // fall back into the normal database.
-                    if (self.currentQuestionFromHashOnly) {
-                        self.currentQuestionFromHashOnly = null;
-                        self.currentIndex = 0;
-                    } else {
-                        if (self.currentIndex < self.questionsCount - 1) {
-                            self.currentIndex++;
-                        } else {
-                            self.currentIndex = 0;
-                        }
+                        self.currentQuestion = quizData[self.currentIndex];
                     }
 
-                    self.currentQuestion = quizData[self.currentIndex];
                     self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
                     self.answered = false;
                     self.selectedOption = null;
-                    updateUI();
-                };
+                    self.questionsCount = quizData.length;
+                    self.correctCount = 0;
+                    self.incorrectCount = 0;
 
-                // Keyboard navigation
-                document.addEventListener('keydown', (e) => {
-                    // Keys 1-5 to select options
-                    if (e.key >= '1' && e.key <= '5' && !self.answered) {
-                        const index = parseInt(e.key) - 1;
-                        if (index < self.options.length) {
-                            window.quizSelect(self.options[index]);
+                    const updateUI = () => {
+                        // Update scores in footer
+                        if (self.correctEl) {
+                            self.correctEl.textContent = self.correctCount;
                         }
-                    }
-                    // Enter to go to next question
-                    if (e.key === 'Enter' && self.answered) {
-                        window.quizNext();
-                    }
-                });
+                        if (self.incorrectEl) {
+                            self.incorrectEl.textContent = self.incorrectCount;
+                        }
 
-                return render => render`<div>
-                    <h1>Guess the Java Version</h1>
-                    <div class="code-container">
-                        <pre><code class="language-java" :ref="self.codeEl"></code></pre>
-                    </div>
-                    <div class="options" :ref="self.optionsEl"></div>
-                    <div :ref="self.feedbackEl"></div>
-                    <div class="disclaimer">
-                        Score: <span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span>
-                        <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
-                        <span style="padding-left: 1em">Note: This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
-                        <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
-                    </div>
-                </div>`;
-            }
+                        // Share link: always visible and always points to the *currently shown* question.
+                        // We keep the page URL clean (no hash changes) by only updating the link's href.
+                        if (self.shareLinkEl) {
+                            self.shareLinkEl.style.display = '';
+                            self.shareLinkEl.title = 'Open/copy a URL that starts at this question';
 
-            lemonade.render(Quiz, document.getElementById('app'));
+                            // Show a placeholder while we (async) compute the compressed payload.
+                            self.shareLinkEl.href = '#';
+
+                            // Compute and set href asynchronously; protect against races when questions change quickly.
+                            const myQuestion = self.currentQuestion;
+                            const myUpdateToken = (self._shareLinkUpdateToken || 0) + 1;
+                            self._shareLinkUpdateToken = myUpdateToken;
+
+                            (async function() {
+                                try {
+                                    var payload = await encodeQuestionToHashPayload(myQuestion);
+                                    // Only apply if this is still the latest update.
+                                    if (self._shareLinkUpdateToken !== myUpdateToken) return;
+
+                                    var url = new URL(window.location.href);
+                                    // Note: set the hash only on the share link URL, not on the page itself.
+                                    url.hash = 'question=' + payload;
+                                    self.shareLinkEl.href = url.toString();
+                                } catch (e) {
+                                    // Keep it as '#' if anything goes wrong.
+                                }
+                            })();
+                        }
+
+                        // Update code
+                        if (self.codeEl) {
+                            self.codeEl.textContent = self.currentQuestion.code;
+                            setTimeout(() => Prism.highlightAll(), 10);
+                        }
+
+                        // Update options
+                        if (self.optionsEl) {
+                            self.optionsEl.innerHTML = self.options.map((opt, index) => {
+                                let cls = '';
+                                let disabled = '';
+                                if (self.answered) {
+                                    disabled = 'disabled';
+                                    if (opt === self.currentQuestion.correct) {
+                                        cls = 'correct';
+                                    } else if (opt === self.selectedOption) {
+                                        cls = 'wrong';
+                                    }
+                                }
+                                return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
+                            }).join('');
+                        }
+
+                        // Update feedback
+                        if (self.feedbackEl) {
+                            if (!self.answered) {
+                                self.feedbackEl.innerHTML = '';
+                            } else {
+                                const isCorrect = self.selectedOption === self.currentQuestion.correct;
+                                const resultText = isCorrect ? 'Correct!' : 'Wrong!';
+                                const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
+
+                                let featuresHtml = '';
+                                if (self.currentQuestion.features && self.currentQuestion.features.length) {
+                                    // Sort features by version (highest to lowest)
+                                    const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
+                                    featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
+                                        sortedFeatures.map(f =>
+                                            `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
+                                        ).join('') + '</div>';
+                                }
+
+                                self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
+                                    <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
+                                    ${featuresHtml}
+                                    <button class="next-btn" onclick="quizNext()" title="Press Enter">Next Question</button>
+                                </div>`;
+                            }
+                        }
+                    };
+
+                    onload(() => {
+                        updateUI();
+                    });
+
+                    window.quizSelect = (option) => {
+                        if (self.answered) return;
+                        self.answered = true;
+                        self.selectedOption = option;
+                        if (option === self.currentQuestion.correct) {
+                            self.correctCount++;
+                        } else {
+                            self.incorrectCount++;
+                        }
+                        // Keep the shared URL available while the answer is shown.
+                        updateUI();
+                    };
+
+                    // Go to next question
+                    window.quizNext = () => {
+                        // Leaving the current question: clean URL by clearing shared hash (if present).
+                        clearQuestionFromHash();
+
+                        if (self.currentQuestionFromHashOnly) {
+                            self.currentQuestionFromHashOnly = null;
+                            self.currentIndex = 0;
+                        } else {
+                            if (self.currentIndex < self.questionsCount - 1) {
+                                self.currentIndex++;
+                            } else {
+                                self.currentIndex = 0;
+                            }
+                        }
+
+                        self.currentQuestion = quizData[self.currentIndex];
+                        self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
+                        self.answered = false;
+                        self.selectedOption = null;
+                        updateUI();
+                    };
+
+                    // Keyboard navigation
+                    document.addEventListener('keydown', (e) => {
+                        // Keys 1-5 to select options
+                        if (e.key >= '1' && e.key <= '5' && !self.answered) {
+                            const index = parseInt(e.key) - 1;
+                            if (index < self.options.length) {
+                                window.quizSelect(self.options[index]);
+                            }
+                        }
+                        // Enter to go to next question
+                        if (e.key === 'Enter' && self.answered) {
+                            window.quizNext();
+                        }
+                    });
+
+                    return render => render`<div>
+                        <h1>Guess the Java Version</h1>
+                        <div class="code-container">
+                            <pre><code class="language-java" :ref="self.codeEl"></code></pre>
+                        </div>
+                        <div class="options" :ref="self.optionsEl"></div>
+                        <div :ref="self.feedbackEl"></div>
+                        <div class="disclaimer">
+                            Score: <span title="Correctly vs incorrectly answered questions since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span></span>
+                            <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
+                            <span style="padding-left: 1em">Note: This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
+                            <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
+                        </div>
+                    </div>`;
+                }
+
+                lemonade.render(Quiz, document.getElementById('app'));
+            });
         }
     </script>
     {%goatcounter_script%}

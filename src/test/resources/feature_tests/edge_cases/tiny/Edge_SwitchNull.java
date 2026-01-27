@@ -1,7 +1,7 @@
 // Java 21 edge case: null case in switch
 // Test: Switch with null handling
 // Expected Version: 21
-// Required Features: SWITCH_NULL_DEFAULT
+// Required Features: SWITCH_NULL_DEFAULT, STRINGS_IN_SWITCH, SWITCH_EXPRESSIONS
 public class Edge_SwitchNull {
     void test(String s) {
         switch (s) {

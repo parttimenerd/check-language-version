@@ -14,6 +14,8 @@ import com.github.javaparser.ast.stmt.*;
 import com.github.javaparser.ast.type.UnionType;
 import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
+import com.github.javaparser.JavaToken;
+import com.github.javaparser.TokenRange;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -65,6 +67,20 @@ public class FeatureChecker {
         JNDI(3, true, "javax.naming"),
         JAVA_SOUND(3, true, "javax.sound"),
         JPDA(3, true, "com.sun.jdi"),
+
+        // Java 1.0-alpha2 features (encoded as Java -2)
+        ALPHA2_TRY_FINALLY(-2, false, "try-finally without catch (no combined form yet)"),
+        ALPHA2_INET_ADDRESS(-2, true, "InetAddress class for network addresses"),
+        ALPHA2_SOCKET(-2, true, "Socket class for network connections"),
+        ALPHA2_PROTOCOL_EXCEPTION(-2, true, "ProtocolException for network protocol errors"),
+
+        // Java 1.0-alpha3 features (encoded as Java -1)
+        ALPHA3_TRY_CATCH_FINALLY(-1, false, "Combined try-catch-finally statement"),
+        ALPHA3_ARRAY_SYNTAX(-1, false, "New array declaration syntax (int[] i)"),
+        ALPHA3_STRING_BUFFER_PRINT_STREAM(-1, true, "StringBufferPrintStream for capturing output"),
+        ALPHA3_STRING_INPUT_STREAM(-1, true, "StringInputStream for reading from strings"),
+        ALPHA3_TEXT_INPUT_STREAM(-1, true, "TextInputStream for reading text"),
+        ALPHA3_HEX_LITERALS(-1, false, "Hex literals with uppercase X (0X1) or L suffix (0x1L)"),
 
         // Java 1.4 features (Java1_4Validator: remove noAssertKeyword)
         ASSERT(4, false, "Assert statement"),
@@ -371,6 +387,16 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("java.applet", JavaFeature.APPLET),
         TypeFeatureRule.pkg("java.io", JavaFeature.IO_API),
 
+        // === Java 1.0-alpha2 ===
+        TypeFeatureRule.types("net", JavaFeature.ALPHA2_INET_ADDRESS, "InetAddress"),
+        TypeFeatureRule.types("net", JavaFeature.ALPHA2_SOCKET, "Socket"),
+        TypeFeatureRule.types("net", JavaFeature.ALPHA2_PROTOCOL_EXCEPTION, "ProtocolException"),
+
+        // === Java 1.0-alpha3 ===
+        TypeFeatureRule.types("net", JavaFeature.ALPHA3_STRING_BUFFER_PRINT_STREAM, "StringBufferPrintStream"),
+        TypeFeatureRule.types("net", JavaFeature.ALPHA3_STRING_INPUT_STREAM, "StringInputStream"),
+        TypeFeatureRule.types("net", JavaFeature.ALPHA3_TEXT_INPUT_STREAM, "TextInputStream"),
+
         // === Java 1.1 ===
         TypeFeatureRule.pkg("java.sql", JavaFeature.JDBC),
         TypeFeatureRule.pkg("javax.sql", JavaFeature.JDBC),
@@ -513,20 +539,12 @@ public class FeatureChecker {
      * @param file The source file that was checked
      * @param features Set of detected Java features (filtered by minVersion)
      * @param requiredJavaVersion The minimum Java version required based on detected features
-     * @param minVersionConsidered The minimum version that was considered (features below this are ignored)
      */
     public record FeatureCheckResult(
             File file,
             Set<JavaFeature> features,
-            int requiredJavaVersion,
-            int minVersionConsidered
+            int requiredJavaVersion
     ) {
-        /**
-         * Convenience constructor that uses default min version.
-         */
-        public FeatureCheckResult(File file, Set<JavaFeature> features, int requiredJavaVersion) {
-            this(file, features, requiredJavaVersion, DEFAULT_MIN_VERSION);
-        }
 
         public FeatureCheckResult {
             EnumSet<JavaFeature> copy = EnumSet.noneOf(JavaFeature.class);
@@ -613,13 +631,112 @@ public class FeatureChecker {
     private static final Pattern YIELD_PATTERN = Pattern.compile("\\byield\\s+");
 
     /**
-     * Pattern to detect local enum declarations inside method bodies.
-     * Matches enum declarations that appear inside braces (method bodies).
-     * Captures: the enum declaration including its body.
+     * Best-effort removal of comments and string/char literals.
+     * This is intentionally simple and only used to avoid false positives for keyword scanning (e.g., "yield" in comments).
      */
-    private static final Pattern LOCAL_ENUM_PATTERN = Pattern.compile(
-            "(\\benum\\s+\\w+\\s*\\{[^{}]*(?:\\{[^{}]*\\}[^{}]*)*\\})"
-    );
+    private static String stripCommentsAndStrings(String source) {
+        StringBuilder out = new StringBuilder(source.length());
+        int i = 0;
+        int len = source.length();
+        while (i < len) {
+            char c = source.charAt(i);
+
+            // Line comment //...
+            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '/') {
+                // replace comment with whitespace to keep offsets roughly stable
+                out.append(' ');
+                i += 2;
+                while (i < len && source.charAt(i) != '\n') {
+                    out.append(' ');
+                    i++;
+                }
+                continue;
+            }
+
+            // Block comment /* ... */
+            if (c == '/' && i + 1 < len && source.charAt(i + 1) == '*') {
+                out.append(' ');
+                i += 2;
+                while (i + 1 < len) {
+                    if (source.charAt(i) == '*' && source.charAt(i + 1) == '/') {
+                        out.append(' ');
+                        i += 2;
+                        break;
+                    }
+                    // preserve newlines
+                    out.append(source.charAt(i) == '\n' ? '\n' : ' ');
+                    i++;
+                }
+                continue;
+            }
+
+            // Text block """ ... """
+            if (c == '"' && i + 2 < len && source.charAt(i + 1) == '"' && source.charAt(i + 2) == '"') {
+                out.append(' ');
+                i += 3;
+                while (i + 2 < len) {
+                    if (source.charAt(i) == '"' && source.charAt(i + 1) == '"' && source.charAt(i + 2) == '"') {
+                        out.append("   ");
+                        i += 3;
+                        break;
+                    }
+                    out.append(source.charAt(i) == '\n' ? '\n' : ' ');
+                    i++;
+                }
+                continue;
+            }
+
+            // String literal "..."
+            if (c == '"') {
+                out.append(' ');
+                i++;
+                while (i < len) {
+                    char sc = source.charAt(i);
+                    if (sc == '\\' && i + 1 < len) {
+                        out.append(' ');
+                        out.append(' ');
+                        i += 2;
+                        continue;
+                    }
+                    if (sc == '"') {
+                        out.append(' ');
+                        i++;
+                        break;
+                    }
+                    out.append(sc == '\n' ? '\n' : ' ');
+                    i++;
+                }
+                continue;
+            }
+
+            // Char literal 'x'
+            if (c == '\'') {
+                out.append(' ');
+                i++;
+                while (i < len) {
+                    char sc = source.charAt(i);
+                    if (sc == '\\' && i + 1 < len) {
+                        out.append(' ');
+                        out.append(' ');
+                        i += 2;
+                        continue;
+                    }
+                    if (sc == '\'') {
+                        out.append(' ');
+                        i++;
+                        break;
+                    }
+                    out.append(sc == '\n' ? '\n' : ' ');
+                    i++;
+                }
+                continue;
+            }
+
+            out.append(c);
+            i++;
+        }
+        return out.toString();
+    }
 
     /**
      * Result of preprocessing source code to handle unsupported syntax.
@@ -639,10 +756,13 @@ public class FeatureChecker {
         boolean hasLocalEnum = false;
 
         // Step 1: Handle yield statements
-        Matcher yieldMatcher = YIELD_PATTERN.matcher(source);
+        // IMPORTANT: Ignore occurrences of "yield" in comments/strings to avoid false positives.
+        String codeOnlyForYieldScan = stripCommentsAndStrings(source);
+        Matcher yieldMatcher = YIELD_PATTERN.matcher(codeOnlyForYieldScan);
         if (yieldMatcher.find()) {
             hasYield = true;
-            source = yieldMatcher.replaceAll("return ");
+            // Replace on the real source (not the stripped one) to make JavaParser accept it.
+            source = YIELD_PATTERN.matcher(source).replaceAll("return ");
         }
 
         // Step 2: Handle local enums - try to detect and fix them
@@ -883,13 +1003,6 @@ public class FeatureChecker {
     }
 
     /**
-     * Default minimum Java version to consider. Features from versions below this are ignored.
-     * By default, Java 5 and lower features are ignored as they're ubiquitous in modern Java code.
-     */
-    public static final int DEFAULT_MIN_VERSION = 6;
-
-
-    /**
      * Parse a file and detect all Java language features used, considering only features
      *
      * @param file The Java source file
@@ -991,6 +1104,64 @@ public class FeatureChecker {
 
         private void addFeature(JavaFeature feature) {
             featureConsumer.accept(feature);
+        }
+
+        /**
+         * Java 1.0-alpha3: Detect the "new" array declarator placement where the brackets are part of the type,
+         * i.e. `int[] a` or `int[] f()`, as opposed to the older `int a[]` / `int f()[]` style.
+         *
+         * We keep this token-based so it's robust even if JavaParser normalizes array types in the AST.
+         */
+        private void detectAlpha3ArraySyntax(Node declarationNode, Node typeNode, String declaredName) {
+            if (declaredName == null || declaredName.isEmpty() || typeNode == null) {
+                return;
+            }
+
+            // Only declarations whose *type* is an array can use the alpha3 array-type bracket placement.
+            // This avoids false positives from array initializers (new int[...]) and indexing (a[0]).
+            if (typeNode instanceof com.github.javaparser.ast.type.Type t) {
+                if (!t.isArrayType()) {
+                    return;
+                }
+            } else {
+                return;
+            }
+
+            Optional<TokenRange> declTR = declarationNode.getTokenRange();
+            Optional<TokenRange> typeTR = typeNode.getTokenRange();
+            if (declTR.isEmpty() || typeTR.isEmpty()) {
+                return;
+            }
+
+            // Find the identifier token for the declared name within the declaration.
+            JavaToken nameTok = null;
+            for (JavaToken tok : declTR.get()) {
+                if (tok.getCategory() == JavaToken.Category.IDENTIFIER && declaredName.equals(tok.getText())) {
+                    nameTok = tok;
+                    break;
+                }
+            }
+            if (nameTok == null) {
+                return;
+            }
+
+            Range nameRange = nameTok.getRange().orElse(null);
+            if (nameRange == null) {
+                return;
+            }
+
+            // If we see any '[' token inside the *type* token range that starts before the identifier,
+            // then this is the alpha3 style (brackets belong to the type).
+            for (JavaToken tok : typeTR.get()) {
+                if (!"[".equals(tok.getText())) {
+                    continue;
+                }
+                Range brRange = tok.getRange().orElse(null);
+                if (brRange != null && brRange.begin.isBefore(nameRange.begin)) {
+                    addFeature(JavaFeature.ALPHA3_ARRAY_SYNTAX);
+                    return;
+                }
+            }
         }
 
         // ==================== Fully Qualified Name Detection ====================
@@ -1457,6 +1628,10 @@ public class FeatureChecker {
         // Detect autoboxing patterns: wrapper type = primitive literal
         @Override
         public void visit(com.github.javaparser.ast.body.VariableDeclarator n, Void arg) {
+            // Java 1.0-alpha3: new array declaration syntax (int[] a)
+            // For old style (int a[]) the brackets come after the name and won't be inside type token range.
+            detectAlpha3ArraySyntax(n, n.getType(), n.getNameAsString());
+
             // Check for autoboxing: Integer x = 42; Double d = 3.14; etc.
             String typeName = n.getTypeAsString();
             n.getInitializer().ifPresent(init -> {
@@ -1590,6 +1765,9 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noVarargs
         @Override
         public void visit(Parameter n, Void arg) {
+            // Java 1.0-alpha3: new array declaration syntax (int[] a)
+            detectAlpha3ArraySyntax(n, n.getType(), n.getNameAsString());
+
             if (n.isVarArgs()) {
                 addFeature(JavaFeature.VARARGS);
             }
@@ -1633,10 +1811,20 @@ public class FeatureChecker {
         }
 
 
-        // === Java 7/9: Try-with-resources ===
-        // Based on Java1_0Validator.tryWithoutResources and Java7Validator.tryWithLimitedResources
+        // === Java 1.0-alpha2/-3: try/finally forms ===
         @Override
         public void visit(TryStmt n, Void arg) {
+            // Java 1.0-alpha2: try { ... } finally { ... } without catch
+            if (n.getCatchClauses().isEmpty() && n.getFinallyBlock().isPresent()) {
+                addFeature(JavaFeature.ALPHA2_TRY_FINALLY);
+            }
+
+            // Java 1.0-alpha3: combined try-catch-finally
+            if (!n.getCatchClauses().isEmpty() && n.getFinallyBlock().isPresent()) {
+                addFeature(JavaFeature.ALPHA3_TRY_CATCH_FINALLY);
+            }
+
+            // === Java 7/9: Try-with-resources ===
             if (n.getResources().isNonEmpty()) {
                 addFeature(JavaFeature.TRY_WITH_RESOURCES);
                 // Java 9: Check for effectively final variables in try-with-resources
@@ -1674,6 +1862,17 @@ public class FeatureChecker {
                     }
                 }
             }
+
+            // Java 14: "switch rules" (case ... ->) can be used in both switch expressions and switch statements.
+            // If we see them in a SwitchStmt, we still want to report SWITCH_EXPRESSIONS.
+            for (SwitchEntry entry : n.getEntries()) {
+                // JavaParser represents ':' style entries as STATEMENT_GROUP and '->' style as EXPRESSION/THROWS_STATEMENT/etc.
+                if (entry.getType() != SwitchEntry.Type.STATEMENT_GROUP) {
+                    addFeature(JavaFeature.SWITCH_EXPRESSIONS);
+                    break;
+                }
+            }
+
             super.visit(n, arg);
         }
 
@@ -1682,6 +1881,14 @@ public class FeatureChecker {
         @Override
         public void visit(IntegerLiteralExpr n, Void arg) {
             String value = n.getValue();
+
+            // Java 1.0-alpha3: hex literals with uppercase '0X' prefix or long suffix (e.g., 0x1L)
+            // JavaParser keeps the original source spelling in getValue().
+            if ((value.startsWith("0X") || value.startsWith("0x")) &&
+                (value.startsWith("0X") || value.endsWith("L") || value.endsWith("l"))) {
+                addFeature(JavaFeature.ALPHA3_HEX_LITERALS);
+            }
+
             if (value.startsWith("0b") || value.startsWith("0B")) {
                 addFeature(JavaFeature.BINARY_LITERALS);
             }
@@ -1694,6 +1901,13 @@ public class FeatureChecker {
         @Override
         public void visit(LongLiteralExpr n, Void arg) {
             String value = n.getValue();
+
+            // Java 1.0-alpha3: hex literals with uppercase '0X' prefix or long suffix (e.g., 0x1L)
+            if ((value.startsWith("0X") || value.startsWith("0x")) &&
+                (value.startsWith("0X") || value.endsWith("L") || value.endsWith("l"))) {
+                addFeature(JavaFeature.ALPHA3_HEX_LITERALS);
+            }
+
             if (value.startsWith("0b") || value.startsWith("0B")) {
                 addFeature(JavaFeature.BINARY_LITERALS);
             }
@@ -1728,6 +1942,9 @@ public class FeatureChecker {
         // Based on Java8Validator.defaultMethodsInInterface
         @Override
         public void visit(MethodDeclaration n, Void arg) {
+            // Java 1.0-alpha3: new array return type syntax (int[] f())
+            detectAlpha3ArraySyntax(n, n.getType(), n.getNameAsString());
+
             checkGenerics(n);
             if (n.isDefault()) {
                 addFeature(JavaFeature.DEFAULT_INTERFACE_METHODS);

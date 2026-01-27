@@ -3,5 +3,7 @@
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS
 public class Edge_SwitchExpressionMinimal {
-    int test(int x) { return switch(x) { default -> 0; }; }
+    int test(int x) {
+        return switch(x) { default -> 0; };
+    }
 }

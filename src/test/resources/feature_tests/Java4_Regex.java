@@ -1,6 +1,6 @@
 // Java 4 feature: Regular expressions (java.util.regex)
 // Expected Version: 4
-// Required Features: REGEX
+// Required Features: ALPHA3_ARRAY_SYNTAX, REGEX
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

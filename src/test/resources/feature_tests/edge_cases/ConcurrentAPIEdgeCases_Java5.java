@@ -1,6 +1,6 @@
 // Edge case: Concurrent API features across Java versions (uses Java 8 features)
 // Expected Version: 8
-// Required Features: ANNOTATIONS, CONCURRENT_API, DIAMOND_OPERATOR, FORK_JOIN, GENERICS, INNER_CLASSES, LAMBDAS, METHOD_REFERENCES
+// Required Features: ALPHA2_TRY_FINALLY, ANNOTATIONS, CONCURRENT_API, DIAMOND_OPERATOR, FORK_JOIN, GENERICS, INNER_CLASSES, LAMBDAS, METHOD_REFERENCES
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;

@@ -1,7 +1,7 @@
 // Java 21 edge case: Nested record patterns with guards
 // Test: Testing nested record patterns with when guards in switch
 // Expected Version: 21
-// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_PATTERN_MATCHING
+// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
 public class Edge_NestedRecordPatternsGuards_Java21 {
     record Outer(Inner inner) {}
     record Inner(String value) {}

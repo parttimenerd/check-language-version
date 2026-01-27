@@ -19,7 +19,7 @@ OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
 OUTPUT_PRISM_CSS = os.path.join(OUTPUT_DIR, 'prism.css')
 MIN_LINES = 1
 MAX_LINES = 20
-MIN_VERSION = -2
+MIN_VERSION = -3
 MAX_VERSION = 25
 LEMONADE_URL = 'https://lemonadejs.com/v5/lemonade.js'
 PRISM_CSS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css'
@@ -168,7 +168,6 @@ def scan_files():
 
             # extract metadata
             expected_version = None
-            required_features_str = None
 
             # 1. Header comment Expected Version: N
             ver_match = re.search(r'Expected Version:\s*(\d+)', raw_content)
@@ -187,12 +186,16 @@ def scan_files():
             # Format: // Required Features: A, B, C
             feat_match = re.search(r'Required Features:\s*(.*)', raw_content)
             file_features = []
+            required_features_text = None
             if feat_match:
-                feats_list = feat_match.group(1).split() # split by whitespace (and commas probably?)
+                required_features_text = (feat_match.group(1) or '').strip()
+                feats_list = required_features_text.split()  # split by whitespace
                 # Cleaning up potential commas
                 feats_list = [f.strip(',').strip() for f in feats_list]
 
                 for f_name in feats_list:
+                    if not f_name:
+                        continue
                     if f_name in feature_map:
                         file_features.append({
                             'name': f_name,
@@ -205,6 +208,11 @@ def scan_files():
                             'label': f_name,
                             'version': '?'
                         })
+
+            # If the file explicitly declares no required features, treat it as Java 1.0-alpha1 (-3)
+            # for the game dataset, regardless of filename/Expected Version.
+            if required_features_text is not None and required_features_text == '':
+                expected_version = -3
 
             # Check logic range
             if not (MIN_VERSION <= expected_version <= MAX_VERSION):
@@ -253,6 +261,16 @@ def load_alpha_questions():
         questions = json.load(f)
 
     print(f"Loaded {len(questions)} alpha version questions.")
+    return questions
+
+def load_alpha1_questions():
+    """Loads hand-crafted Java 1.0-alpha1 questions (version -3) with no detected features."""
+    alpha1_path = os.path.join(os.path.dirname(__file__), 'alpha1_features.json')
+    if not os.path.exists(alpha1_path):
+        return []
+    with open(alpha1_path, 'r', encoding='utf-8') as f:
+        questions = json.load(f)
+    print(f"Loaded {len(questions)} alpha1 version questions.")
     return questions
 
 
@@ -511,10 +529,12 @@ if __name__ == "__main__":
         # Load and merge alpha questions with weight
         if args.alpha_weight > 0:
             alpha_qs = load_alpha_questions()
+            alpha1_qs = load_alpha1_questions()
             # Duplicate alpha questions based on weight
             for _ in range(args.alpha_weight):
+                qs.extend(alpha1_qs)
                 qs.extend(alpha_qs)
-            print(f"Added {len(alpha_qs) * args.alpha_weight} alpha questions (weight={args.alpha_weight})")
+            print(f"Added {len(alpha1_qs) * args.alpha_weight} alpha1 questions and {len(alpha_qs) * args.alpha_weight} alpha questions (weight={args.alpha_weight})")
 
         if not qs:
             print("No valid questions found.")

@@ -1,6 +1,6 @@
 // Java 8 feature: Type annotations (JEP 104)
 // Expected Version: 8
-// Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, TYPE_ANNOTATIONS
+// Required Features: ALPHA3_ARRAY_SYNTAX, ANNOTATIONS, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, TYPE_ANNOTATIONS
 import java.lang.annotation.*;
 import java.util.List;
 

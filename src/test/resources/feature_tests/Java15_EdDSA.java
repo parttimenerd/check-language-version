@@ -1,6 +1,6 @@
 // Java 15 feature: Edwards-Curve Digital Signature Algorithm (JEP 339)
 // Expected Version: 15
-// Required Features: EDDSA
+// Required Features: ALPHA3_ARRAY_SYNTAX, EDDSA
 import java.security.*;
 import java.security.spec.*;
 import java.security.interfaces.EdECPublicKey;

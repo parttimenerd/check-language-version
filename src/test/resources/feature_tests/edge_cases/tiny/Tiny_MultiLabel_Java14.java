@@ -1,6 +1,6 @@
 // Tiny: Multiple switch labels (Java 14)
 // Expected Version: 14
-// Required Features: SWITCH_MULTIPLE_LABELS
+// Required Features: SWITCH_EXPRESSIONS, SWITCH_MULTIPLE_LABELS
 
 public class Tiny_MultiLabel_Java14 {
     void test(int x) {

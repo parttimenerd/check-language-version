@@ -1,7 +1,7 @@
 // Java 21 edge case: Record pattern in switch
 // Test: Record deconstruction in switch case
 // Expected Version: 21
-// Required Features: RECORD_PATTERNS, SWITCH_PATTERN_MATCHING
+// Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
 record Edge_RecordPatternSwitch(int x, int y) {}
 public class Tiny_RecPattern_Java21 {
     void test(Object o) {

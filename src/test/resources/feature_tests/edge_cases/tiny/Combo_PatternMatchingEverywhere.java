@@ -1,7 +1,7 @@
 // Java 21 combination: Pattern matching everywhere
 // Test: Pattern matching in instanceof, switch, and record patterns
 // Expected Version: 21
-// Required Features: PATTERN_MATCHING_INSTANCEOF, SWITCH_PATTERN_MATCHING, RECORD_PATTERNS, RECORDS
+// Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
 public class Combo_PatternMatchingEverywhere {
     record Point(int x, int y) {}
 

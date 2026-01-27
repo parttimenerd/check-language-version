@@ -1,6 +1,6 @@
 // Java 17 feature: HexFormat API
 // Expected Version: 17
-// Required Features: HEX_FORMAT
+// Required Features: ALPHA3_ARRAY_SYNTAX, HEX_FORMAT
 import java.util.HexFormat;
 
 public class Java17_HexFormat {

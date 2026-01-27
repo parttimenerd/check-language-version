@@ -1,6 +1,6 @@
 // Java 7 feature: ForkJoin Framework
 // Expected Version: 7
-// Required Features: ANNOTATIONS, CONCURRENT_API, FORK_JOIN, GENERICS, INNER_CLASSES
+// Required Features: ALPHA3_ARRAY_SYNTAX, ANNOTATIONS, CONCURRENT_API, FORK_JOIN, GENERICS, INNER_CLASSES
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 

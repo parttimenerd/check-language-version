@@ -1,0 +1,52 @@
+[
+  {
+    "code": "public class Quiz {\n    int x;\n\n    int getX() {\n        return x;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int inc(int x) {\n        return x + 1;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int sumTo(int n) {\n        int s = 0;\n        int i = 0;\n        while (i < n) {\n            s = s + i;\n            i = i + 1;\n        }\n        return s;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    boolean isPositive(int x) {\n        if (x > 0) {\n            return true;\n        }\n        return false;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int max(int a, int b) {\n        if (a > b) {\n            return a;\n        } else {\n            return b;\n        }\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int abs(int x) {\n        if (x < 0) {\n            return 0 - x;\n        }\n        return x;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int sumArray(int[] a) {\n        int s = 0;\n        for (int i = 0; i < a.length; i = i + 1) {\n            s = s + a[i];\n        }\n        return s;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int countDown(int n) {\n        int c = 0;\n        while (n > 0) {\n            n = n - 1;\n            c = c + 1;\n        }\n        return c;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int clamp01(int x) {\n        switch (x) {\n            case 0: return 0;\n            case 1: return 1;\n            default: return 0;\n        }\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  },
+  {
+    "code": "public class Quiz {\n    int fib(int n) {\n        if (n <= 1) return n;\n        int a = 0;\n        int b = 1;\n        int i = 2;\n        while (i <= n) {\n            int t = a + b;\n            a = b;\n            b = t;\n            i = i + 1;\n        }\n        return b;\n    }\n}\n",
+    "correct": -3,
+    "features": []
+  }
+]

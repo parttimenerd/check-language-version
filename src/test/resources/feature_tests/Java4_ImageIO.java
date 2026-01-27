@@ -1,6 +1,6 @@
 // Java 4 feature: Image I/O API
 // Expected Version: 4
-// Required Features: AWT, COLLECTIONS_FRAMEWORK, IMAGE_IO, IO_API
+// Required Features: ALPHA3_ARRAY_SYNTAX, AWT, COLLECTIONS_FRAMEWORK, IMAGE_IO, IO_API
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriter;

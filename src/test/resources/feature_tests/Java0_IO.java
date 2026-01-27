@@ -1,6 +1,6 @@
 // Java 1.0 feature: Basic I/O API
 // Expected Version: 0
-// Required Features: IO_API
+// Required Features: ALPHA3_ARRAY_SYNTAX, IO_API
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;

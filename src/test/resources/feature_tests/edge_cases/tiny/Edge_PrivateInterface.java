@@ -1,7 +1,7 @@
 // Java 9 edge case: Private method in interface
 // Test: private keyword in interface (easy to miss)
 // Expected Version: 9
-// Required Features: PRIVATE_INTERFACE_METHODS, DEFAULT_INTERFACE_METHODS
+// Required Features: PRIVATE_INTERFACE_METHODS, DEFAULT_INTERFACE_METHODS, INNER_CLASSES
 public class Edge_PrivateInterface {
     interface I {
         default void pub() { helper(); }

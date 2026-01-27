@@ -1,6 +1,6 @@
 // Tiny: Hidden classes (Java 15)
 // Expected Version: 15
-// Required Features: HIDDEN_CLASSES
+// Required Features: ALPHA3_ARRAY_SYNTAX, HIDDEN_CLASSES
 
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup.ClassOption;

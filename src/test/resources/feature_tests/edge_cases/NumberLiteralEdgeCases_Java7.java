@@ -1,6 +1,6 @@
 // Edge case: Binary literals and underscores in numeric literals
 // Expected Version: 7
-// Required Features: BINARY_LITERALS, UNDERSCORES_IN_LITERALS
+// Required Features: ALPHA3_HEX_LITERALS, BINARY_LITERALS, UNDERSCORES_IN_LITERALS
 public class NumberLiteralEdgeCases_Java7 {
 
     // Java 7: Binary literals
