@@ -16,6 +16,11 @@
     <style>
         {%prism_css%}
 
+        html {
+            /* Keep layout stable when the vertical scrollbar appears/disappears */
+            scrollbar-gutter: stable;
+        }
+
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #f0f2f5;
@@ -56,7 +61,7 @@
         pre[class*="language-"] {
             margin: 0 !important;
             border-radius: 6px;
-            height: calc(15 * 1.5em + 2em); /* Fixed height: 15 lines * line-height + padding */
+            height: calc(12 * 1.5em + 2em); /* Fixed height: 15 lines * line-height + padding */
             overflow-y: auto;
         }
         .options {
@@ -64,6 +69,30 @@
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 12px;
             margin-bottom: 24px;
+        }
+
+        /* All version buttons should have consistent width */
+        .options button {
+            width: 140px;
+        }
+
+        /* Answered layout: left-aligned buttons + a filling Next button on the right */
+        .options.answered {
+            display: flex;
+            align-items: stretch;
+            gap: 12px;
+        }
+        .options.answered .answers-left {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        /* keep answer buttons fixed width; let Next expand */
+        .options.answered .next-inline {
+            flex: 1;
+            min-width: 180px;
+            width: auto;
+            background-color: #495057;
         }
         button {
             padding: 12px;
@@ -134,6 +163,9 @@
         }
         .disclaimer a:hover {
             text-decoration: underline;
+        }
+        h1 {
+            margin-top: 10px;
         }
     </style>
 </head>
@@ -453,19 +485,43 @@
 
                         // Update options
                         if (self.optionsEl) {
-                            self.optionsEl.innerHTML = self.options.map((opt, index) => {
-                                let cls = '';
-                                let disabled = '';
-                                if (self.answered) {
-                                    disabled = 'disabled';
-                                    if (opt === self.currentQuestion.correct) {
-                                        cls = 'correct';
-                                    } else if (opt === self.selectedOption) {
-                                        cls = 'wrong';
-                                    }
+                            if (!self.answered) {
+                                self.optionsEl.classList.remove('answered');
+                                // Always display options ordered by version
+                                const sortedOpts = self.options.slice().sort((a, b) => a - b);
+                                self.optionsEl.innerHTML = sortedOpts.map((opt, index) => {
+                                    return `<button onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
+                                }).join('');
+                            } else {
+                                self.optionsEl.classList.add('answered');
+
+                                const isCorrect = self.selectedOption === self.currentQuestion.correct;
+
+                                // When correct: keep only the selected (which is also correct)
+                                // When wrong: keep selected + correct
+                                let leftVersions;
+                                if (isCorrect) {
+                                    leftVersions = [self.selectedOption];
+                                } else {
+                                    leftVersions = [self.currentQuestion.correct, self.selectedOption];
                                 }
-                                return `<button class="${cls}" ${disabled} onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
-                            }).join('');
+
+                                // Always order left buttons by version number
+                                leftVersions = leftVersions
+                                    .filter((v, idx) => leftVersions.indexOf(v) === idx)
+                                    .slice()
+                                    .sort((a, b) => a - b);
+
+                                const leftButtons = leftVersions.map((opt) => {
+                                    const cls = (opt === self.currentQuestion.correct) ? 'correct' : 'wrong';
+                                    return `<button class="${cls}" disabled>Java ${formatVersion(opt)}</button>`;
+                                });
+
+                                self.optionsEl.innerHTML = `
+                                    <div class="answers-left">${leftButtons.join('')}</div>
+                                    <button class="next-inline" onclick="quizNext()" title="Press Enter">Next Question</button>
+                                `;
+                            }
                         }
 
                         // Update feedback
@@ -481,16 +537,15 @@
                                 if (self.currentQuestion.features && self.currentQuestion.features.length) {
                                     // Sort features by version (highest to lowest)
                                     const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
-                                    featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
+                                    featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong><div>' +
                                         sortedFeatures.map(f =>
                                             `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
-                                        ).join('') + '</div>';
+                                        ).join('') + '</div></div>';
                                 }
 
                                 self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
                                     <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
                                     ${featuresHtml}
-                                    <button class="next-btn" onclick="quizNext()" title="Press Enter">Next Question</button>
                                 </div>`;
                             }
                         }
@@ -533,6 +588,7 @@
                         self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
                         self.answered = false;
                         self.selectedOption = null;
+                        if (self.optionsEl) self.optionsEl.classList.remove('answered');
                         updateUI();
                     };
 
@@ -561,7 +617,7 @@
                         <div class="disclaimer">
                             Score: <span title="Correctly vs incorrectly answered questions since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span></span>
                             <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
-                            <span style="padding-left: 1em">Note: This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
+                            <span style="padding-left: 1em">This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
                             <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
                         </div>
                     </div>`;
