@@ -5,7 +5,7 @@ import java.util.stream.*;
 import java.time.*;
 import java.util.*;
 
-public class WildcardImports_Java8 {
+class WildcardImports_Java8 {
     public void testWildcardImports() {
         // Stream API via wildcard import
         Stream<String> stream = Stream.of("a", "b", "c");

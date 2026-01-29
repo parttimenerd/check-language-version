@@ -4,6 +4,6 @@
 
 import java.lang.reflect.*;
 
-public class Tiny_ReflectLooksModern_Java1 {
+class Tiny_ReflectLooksModern_Java1 {
     Method m = String.class.getMethods()[0];
 }

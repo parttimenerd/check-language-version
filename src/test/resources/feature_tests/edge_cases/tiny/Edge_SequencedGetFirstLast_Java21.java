@@ -3,7 +3,7 @@
 // Expected Version: 21
 // Required Features: COLLECTION_FACTORY_METHODS, GENERICS, SEQUENCED_COLLECTIONS
 import java.util.*;
-public class Edge_SequencedGetFirstLast_Java21 {
+class Edge_SequencedGetFirstLast_Java21 {
     void test() {
         // Use explicit SequencedCollection type for detection
         SequencedCollection<String> seq = List.of("a", "b", "c");

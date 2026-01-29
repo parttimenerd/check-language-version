@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: While loop with counter
-public class Minimal_WhileLoop_Java0 {
+class Minimal_WhileLoop_Java0 {
     int sumTo(int n) {
         int i = 0;
         int s = 0;

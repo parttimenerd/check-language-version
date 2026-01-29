@@ -3,7 +3,7 @@
 // Required Features: JNDI
 import javax.naming.InitialContext;
 
-public class Tiny_JNDILookup_Java3 {
+class Tiny_JNDILookup_Java3 {
     Object get(String n) throws Exception {
         return new InitialContext().lookup(n);
     }

@@ -3,7 +3,7 @@
 // Required Features: IO_API, MULTI_CATCH
 import java.io.*;
 
-public class Java7_MultiCatch {
+class Java7_MultiCatch {
     public void method() {
         try {
             throw new IOException("test");

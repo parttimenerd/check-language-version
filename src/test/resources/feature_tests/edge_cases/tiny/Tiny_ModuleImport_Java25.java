@@ -4,7 +4,7 @@
 
 import module java.base;
 
-public class Tiny_ModuleImport_Java25 {
+class Tiny_ModuleImport_Java25 {
     void test() {
         List<String> list = List.of("a");
     }

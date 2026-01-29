@@ -4,7 +4,7 @@
 
 import java.lang.classfile.*;
 
-public class Tiny_ClassFile_Java24 {
+class Tiny_ClassFile_Java24 {
     void test() {
         ClassFile cf = ClassFile.of();
     }

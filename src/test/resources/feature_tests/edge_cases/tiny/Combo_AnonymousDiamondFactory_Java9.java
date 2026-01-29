@@ -3,7 +3,7 @@
 // Expected Version: 9
 // Required Features: COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES
 import java.util.*;
-public class Combo_AnonymousDiamondFactory_Java9 {
+class Combo_AnonymousDiamondFactory_Java9 {
     void test() {
         List<String> items = List.of("a", "b", "c");
         List<String> custom = new ArrayList<>() {

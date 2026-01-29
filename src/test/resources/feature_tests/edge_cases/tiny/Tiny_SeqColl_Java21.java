@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_SeqColl_Java21 {
+class Tiny_SeqColl_Java21 {
     void test() {
         SequencedCollection<String> sc = new ArrayList<>();
         sc.addFirst("a");

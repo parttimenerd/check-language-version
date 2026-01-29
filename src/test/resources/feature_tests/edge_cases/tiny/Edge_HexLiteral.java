@@ -2,6 +2,6 @@
 // Required Features:
 // Expected Version: 0
 // Test: Hexadecimal literal (0x prefix)
-public class Edge_HexLiteral {
+class Edge_HexLiteral {
     int hex = 0xFF;
 }

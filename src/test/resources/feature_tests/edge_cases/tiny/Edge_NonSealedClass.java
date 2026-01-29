@@ -2,7 +2,7 @@
 // Test: non-sealed in class hierarchy
 // Expected Version: 17
 // Required Features: INNER_CLASSES, SEALED_CLASSES
-public class Edge_NonSealedClass {
+class Edge_NonSealedClass {
     sealed interface Shape permits Circle, Polygon {}
     final class Circle implements Shape {}
     non-sealed class Polygon implements Shape {}

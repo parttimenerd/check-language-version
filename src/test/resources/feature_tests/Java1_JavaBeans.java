@@ -7,7 +7,7 @@ import java.beans.PropertyChangeEvent;
 import java.beans.BeanInfo;
 import java.beans.Introspector;
 
-public class Java1_JavaBeans {
+class Java1_JavaBeans {
     // A simple JavaBean with property change support
     private String name;
     private int age;

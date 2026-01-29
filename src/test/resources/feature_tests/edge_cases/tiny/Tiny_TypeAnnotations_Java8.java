@@ -3,7 +3,7 @@
 // Required Features: ANNOTATIONS, GENERICS, TYPE_ANNOTATIONS, COLLECTIONS_FRAMEWORK
 import java.lang.annotation.*;
 import java.util.List;
-public class Tiny_TypeAnnotations_Java8 {
+class Tiny_TypeAnnotations_Java8 {
     @Target(ElementType.TYPE_USE)
     @interface NonNull {}
 

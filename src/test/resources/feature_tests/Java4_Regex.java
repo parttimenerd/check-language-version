@@ -4,7 +4,7 @@
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class Java4_Regex {
+class Java4_Regex {
     public void testRegex() {
         // Compile a pattern
         Pattern pattern = Pattern.compile("\\d+");

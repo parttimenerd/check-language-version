@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_WildcardLooksPattern_Java5 {
+class Tiny_WildcardLooksPattern_Java5 {
     void process(List<? extends Number> nums) {
         for (Number n : nums) System.out.println(n);
     }

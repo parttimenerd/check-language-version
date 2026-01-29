@@ -2,7 +2,7 @@
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS, YIELD
 
-public class Tiny_YieldSimple_Java14 {
+class Tiny_YieldSimple_Java14 {
     int test(int x) {
         return switch (x) {
             case 1 -> 10;

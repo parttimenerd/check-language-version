@@ -4,7 +4,7 @@
 // Required Features: GENERICS, LAMBDAS
 import java.util.function.*;
 
-public class Edge_LambdaAllVariations {
+class Edge_LambdaAllVariations {
     void test() {
         Runnable r1 = () -> {};
         Runnable r2 = () -> System.out.println("hi");

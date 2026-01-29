@@ -3,7 +3,7 @@
 // Expected Version: 9
 // Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, DIAMOND_WITH_ANONYMOUS, GENERICS, INNER_CLASSES
 import java.util.*;
-public class Edge_AnonymousDiamond {
+class Edge_AnonymousDiamond {
     List<String> list = new ArrayList<>() {
         { add("initial"); }
     };

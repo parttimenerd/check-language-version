@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: Static initializer block and static field
-public class Minimal_StaticInit_Java0 {
+class Minimal_StaticInit_Java0 {
     static int X;
     static {
         X = 1;

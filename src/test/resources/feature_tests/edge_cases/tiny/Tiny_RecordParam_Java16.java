@@ -4,6 +4,6 @@
 
 record R(int x) {}
 
-public class Tiny_RecordParam_Java16 {
+class Tiny_RecordParam_Java16 {
     void test(R r) {}
 }

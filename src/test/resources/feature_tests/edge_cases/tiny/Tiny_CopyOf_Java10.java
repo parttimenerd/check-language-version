@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_CopyOf_Java10 {
+class Tiny_CopyOf_Java10 {
     void test() {
         var copy = List.copyOf(List.of("a", "b"));
     }

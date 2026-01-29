@@ -2,6 +2,6 @@
 // Test: var used in traditional for loop
 // Expected Version: 10
 // Required Features: VAR
-public class Edge_VarInFor {
+class Edge_VarInFor {
     void test() { for (var i = 0; i < 1; i++) {} }
 }

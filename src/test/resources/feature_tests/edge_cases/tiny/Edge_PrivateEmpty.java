@@ -6,4 +6,4 @@ interface Edge_PrivateEmpty {
     private void h() {}
     default void m() { h(); }
 }
-public class Tiny_PrivateIface_Java9 implements Edge_PrivateEmpty {}
+class Tiny_PrivateIface_Java9 implements Edge_PrivateEmpty {}

@@ -3,7 +3,7 @@
 // Required Features: IO_API, JDBC, MULTI_CATCH
 import java.io.*;
 import java.sql.*;
-public class Tiny_MultiCatch_Java7 {
+class Tiny_MultiCatch_Java7 {
     public void test() throws IOException, SQLException {
         try {
             throw new IOException();

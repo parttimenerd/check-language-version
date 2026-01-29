@@ -1,7 +1,7 @@
 // Java 8 feature: Static methods in interfaces
 // Expected Version: 8
 // Required Features: AUTOBOXING, DEFAULT_INTERFACE_METHODS, INNER_CLASSES, STATIC_INTERFACE_METHODS
-public class Java8_StaticInterfaceMethods {
+class Java8_StaticInterfaceMethods {
     interface Calculator {
         // Static method in interface (Java 8)
         static int add(int a, int b) {

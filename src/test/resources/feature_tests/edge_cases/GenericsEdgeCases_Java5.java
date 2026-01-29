@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.Stream;
 
-public class GenericsEdgeCases_Java5 {
+class GenericsEdgeCases_Java5 {
 
     // Generic class
     class Box<T> {

@@ -5,7 +5,7 @@
 import java.util.*;
 import java.lang.annotation.*;
 
-public class Tiny_TypeAnno_Java8 {
+class Tiny_TypeAnno_Java8 {
     @Target(ElementType.TYPE_USE)
     @interface NonNull {}
 

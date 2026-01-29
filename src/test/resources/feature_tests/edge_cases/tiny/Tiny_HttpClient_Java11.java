@@ -3,6 +3,6 @@
 // Required Features: HTTP_CLIENT
 import java.net.http.*;
 import java.net.URI;
-public class Tiny_HttpClient_Java11 {
+class Tiny_HttpClient_Java11 {
     HttpClient client = HttpClient.newHttpClient();
 }

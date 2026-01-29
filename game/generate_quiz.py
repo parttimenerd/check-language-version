@@ -70,15 +70,18 @@ def remove_comments(source):
     """
     # Regex for block comments /* ... */
     source = re.sub(r'/\*[\s\S]*?\*/', '', source)
-    # Regex for single line comments // ... but NOT markdown doc comments /// ...
-    source = re.sub(r'(?<!/)//((?!//).*)$', '', source, flags=re.MULTILINE)
+    # Regex for single line comments starting with //, but NOT markdown doc comments /// ...
+    # Keep any line whose comment marker is exactly '///' (Java 23 markdown doc comments, JEP 467).
+    source = re.sub(r'(?m)^(\s*)//(?!/)\s?.*$', r'\1', source)
     return source
 
 def sanitize_code(code):
     """
     1. Removes package declaration.
-    2. Renames first top-level type to Quiz.
-    3. Replaces all class/type names that contain Java version hints.
+    2. Renames first *public* top-level type to Quiz (preferring class/record over interface/enum).
+    3. Replaces class/type names that contain Java version/test-suite hints.
+
+    Goal: hide hint-y names like `Tiny_DefaultEmpty_Java8`, but keep innocuous short names like `I`.
     """
     lines = code.split('\n')
     new_lines = []
@@ -94,16 +97,29 @@ def sanitize_code(code):
     # Replace all identifiers that contain Java version patterns (Java followed by digits)
     # This handles: Java5_Foo, Foo_Java11, Java21Feature, Tiny_Foo_Java16, etc.
     # We need to be careful not to replace things like "java.util" (lowercase)
-    # Pattern: word boundary, any word chars, then Java + digits, then any word chars, word boundary
-    cleaned_code = re.sub(r'\b(\w*_)?Java\d+(_\w*)?\b', 'Example', cleaned_code)
-    cleaned_code = re.sub(r'\bJava\d+_\w+\b', 'Example', cleaned_code)
-    cleaned_code = re.sub(r'\b\w+_Java\d+\b', 'Example', cleaned_code)
+    # Also: don't replace short identifiers (<5 chars) unless they contain digits.
+    def _replace_version_hint_identifier(m: re.Match) -> str:
+        ident = m.group(0)
+        # if no digits and very short (likely an interface like I/A/B), keep it
+        if len(ident) < 5 and not re.search(r'\d', ident):
+            return ident
+        return 'Example'
+
+    # Pattern: word boundary, optional prefix_, Java + digits, optional _suffix, word boundary
+    cleaned_code = re.sub(r'\b(\w*_)?Java\d+(_\w*)?\b', _replace_version_hint_identifier, cleaned_code)
 
     # Also replace identifiers like: Tiny_..., Edge_..., Combo_... that might hint at test type
-    cleaned_code = re.sub(r'\bTiny_\w*', 'Example', cleaned_code)
-    cleaned_code = re.sub(r'\bEdge_\w*', 'Example', cleaned_code)
-    cleaned_code = re.sub(r'\bCombo_\w*', 'Example', cleaned_code)
-    cleaned_code = re.sub(r'\bMinimal\w*', 'Example', cleaned_code)
+    # but keep very short identifiers without digits intact.
+    def _replace_test_prefix(m: re.Match) -> str:
+        ident = m.group(0)
+        if len(ident) < 5 and not re.search(r'\d', ident):
+            return ident
+        return 'Example'
+
+    cleaned_code = re.sub(r'\bTiny_\w*', _replace_test_prefix, cleaned_code)
+    cleaned_code = re.sub(r'\bEdge_\w*', _replace_test_prefix, cleaned_code)
+    cleaned_code = re.sub(r'\bCombo_\w*', _replace_test_prefix, cleaned_code)
+    cleaned_code = re.sub(r'\bMinimal\w*', _replace_test_prefix, cleaned_code)
 
     def normalize_empty_lines(code):
         """Remove excessive empty lines, keeping at most one empty line between code blocks."""
@@ -123,27 +139,67 @@ def sanitize_code(code):
         # Join and strip leading/trailing empty lines
         return '\n'.join(result).strip()
 
-    # Find top-level type definition (class, interface, enum, record)
-    type_pattern = re.compile(r'(public\s+|private\s+|protected\s+)?(class|interface|enum|record)\s+(\w+)')
-    match = type_pattern.search(cleaned_code)
+    # Find top-level PUBLIC type definition.
+    # Prefer renaming a public class/record (common file main type), otherwise public interface/enum.
+    # NOTE: version-hint sanitization above may already have replaced the original name with "Example".
+    public_type_patterns = [
+        re.compile(r'\bpublic\s+(class|record)\s+(\w+)'),
+        re.compile(r'\bpublic\s+(interface|enum)\s+(\w+)'),
+    ]
+
+    match = None
+    for p in public_type_patterns:
+        match = p.search(cleaned_code)
+        if match:
+            break
 
     if match:
-        original_name = match.group(3)
+        kind = match.group(1)
+        original_name = match.group(2)
 
-        start_idx = match.start(3)
-        end_idx = match.end(3)
+        def _is_hint_name(name: str) -> bool:
+            """Return True if `name` likely leaks version/test-suite hints and should be sanitized."""
+            if not name:
+                return False
+            if name == 'Quiz':
+                return False
+            # Never rename innocuous, short names like I/A/B.
+            if len(name) < 5 and not re.search(r'\d', name):
+                return False
+            # Otherwise rename only when it looks like a hint.
+            return (
+                bool(re.search(r'Java\d+', name))
+                or name.startswith(('Tiny_', 'Edge_', 'Combo_', 'Minimal'))
+                # If a previous pass already replaced the original hint-y name, treat it as hint-y too.
+                or name == 'Example'
+            )
 
-        # Replace name in definition
-        code_pre = cleaned_code[:start_idx] + "Quiz" + cleaned_code[end_idx:]
+        # We only rename the top-level type if its name is hint-y.
+        should_rename_top_level = _is_hint_name(original_name)
 
-        # Also replace constructor name if it's a class/record
-        if match.group(2) in ['class', 'record']:
-             code_pre = re.sub(fr'\b{original_name}\s*\(', 'Quiz(', code_pre)
+        if should_rename_top_level:
+            # Replace name in definition (match group 2 spans the identifier)
+            start_idx = match.start(2)
+            end_idx = match.end(2)
+            code_pre = cleaned_code[:start_idx] + 'Quiz' + cleaned_code[end_idx:]
+
+            # Replace the original top-level type name everywhere else too (extends/implements/type uses/etc.).
+            code_pre = re.sub(fr'\b{re.escape(original_name)}\b', 'Quiz', code_pre)
+
+            # Also replace constructor name if it's a class/record
+            if kind in ['class', 'record']:
+                code_pre = re.sub(fr'\b{re.escape(original_name)}\s*\(', 'Quiz(', code_pre)
+        else:
+            # Keep the original top-level type name.
+            code_pre = cleaned_code
 
         # Ensure empty line between imports and class definition
-        code_pre = re.sub(r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )', r'\1\n\n\2', code_pre)
+        code_pre = re.sub(
+            r'(import [^;]+;)\n(public |class |interface |enum |record |abstract |final |sealed )',
+            r'\1\n\n\2',
+            code_pre,
+        )
 
-        # Normalize empty lines
         return normalize_empty_lines(code_pre)
 
     # Ensure empty line between imports and class definition
@@ -201,12 +257,6 @@ def scan_files():
                             'name': f_name,
                             'label': feature_map[f_name]['label'],
                             'version': feature_map[f_name]['version']
-                        })
-                    else:
-                        file_features.append({
-                            'name': f_name,
-                            'label': f_name,
-                            'version': '?'
                         })
 
             # If the file explicitly declares no required features, treat it as Java 1.0-alpha1 (-3)
@@ -404,6 +454,8 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
             base_url = base_url + '/'
     else:
         base_url = ''
+    # If caller provided a base_url without scheme (common mistake), don't try to fix it here,
+    # but the generated share links will likely be wrong.
 
     # === Dependencies: download once and cache in OUTPUT_DIR ===
     # If deps.js already exists in OUTPUT_DIR, reuse it and don't re-download JS libs
@@ -486,6 +538,7 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
         base_url=base_url
     )
 
+
     with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
         f.write(html)
     print(f"Generated {OUTPUT_HTML}")
@@ -506,15 +559,17 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Java Version Quiz')
     parser.add_argument('--alpha-weight', type=int, default=1, metavar='N',
-                        help='Weight multiplier for alpha version questions (default: 1). '
-                             'Use 0 to exclude alpha questions, >1 to increase their frequency.')
+                        help='Weight multiplier for alpha version questions (default: 1 = shipped once). '
+                             'Use 0 to exclude them from code.json, or >1 to increase their frequency.')
     parser.add_argument('--test', action='store_true',
                         help='Test compile all alpha_feature tests via javac (in temporary folders).')
-    parser.add_argument('--base-url', type=str, metavar='URL',
-                        help='Base URL to prefix to relative asset paths (e.g., https://example.com/).')
+    parser.add_argument('--base-url', type=str, required=True, metavar='URL',
+                        help='Required. Base URL to prefix to relative asset paths and for share links (e.g., https://example.com/quiz/).')
     parser.add_argument('--goatcounter', type=str, metavar='URL',
                         help='GoatCounter URL for analytics (e.g., https://example.goatcounter.com/count).')
     args = parser.parse_args()
+    if not args.base_url.strip():
+        raise SystemExit('--base-url must not be empty')
 
     # If --test is specified, run tests and exit
     if args.test:
@@ -539,4 +594,4 @@ if __name__ == "__main__":
         if not qs:
             print("No valid questions found.")
         else:
-            generate_html(qs, goatcounter_url=args.goatcounter, base_url=(args.base_url or ''))
+            generate_html(qs, goatcounter_url=args.goatcounter, base_url=args.base_url)

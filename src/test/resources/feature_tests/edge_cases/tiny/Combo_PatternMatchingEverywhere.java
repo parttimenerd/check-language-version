@@ -2,7 +2,7 @@
 // Test: Pattern matching in instanceof, switch, and record patterns
 // Expected Version: 21
 // Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
-public class Combo_PatternMatchingEverywhere {
+class Combo_PatternMatchingEverywhere {
     record Point(int x, int y) {}
 
     void test(Object obj) {

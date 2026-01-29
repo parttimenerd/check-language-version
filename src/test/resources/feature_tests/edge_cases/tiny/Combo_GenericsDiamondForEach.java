@@ -3,7 +3,7 @@
 // Expected Version: 7
 // Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, FOR_EACH, GENERICS
 import java.util.*;
-public class Combo_GenericsDiamondForEach {
+class Combo_GenericsDiamondForEach {
     public void test() {
         List<String> list = new ArrayList<>();
         for (String s : list) {

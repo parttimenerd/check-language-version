@@ -2,5 +2,5 @@
 // Expected Version: 1
 // Required Features: IO_API, SERIALIZATION
 import java.io.Serializable;
-public class Tiny_Serialization_Java1 implements Serializable {
+class Tiny_Serialization_Java1 implements Serializable {
 }

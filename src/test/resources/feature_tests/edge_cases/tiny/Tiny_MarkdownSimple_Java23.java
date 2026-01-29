@@ -4,7 +4,7 @@
 // Compile Check: false
 
 /// This is a **markdown** doc comment
-public class Tiny_MarkdownSimple_Java23 {
+class Tiny_MarkdownSimple_Java23 {
     /// Returns the _value_
     int get() { return 1; }
 }

@@ -1,7 +1,7 @@
 // Java 16 feature: Pattern matching for instanceof (JEP 394)
 // Expected Version: 16
 // Required Features: PATTERN_MATCHING_INSTANCEOF
-public class Java16_PatternMatchingInstanceof {
+class Java16_PatternMatchingInstanceof {
     public void process(Object obj) {
         // Pattern matching with instanceof
         if (obj instanceof String s) {

@@ -4,7 +4,7 @@
 import java.lang.annotation.*;
 import java.util.*;
 
-public class AnnotationEdgeCases_Java8 {
+class AnnotationEdgeCases_Java8 {
 
     // Type annotation for TYPE_ANNOTATIONS detection
     @Target(ElementType.TYPE_USE)

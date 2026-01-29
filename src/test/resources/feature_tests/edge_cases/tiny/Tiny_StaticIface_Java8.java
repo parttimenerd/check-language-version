@@ -4,6 +4,6 @@
 
 interface I { static int get() { return 1; } }
 
-public class Tiny_StaticIface_Java8 {
+class Tiny_StaticIface_Java8 {
     int x = I.get();
 }

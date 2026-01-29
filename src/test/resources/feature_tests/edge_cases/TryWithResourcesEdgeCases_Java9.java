@@ -5,7 +5,7 @@ import java.io.*;
 import java.net.*;
 import java.util.zip.*;
 
-public class TryWithResourcesEdgeCases_Java9 {
+class TryWithResourcesEdgeCases_Java9 {
 
     // Java 7: Basic try-with-resources with single resource
     public void basicTryWithResources() throws IOException {

@@ -3,7 +3,7 @@
 // Expected Version: 21
 // Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
 record Edge_RecordPatternSwitch(int x, int y) {}
-public class Tiny_RecPattern_Java21 {
+class Tiny_RecPattern_Java21 {
     void test(Object o) {
         switch (o) {
             case Edge_RecordPatternSwitch(int x, int y) -> System.out.println(x + y);

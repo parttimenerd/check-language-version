@@ -6,7 +6,7 @@ import static java.util.Collections.*;
 
 import java.util.*;
 
-public class StaticImports_Java5 {
+class StaticImports_Java5 {
 
     public void testStaticMathImports() {
         double result = sqrt(16) + pow(2, 3);

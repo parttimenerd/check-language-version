@@ -4,6 +4,6 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
 
-public class Tiny_JDBCConnect_Java1 {
+class Tiny_JDBCConnect_Java1 {
     Connection c;
 }

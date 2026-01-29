@@ -10,7 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
-public class Java4_ImageIO {
+class Java4_ImageIO {
     public void testImageIO() throws IOException {
         // Read an image
         File inputFile = new File("input.png");

@@ -3,4 +3,4 @@
 // Expected Version: 8
 // Required Features: DEFAULT_INTERFACE_METHODS
 interface Edge_DefaultEmpty { default void m() {} }
-public class Tiny_DefaultEmpty_Java8 implements Edge_DefaultEmpty {}
+class Tiny_DefaultEmpty_Java8 implements Edge_DefaultEmpty {}

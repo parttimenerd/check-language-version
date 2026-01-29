@@ -2,7 +2,7 @@
 // Test: Testing anonymous inner classes that implement interfaces
 // Expected Version: 1
 // Required Features: INNER_CLASSES
-public class Edge_AnonymousInnerInterface {
+class Edge_AnonymousInnerInterface {
     Runnable r = new Runnable() {
         public void run() {
             System.out.println("running");

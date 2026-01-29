@@ -3,6 +3,6 @@
 // Required Features: RMI, INNER_CLASSES
 import java.rmi.Remote;
 
-public class Tiny_RMIInner_Java1 {
+class Tiny_RMIInner_Java1 {
     class Handler implements Remote {}
 }

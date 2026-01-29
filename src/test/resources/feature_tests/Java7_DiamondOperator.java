@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 
-public class Java7_DiamondOperator {
+class Java7_DiamondOperator {
     public void method() {
         // Diamond operator - type inference for generic constructors
         List<String> list = new ArrayList<>();

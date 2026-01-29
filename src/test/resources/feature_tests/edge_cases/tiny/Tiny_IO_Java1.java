@@ -3,6 +3,6 @@
 // Expected Version: 0
 // Required Features: IO_API
 import java.io.InputStream;
-public class Tiny_IO_Java1 {
+class Tiny_IO_Java1 {
     InputStream is;
 }

@@ -2,7 +2,7 @@
 // Test: Combination of switch expressions with yield and multiple case labels
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS, YIELD, SWITCH_MULTIPLE_LABELS
-public class Combo_SwitchYieldMultiLabel_Java14 {
+class Combo_SwitchYieldMultiLabel_Java14 {
     int test(int x) {
         return switch (x) {
             case 1, 2, 3:

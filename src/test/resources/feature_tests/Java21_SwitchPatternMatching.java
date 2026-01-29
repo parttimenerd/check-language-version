@@ -1,7 +1,7 @@
 // Java 21 feature: Pattern matching in switch
 // Expected Version: 21
 // Required Features: INNER_CLASSES, RECORDS, SEALED_CLASSES, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING
-public class Java21_SwitchPatternMatching {
+class Java21_SwitchPatternMatching {
     sealed interface Shape permits Circle, Rectangle, Triangle {}
     record Circle(double radius) implements Shape {}
     record Rectangle(double w, double h) implements Shape {}

@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.stream.*;
 import java.util.function.*;
 
-public class OptionalEdgeCases_Java11 {
+class OptionalEdgeCases_Java11 {
 
     // Java 8: Basic Optional creation
     public void testJava8Creation() {

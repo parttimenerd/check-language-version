@@ -4,7 +4,7 @@
 
 import javax.crypto.*;
 
-public class Tiny_KEM_Java21 {
+class Tiny_KEM_Java21 {
     void test() throws Exception {
         KEM kem = KEM.getInstance("DHKEM");
     }

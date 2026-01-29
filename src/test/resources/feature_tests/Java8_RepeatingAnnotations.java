@@ -18,7 +18,7 @@ import java.lang.annotation.*;
 
 @Schedule(day = "Monday")
 @Schedule(day = "Friday")
-public class Java8_RepeatingAnnotations {
+class Java8_RepeatingAnnotations {
 
     @Schedule(day = "Tuesday")
     @Schedule(day = "Thursday")

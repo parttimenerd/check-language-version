@@ -5,7 +5,7 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.*;
 
-public class AllJava7Features {
+class AllJava7Features {
 
     public void testDiamondOperator() {
         List<String> list = new ArrayList<>();

@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-public class Combo_GenericsVarDiamond_Java10 {
+class Combo_GenericsVarDiamond_Java10 {
     void test() {
         // Use explicit generic type on left side to allow diamond on right
         List<String> list = new ArrayList<>();

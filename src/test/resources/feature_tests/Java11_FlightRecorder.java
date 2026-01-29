@@ -8,7 +8,7 @@ import jdk.jfr.consumer.*;
 @Label("My Custom Event")
 @Description("An example custom JFR event")
 @Category({"Example", "Custom"})
-public class Java11_FlightRecorder extends Event {
+class Java11_FlightRecorder extends Event {
     @Label("Message")
     private String message;
 

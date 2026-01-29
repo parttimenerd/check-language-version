@@ -2,7 +2,7 @@
 // Expected Version: 16
 // Required Features: ANNOTATIONS, DIAMOND_OPERATOR, ENUMS, FOR_EACH, GENERICS, INNER_CLASSES, LAMBDAS, LOCAL_ENUMS, LOCAL_INTERFACES, SWITCH_EXPRESSIONS, COLLECTIONS_FRAMEWORK
 
-public class LocalEnumEdgeCases_Java16 {
+class LocalEnumEdgeCases_Java16 {
 
     // Test 1: Local enum with methods and fields
     public void testLocalEnumWithMethods() {

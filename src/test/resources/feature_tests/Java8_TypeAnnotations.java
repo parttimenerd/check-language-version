@@ -13,7 +13,7 @@ import java.util.List;
 @Retention(RetentionPolicy.RUNTIME)
 @interface Valid {}
 
-public class Java8_TypeAnnotations {
+class Java8_TypeAnnotations {
     // Type annotation on field type
     private @NonNull String name;
 

@@ -3,6 +3,6 @@
 // Required Features: SWING, INNER_CLASSES
 import javax.swing.JFrame;
 
-public class Tiny_SwingFrame_Java2 {
+class Tiny_SwingFrame_Java2 {
     class MyFrame extends JFrame {}
 }

@@ -4,7 +4,7 @@
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.Bootstrap;
 
-public class Java3_JPDA {
+class Java3_JPDA {
     public boolean doesVirtualMachineHaveNoName() {
         return Bootstrap.virtualMachineManager().defaultConnector().toString().isEmpty();
     }

@@ -7,7 +7,7 @@ import java.lang.classfile.MethodModel;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 
-public class Java24_ClassFileAPI {
+class Java24_ClassFileAPI {
     public void testClassFileAPI() throws Exception {
         // Read and parse a class file
         byte[] bytes = getClass().getResourceAsStream("/java/lang/Object.class").readAllBytes();

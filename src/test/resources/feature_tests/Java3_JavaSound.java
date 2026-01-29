@@ -6,7 +6,7 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.AudioInputStream;
 
-public class Java3_JavaSound {
+class Java3_JavaSound {
     public void playAudio(java.io.File file) throws Exception {
         AudioInputStream audioIn = AudioSystem.getAudioInputStream(file);
         Clip clip = AudioSystem.getClip();

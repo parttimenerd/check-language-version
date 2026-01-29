@@ -2,7 +2,7 @@
 // Expected Version: 1
 // Required Features: INNER_CLASSES
 
-public class Tiny_IfaceConstLooksEnum_Java1 {
+class Tiny_IfaceConstLooksEnum_Java1 {
     interface Constants {
         int SMALL = 1;
         int MEDIUM = 2;

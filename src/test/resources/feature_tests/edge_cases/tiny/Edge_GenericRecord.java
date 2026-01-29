@@ -2,7 +2,7 @@
 // Test: Testing record with generic type parameters
 // Expected Version: 16
 // Required Features: DIAMOND_OPERATOR, GENERICS, RECORDS
-public class Edge_GenericRecord {
+class Edge_GenericRecord {
     record Pair<T, U>(T first, U second) {}
 
     Pair<String, Integer> pair = new Pair<>("test", 42);

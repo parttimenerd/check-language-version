@@ -1,7 +1,7 @@
 // Java 5 feature: Enumerations
 // Expected Version: 5
 // Required Features: ENUMS
-public class Java5_Enums {
+class Java5_Enums {
     enum Day {
         MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY
     }

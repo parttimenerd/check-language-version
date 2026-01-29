@@ -4,7 +4,7 @@
 // Required Features: COLLECTIONS_FRAMEWORK, GENERICS, LAMBDAS, METHOD_REFERENCES, OPTIONAL, STREAM_API
 import java.util.*;
 import java.util.stream.Stream;
-public class Combo_StreamOptionalRefLambda {
+class Combo_StreamOptionalRefLambda {
     public Optional<String> process(List<String> list) {
         Stream<String> stream = list.stream();
         return stream

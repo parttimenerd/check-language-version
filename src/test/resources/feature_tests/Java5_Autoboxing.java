@@ -4,7 +4,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Java5_Autoboxing {
+class Java5_Autoboxing {
     public void testAutoboxing() {
         // Autoboxing: primitive to wrapper automatically
         Integer boxedInt = 42;  // autoboxing: int -> Integer

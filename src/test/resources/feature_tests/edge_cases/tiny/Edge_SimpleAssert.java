@@ -2,7 +2,7 @@
 // Test: Simple assert that might be confused with validation
 // Expected Version: 4
 // Required Features: ASSERT
-public class Edge_SimpleAssert {
+class Edge_SimpleAssert {
     void test(int x) {
         assert x > 0;
     }

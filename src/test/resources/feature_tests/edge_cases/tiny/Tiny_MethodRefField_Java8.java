@@ -4,6 +4,6 @@
 
 import java.util.function.*;
 
-public class Tiny_MethodRefField_Java8 {
+class Tiny_MethodRefField_Java8 {
     Function<String,Integer> f = Integer::parseInt;
 }

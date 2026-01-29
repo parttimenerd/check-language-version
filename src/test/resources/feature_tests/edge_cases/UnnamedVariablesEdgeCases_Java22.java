@@ -3,7 +3,7 @@
 // Required Features: ANNOTATIONS, AUTOBOXING, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, FOR_EACH, GENERICS, INNER_CLASSES, LAMBDAS, PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING, TRY_WITH_RESOURCES, UNNAMED_VARIABLES, VAR
 import java.util.*;
 
-public class UnnamedVariablesEdgeCases_Java22 {
+class UnnamedVariablesEdgeCases_Java22 {
 
     record Point(int x, int y) {}
     record Line(Point start, Point end) {}

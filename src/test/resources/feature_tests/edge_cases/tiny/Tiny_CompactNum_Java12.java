@@ -4,7 +4,7 @@
 
 import java.text.*;
 
-public class Tiny_CompactNum_Java12 {
+class Tiny_CompactNum_Java12 {
     void test() {
         CompactNumberFormat f = null;
     }

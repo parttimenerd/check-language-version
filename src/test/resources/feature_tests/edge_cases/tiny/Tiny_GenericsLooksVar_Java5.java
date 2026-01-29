@@ -4,6 +4,6 @@
 
 import java.util.*;
 
-public class Tiny_GenericsLooksVar_Java5 {
+class Tiny_GenericsLooksVar_Java5 {
     Map<String, List<Integer>> data = new HashMap<String, List<Integer>>();
 }

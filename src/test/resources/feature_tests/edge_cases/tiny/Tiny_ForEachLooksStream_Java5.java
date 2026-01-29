@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_ForEachLooksStream_Java5 {
+class Tiny_ForEachLooksStream_Java5 {
     void process(List<String> items) {
         for (String item : items) System.out.println(item);
     }

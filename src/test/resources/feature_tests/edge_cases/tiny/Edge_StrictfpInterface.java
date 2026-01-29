@@ -3,6 +3,6 @@
 // Expected Version: 2
 // Required Features: STRICTFP
 strictfp interface Edge_StrictfpInterface { double calc(); }
-public class Tiny_StrictfpIface_Java2 implements Edge_StrictfpInterface {
+class Tiny_StrictfpIface_Java2 implements Edge_StrictfpInterface {
     public double calc() { return 1.0; }
 }

@@ -4,6 +4,6 @@
 
 enum E { A }
 
-public class Tiny_EnumSwitch_Java5 {
+class Tiny_EnumSwitch_Java5 {
     void test(E e) { switch(e) { case A: } }
 }

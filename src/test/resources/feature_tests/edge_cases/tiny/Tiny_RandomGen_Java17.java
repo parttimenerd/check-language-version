@@ -4,7 +4,7 @@
 
 import java.util.random.*;
 
-public class Tiny_RandomGen_Java17 {
+class Tiny_RandomGen_Java17 {
     void test() {
         RandomGenerator rg = RandomGenerator.of("L64X128MixRandom");
     }

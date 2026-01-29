@@ -6,7 +6,7 @@
 import java.util.*;
 import java.util.stream.*;
 
-public class Combo_VarLambdaRefFactoryStream {
+class Combo_VarLambdaRefFactoryStream {
     void test() {
         var list = List.of("a", "b", "c");
         list.stream()

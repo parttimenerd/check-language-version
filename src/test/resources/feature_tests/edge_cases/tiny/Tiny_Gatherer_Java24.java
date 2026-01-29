@@ -4,7 +4,7 @@
 
 import java.util.stream.*;
 
-public class Tiny_Gatherer_Java24 {
+class Tiny_Gatherer_Java24 {
     void test() {
         Gatherer g = null;
     }

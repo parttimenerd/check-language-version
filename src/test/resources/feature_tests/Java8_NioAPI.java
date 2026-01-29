@@ -1,12 +1,13 @@
 // Java 8 feature: NIO.2 API
 // Expected Version: 8
-// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, IO_API, METHOD_REFERENCES, NIO2, TRY_WITH_RESOURCES
+// Required Features: COLLECTIONS_FRAMEWORK, GENERICS, IO_API, METHOD_REFERENCES, NIO2, TRY_WITH_RESOURCES, STREAM_API
 import java.nio.file.*;
 import java.nio.charset.*;
 import java.io.*;
 import java.util.*;
+import java.util.stream.*;
 
-public class Java8_NioAPI {
+class Java8_NioAPI {
     public void method() throws IOException {
         // Path API
         Path path = Paths.get("test.txt");

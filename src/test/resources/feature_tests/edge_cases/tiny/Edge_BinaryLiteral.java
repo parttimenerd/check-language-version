@@ -2,6 +2,6 @@
 // Test: Binary literal alone (no other Java 7 features)
 // Expected Version: 7
 // Required Features: BINARY_LITERALS, UNDERSCORES_IN_LITERALS
-public class Edge_BinaryLiteral {
+class Edge_BinaryLiteral {
     int binary = 0b1010_1010;
 }

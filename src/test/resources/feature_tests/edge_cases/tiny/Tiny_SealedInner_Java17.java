@@ -2,7 +2,7 @@
 // Expected Version: 17
 // Required Features: INNER_CLASSES, SEALED_CLASSES
 
-public class Tiny_SealedInner_Java17 {
+class Tiny_SealedInner_Java17 {
     sealed interface I permits A {}
     final class A implements I {}
 }

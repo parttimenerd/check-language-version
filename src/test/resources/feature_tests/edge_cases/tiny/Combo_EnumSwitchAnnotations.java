@@ -2,7 +2,7 @@
 // Test: Combination of enums in switch statements with annotations
 // Expected Version: 5
 // Required Features: ENUMS, ANNOTATIONS
-public class Combo_EnumSwitchAnnotations {
+class Combo_EnumSwitchAnnotations {
     enum Status { ACTIVE, INACTIVE, PENDING }
 
     @SuppressWarnings("unused")

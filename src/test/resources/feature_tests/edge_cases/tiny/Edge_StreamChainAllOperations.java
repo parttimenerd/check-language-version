@@ -5,7 +5,7 @@
 import java.util.*;
 import java.util.stream.*;
 
-public class Edge_StreamChainAllOperations {
+class Edge_StreamChainAllOperations {
     void test() {
         List<String> result = Stream.of("a", "b", "c")
             .filter(s -> s.length() > 0)

@@ -6,7 +6,7 @@ import java.util.*;
 import java.util.stream.Stream;
 import java.time.*;
 
-public class Combo_Java8AllFeatures {
+class Combo_Java8AllFeatures {
     interface Processor {
         default void process() {
             run(() -> System.out.println("processing"));

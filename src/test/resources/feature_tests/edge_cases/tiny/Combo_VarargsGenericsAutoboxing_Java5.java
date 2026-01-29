@@ -3,7 +3,7 @@
 // Expected Version: 5
 // Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS, VARARGS
 import java.util.*;
-public class Combo_VarargsGenericsAutoboxing_Java5 {
+class Combo_VarargsGenericsAutoboxing_Java5 {
     <T> List<T> asList(T... elements) {
         return Arrays.asList(elements);
     }

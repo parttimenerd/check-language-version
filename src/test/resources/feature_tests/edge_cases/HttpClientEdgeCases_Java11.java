@@ -7,7 +7,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
 
-public class HttpClientEdgeCases_Java11 {
+class HttpClientEdgeCases_Java11 {
 
     // Java 11: Create HttpClient
     public void testCreateClient() {

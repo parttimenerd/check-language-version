@@ -3,7 +3,7 @@
 // Required Features: ALPHA3_ARRAY_SYNTAX, HEX_FORMAT
 import java.util.HexFormat;
 
-public class Java17_HexFormat {
+class Java17_HexFormat {
     public void testHexFormat() {
         // Default HexFormat
         HexFormat hex = HexFormat.of();

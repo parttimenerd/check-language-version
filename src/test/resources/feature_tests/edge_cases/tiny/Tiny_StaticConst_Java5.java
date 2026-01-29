@@ -4,6 +4,6 @@
 
 import static java.lang.Math.PI;
 
-public class Tiny_StaticConst_Java5 {
+class Tiny_StaticConst_Java5 {
     double d = PI;
 }

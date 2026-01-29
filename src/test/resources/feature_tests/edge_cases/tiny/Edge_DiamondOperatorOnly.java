@@ -2,6 +2,6 @@
 // Test: Diamond operator that's easy to overlook
 // Expected Version: 7
 // Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS
-public class Edge_DiamondOperatorOnly {
+class Edge_DiamondOperatorOnly {
     java.util.List<String> list = new java.util.ArrayList<>();
 }

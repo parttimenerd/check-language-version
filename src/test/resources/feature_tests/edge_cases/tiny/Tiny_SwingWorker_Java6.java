@@ -2,6 +2,6 @@
 // Expected Version: 6
 // Required Features: GENERICS, SWING, SWING_WORKER
 import javax.swing.SwingWorker;
-public class Tiny_SwingWorker_Java6 extends SwingWorker<Void, Void> {
+class Tiny_SwingWorker_Java6 extends SwingWorker<Void, Void> {
     protected Void doInBackground() { return null; }
 }

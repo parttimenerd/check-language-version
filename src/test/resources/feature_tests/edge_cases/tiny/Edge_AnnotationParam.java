@@ -2,6 +2,6 @@
 // Test: Annotation in subtle position
 // Expected Version: 5
 // Required Features: ANNOTATIONS
-public class Edge_AnnotationParam {
+class Edge_AnnotationParam {
     void test(@Deprecated String s) {}
 }

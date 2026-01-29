@@ -2,7 +2,7 @@
 // Test: Enum declared inside method scope
 // Expected Version: 16
 // Required Features: LOCAL_ENUMS, ENUMS
-public class Edge_LocalEnum {
+class Edge_LocalEnum {
     void test() {
         enum E { A, B }
         E e = E.A;

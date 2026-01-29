@@ -3,6 +3,6 @@
 // Expected Version: 16
 // Required Features: RECORDS
 record Edge_RecordParam(int x) {}
-public class Tiny_RecordParam_Java16 {
+class Tiny_RecordParam_Java16 {
     void test(Edge_RecordParam r) {}
 }

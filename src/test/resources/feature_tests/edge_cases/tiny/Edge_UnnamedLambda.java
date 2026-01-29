@@ -2,6 +2,6 @@
 // Test: Underscores as lambda parameters
 // Expected Version: 22
 // Required Features: UNNAMED_VARIABLES, GENERICS, LAMBDAS
-public class Edge_UnnamedLambda {
+class Edge_UnnamedLambda {
     java.util.function.BiConsumer<String,String> c = (_, _) -> {};
 }

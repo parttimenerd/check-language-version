@@ -4,7 +4,7 @@
 
 import java.lang.*;
 
-public class Tiny_Scoped_Java25 {
+class Tiny_Scoped_Java25 {
     static final ScopedValue<String> USER = ScopedValue.newInstance();
 
     void test() {

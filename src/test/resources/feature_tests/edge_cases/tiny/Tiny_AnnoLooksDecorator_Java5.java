@@ -3,6 +3,6 @@
 // Required Features: ANNOTATIONS
 
 @SuppressWarnings("all")
-public class Tiny_AnnoLooksDecorator_Java5 {
+class Tiny_AnnoLooksDecorator_Java5 {
     @Override public String toString() { return ""; }
 }

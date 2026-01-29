@@ -2,7 +2,7 @@
 // Test: Combination of records with pattern matching in switch statements
 // Expected Version: 21
 // Required Features: RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING
-public class Combo_RecordsPatternSwitch {
+class Combo_RecordsPatternSwitch {
     record Point(int x, int y) {}
 
     public String test(Object o) {

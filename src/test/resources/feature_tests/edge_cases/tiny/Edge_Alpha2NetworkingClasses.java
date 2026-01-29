@@ -3,7 +3,7 @@ import net.InetAddress;
 import net.Socket;
 import net.ProtocolException;
 
-public class Edge_Alpha2NetworkingClasses {
+class Edge_Alpha2NetworkingClasses {
     void test() {
         InetAddress a = new InetAddress("localhost");
         Socket s = null;

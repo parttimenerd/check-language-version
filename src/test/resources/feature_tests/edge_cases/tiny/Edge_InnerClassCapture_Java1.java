@@ -2,7 +2,7 @@
 // Test: Testing inner classes that capture outer class instance variables
 // Expected Version: 1
 // Required Features: INNER_CLASSES
-public class Edge_InnerClassCapture_Java1 {
+class Edge_InnerClassCapture_Java1 {
     private int x = 10;
     class Inner {
         void print() {

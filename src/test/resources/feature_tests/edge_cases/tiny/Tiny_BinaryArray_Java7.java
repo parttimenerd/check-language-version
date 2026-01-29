@@ -2,6 +2,6 @@
 // Expected Version: 7
 // Required Features: ALPHA3_ARRAY_SYNTAX, BINARY_LITERALS
 
-public class Tiny_BinaryArray_Java7 {
+class Tiny_BinaryArray_Java7 {
     int[] x = {0b1, 0b10};
 }

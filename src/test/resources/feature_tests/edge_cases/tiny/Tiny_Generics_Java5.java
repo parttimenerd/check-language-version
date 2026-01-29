@@ -3,7 +3,7 @@
 // Required Features: COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.List;
 import java.util.ArrayList;
-public class Tiny_Generics_Java5 {
+class Tiny_Generics_Java5 {
     public <T> List<T> createList() {
         return new ArrayList<T>();
     }

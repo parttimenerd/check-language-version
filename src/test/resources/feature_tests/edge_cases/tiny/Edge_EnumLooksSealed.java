@@ -3,6 +3,6 @@
 // Expected Version: 5
 // Required Features: ENUMS
 enum Edge_EnumLooksSealed { PENDING, RUNNING, DONE }
-public class Tiny_EnumLooksSealed_Java5 {
+class Tiny_EnumLooksSealed_Java5 {
     Edge_EnumLooksSealed state = Edge_EnumLooksSealed.PENDING;
 }

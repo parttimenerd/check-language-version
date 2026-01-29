@@ -4,7 +4,7 @@
 // Required Features: CONCURRENT_API, LAMBDAS, TRY_WITH_RESOURCES, VAR, VIRTUAL_THREADS
 import java.util.concurrent.*;
 
-public class Edge_VirtualThreadsExecutor {
+class Edge_VirtualThreadsExecutor {
     void test() throws Exception {
         // Virtual thread factory
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {

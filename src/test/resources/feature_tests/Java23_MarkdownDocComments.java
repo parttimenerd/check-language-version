@@ -18,7 +18,7 @@
 /// ```
 ///
 /// @see java.lang.String
-public class Java23_MarkdownDocComments {
+class Java23_MarkdownDocComments {
 
     /// Greets the specified person.
     ///

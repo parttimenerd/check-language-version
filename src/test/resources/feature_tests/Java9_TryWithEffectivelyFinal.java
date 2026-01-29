@@ -3,7 +3,7 @@
 // Required Features: IO_API, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES
 import java.io.*;
 
-public class Java9_TryWithEffectivelyFinal {
+class Java9_TryWithEffectivelyFinal {
     public void testEffectivelyFinalResources() throws IOException {
         // Before Java 9: had to declare resource in try statement
         // try (BufferedReader br = new BufferedReader(new FileReader("file.txt"))) { ... }

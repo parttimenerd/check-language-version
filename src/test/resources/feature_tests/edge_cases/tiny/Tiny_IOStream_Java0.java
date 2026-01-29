@@ -3,7 +3,7 @@
 // Required Features: IO_API
 import java.io.*;
 
-public class Tiny_IOStream_Java0 {
+class Tiny_IOStream_Java0 {
     int read(InputStream in) throws IOException {
         return in.read();
     }

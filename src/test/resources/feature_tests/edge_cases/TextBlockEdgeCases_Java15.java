@@ -1,7 +1,7 @@
 // Edge case: Text block variations
 // Expected Version: 15
 // Required Features: TEXT_BLOCKS
-public class TextBlockEdgeCases_Java15 {
+class TextBlockEdgeCases_Java15 {
 
     String basic = """
         Hello, World!

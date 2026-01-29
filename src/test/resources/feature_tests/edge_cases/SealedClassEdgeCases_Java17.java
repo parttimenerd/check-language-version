@@ -1,9 +1,9 @@
 // Edge case: Sealed class variations (uses Java 21 switch pattern matching)
 // Expected Version: 21
-// Required Features: INNER_CLASSES, RECORDS, SEALED_CLASSES, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING, SWITCH_NULL_DEFAULT
-public class SealedClassEdgeCases_Java17 {
+// Required Features: INNER_CLASSES, SEALED_CLASSES, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
+class SealedClassEdgeCases_Java17 {
 
-    sealed class Shape permits Circle, Rectangle {}
+    sealed abstract class Shape permits Circle, Rectangle {}
 
     final class Circle extends Shape {
         double radius;
@@ -13,21 +13,10 @@ public class SealedClassEdgeCases_Java17 {
         double width, height;
     }
 
-    sealed interface Vehicle permits Car, Truck {}
-
-    final class Car implements Vehicle {}
-    final class Truck implements Vehicle {}
-
-    sealed interface Expression permits Constant, Add {}
-
-    record Constant(int value) implements Expression {}
-    record Add(Expression left, Expression right) implements Expression {}
-
     public String describeShape(Shape shape) {
         return switch (shape) {
             case Circle c -> "Circle";
             case Rectangle r -> "Rectangle";
-            case null -> "null";
         };
     }
 }

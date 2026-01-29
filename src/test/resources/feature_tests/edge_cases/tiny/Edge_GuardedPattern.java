@@ -2,7 +2,7 @@
 // Test: Testing guarded patterns (when clauses) in switch expressions
 // Expected Version: 21
 // Required Features: SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING
-public class Edge_GuardedPattern {
+class Edge_GuardedPattern {
     public String test(Object o) {
         return switch (o) {
             case Integer i when i > 0 -> "positive";

@@ -3,7 +3,7 @@
 // Required Features: COLLECTIONS_FRAMEWORK, GENERICS, METHOD_REFERENCES
 import java.util.function.*;
 import java.util.*;
-public class Java8_MethodReferences {
+class Java8_MethodReferences {
     public void method() {
         List<String> list = Arrays.asList("a", "b", "c");
         // Method reference to static method

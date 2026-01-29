@@ -8,7 +8,7 @@ import java.awt.Label;
 import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
-public class Java1_AWT {
+class Java1_AWT {
     public void createWindow() {
         Frame frame = new Frame("AWT Example");
         frame.setSize(300, 200);

@@ -4,7 +4,7 @@
 import javax.sound.sampled.Clip;
 import javax.naming.Context;
 
-public class Tiny_SoundJNDI_Java3 {
+class Tiny_SoundJNDI_Java3 {
     Clip clip;
     Context ctx;
 }

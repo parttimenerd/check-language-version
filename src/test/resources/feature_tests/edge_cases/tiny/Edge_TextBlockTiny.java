@@ -2,7 +2,7 @@
 // Test: Tiny text block that's easy to miss the triple quotes
 // Expected Version: 15
 // Required Features: TEXT_BLOCKS
-public class Edge_TextBlockTiny {
+class Edge_TextBlockTiny {
     String s = """
         x""";
 }

@@ -2,6 +2,6 @@
 // Expected Version: 3
 // Required Features: JPDA
 import com.sun.jdi.VirtualMachine;
-public class Tiny_JPDA_Java3 {
+class Tiny_JPDA_Java3 {
     VirtualMachine vm;
 }

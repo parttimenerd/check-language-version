@@ -2,6 +2,6 @@
 // Expected Version: 10
 // Required Features: VAR
 
-public class Tiny_VarFor_Java10 {
+class Tiny_VarFor_Java10 {
     void test() { for (var i = 0; i < 1; i++) {} }
 }

@@ -2,7 +2,7 @@
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS, SWITCH_MULTIPLE_LABELS
 
-public class Tiny_MultiLabel_Java14 {
+class Tiny_MultiLabel_Java14 {
     void test(int x) {
         switch (x) {
             case 1, 2, 3 -> System.out.println("low");

@@ -4,7 +4,7 @@
 
 import java.net.spi.*;
 
-public class Tiny_InetResolver_Java18 {
+class Tiny_InetResolver_Java18 {
     void test() {
         InetAddressResolverProvider p = null;
     }

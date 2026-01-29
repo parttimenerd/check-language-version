@@ -4,7 +4,7 @@
 import java.util.List;
 import java.util.ArrayList;
 
-public class Java5_Generics {
+class Java5_Generics {
     public <T> T genericMethod(T param) {
         return param;
     }

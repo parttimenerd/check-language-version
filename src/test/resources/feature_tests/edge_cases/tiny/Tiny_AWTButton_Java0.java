@@ -3,6 +3,6 @@
 // Required Features: AWT
 import java.awt.Button;
 
-public class Tiny_AWTButton_Java0 {
+class Tiny_AWTButton_Java0 {
     Button btn = new Button("Click");
 }

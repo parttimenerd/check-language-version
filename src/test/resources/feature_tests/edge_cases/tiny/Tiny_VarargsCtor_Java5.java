@@ -2,6 +2,6 @@
 // Expected Version: 5
 // Required Features: VARARGS
 
-public class Tiny_VarargsCtor_Java5 {
+class Tiny_VarargsCtor_Java5 {
     Tiny_VarargsCtor_Java5(int... x) {}
 }

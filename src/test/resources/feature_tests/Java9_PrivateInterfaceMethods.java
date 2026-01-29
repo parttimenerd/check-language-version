@@ -1,7 +1,7 @@
 // Java 9 feature: Private methods in interfaces
 // Expected Version: 9
 // Required Features: DEFAULT_INTERFACE_METHODS, INNER_CLASSES, PRIVATE_INTERFACE_METHODS, STATIC_INTERFACE_METHODS
-public class Java9_PrivateInterfaceMethods {
+class Java9_PrivateInterfaceMethods {
     interface MyInterface {
         default void publicMethod() {
             privateHelper();

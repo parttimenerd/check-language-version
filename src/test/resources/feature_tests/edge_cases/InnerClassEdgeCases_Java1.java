@@ -1,7 +1,7 @@
 // Edge case: Inner class variations
 // Expected Version: 1
 // Required Features: INNER_CLASSES
-public class InnerClassEdgeCases_Java1 {
+class InnerClassEdgeCases_Java1 {
 
     private String outerField = "outer";
 

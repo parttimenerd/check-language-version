@@ -4,6 +4,6 @@
 
 strictfp interface I { double calc(); }
 
-public class Tiny_StrictfpIface_Java2 implements I {
+class Tiny_StrictfpIface_Java2 implements I {
     public double calc() { return 1.0; }
 }

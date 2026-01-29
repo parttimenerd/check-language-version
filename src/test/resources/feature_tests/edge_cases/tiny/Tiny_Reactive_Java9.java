@@ -4,7 +4,7 @@
 
 import java.util.concurrent.*;
 
-public class Tiny_Reactive_Java9 {
+class Tiny_Reactive_Java9 {
     void test() {
         Flow.Publisher<String> pub = null;
         Flow.Subscriber<String> sub = null;

@@ -5,7 +5,7 @@
 import java.applet.Applet;
 import java.applet.AudioClip;
 
-public class Java0_Applet {
+class Java0_Applet {
     public void playSound(Applet applet) {
         AudioClip clip = applet.getAudioClip(applet.getCodeBase(), "sound.au");
         if (clip != null) {

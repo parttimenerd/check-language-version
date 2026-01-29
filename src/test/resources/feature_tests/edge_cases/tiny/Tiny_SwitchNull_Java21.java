@@ -2,7 +2,7 @@
 // Expected Version: 21
 // Required Features: STRINGS_IN_SWITCH, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT
 
-public class Tiny_SwitchNull_Java21 {
+class Tiny_SwitchNull_Java21 {
     void test(String s) {
         switch (s) {
             case null -> System.out.println("null");

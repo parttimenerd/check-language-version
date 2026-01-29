@@ -3,7 +3,7 @@
 // Expected Version: 5
 // Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, ENUMS, GENERICS
 import java.util.List;
-public class Combo_EnumAnnotationGenerics_Java5 {
+class Combo_EnumAnnotationGenerics_Java5 {
     @Deprecated
     enum Status {
         ACTIVE, INACTIVE

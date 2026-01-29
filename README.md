@@ -3,13 +3,8 @@ Check-Language-Version
 
 A tiny program to check which Java language versions
 the files in a directory are using.
-This is truely approximate and ignores used standard library APIs,
+This is truely approximate and ignores most used standard library APIs,
 it just focuses on syntax.
-
-For this it uses the validators of [JavaParser](https://javaparser.org/),
-which are good enough for a rough estimate.
-For simplicity, our lovest version is Java 8, as there were too many
-changes from Java 7 to Java 8.
 
 This is also the base for a [game](./game/README.md).
 

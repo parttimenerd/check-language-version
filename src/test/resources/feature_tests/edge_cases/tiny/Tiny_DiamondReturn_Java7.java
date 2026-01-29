@@ -4,6 +4,6 @@
 
 import java.util.*;
 
-public class Tiny_DiamondReturn_Java7 {
+class Tiny_DiamondReturn_Java7 {
     List<String> get() { return new ArrayList<>(); }
 }

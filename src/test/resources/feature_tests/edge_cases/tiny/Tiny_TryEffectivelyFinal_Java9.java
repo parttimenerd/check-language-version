@@ -2,7 +2,7 @@
 // Expected Version: 9
 // Required Features: IO_API, TRY_WITH_EFFECTIVELY_FINAL, TRY_WITH_RESOURCES
 import java.io.*;
-public class Tiny_TryEffectivelyFinal_Java9 {
+class Tiny_TryEffectivelyFinal_Java9 {
     public void test() throws IOException {
         FileReader r = new FileReader("f.txt");
         try (r) { r.read(); }

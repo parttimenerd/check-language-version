@@ -3,7 +3,7 @@
 // Expected Version: 17
 // Required Features: INNER_CLASSES, PATTERN_MATCHING_INSTANCEOF, RECORDS, SEALED_CLASSES
 
-public class Java17_SealedClasses {
+class Java17_SealedClasses {
 
     // Sealed interface
     sealed interface Shape permits Circle, Rectangle, Triangle {}

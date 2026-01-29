@@ -3,6 +3,6 @@
 // Required Features: STATIC_IMPORT
 import static java.lang.Math.PI;
 import static java.lang.Math.sqrt;
-public class Tiny_StaticImport_Java5 {
+class Tiny_StaticImport_Java5 {
     double val = PI * sqrt(2);
 }

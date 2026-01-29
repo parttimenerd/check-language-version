@@ -4,7 +4,7 @@
 // Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
 // Note: TYPE_ANNOTATIONS detection depends on how JavaParser represents annotations on types
 import java.lang.annotation.*;
-public class Combo_RepeatingTypeAnnotations_Java8 {
+class Combo_RepeatingTypeAnnotations_Java8 {
     @Target({ElementType.FIELD})
     @Retention(RetentionPolicy.RUNTIME)
     @interface Tags { Tag[] value(); }

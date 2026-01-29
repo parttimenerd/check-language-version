@@ -188,6 +188,8 @@ public class TestRunner {
 
         } catch (FileNotFoundException e) {
             result.parseFailed = true;
+        } catch (FeatureChecker.ParseFailureException e) {
+            throw new RuntimeException(e);
         }
 
         return result;

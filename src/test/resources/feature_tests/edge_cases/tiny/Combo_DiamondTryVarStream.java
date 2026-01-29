@@ -6,7 +6,7 @@ import java.io.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-public class Combo_DiamondTryVarStream {
+class Combo_DiamondTryVarStream {
     void test() throws IOException {
         // Diamond operator requires explicit type on left side
         List<String> list = new ArrayList<>();

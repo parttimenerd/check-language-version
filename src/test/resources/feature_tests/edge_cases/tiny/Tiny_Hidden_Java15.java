@@ -5,7 +5,7 @@
 import java.lang.invoke.*;
 import java.lang.invoke.MethodHandles.Lookup.ClassOption;
 
-public class Tiny_Hidden_Java15 {
+class Tiny_Hidden_Java15 {
     void test() throws Exception {
         MethodHandles.Lookup l = MethodHandles.lookup();
         byte[] bytes = new byte[0];

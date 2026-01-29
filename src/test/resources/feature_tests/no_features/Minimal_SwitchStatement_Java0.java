@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: Basic switch statement (not switch expression)
-public class Minimal_SwitchStatement_Java0 {
+class Minimal_SwitchStatement_Java0 {
     int f(int x) {
         switch (x) {
             case 0:

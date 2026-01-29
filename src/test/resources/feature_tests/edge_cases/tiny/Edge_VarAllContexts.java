@@ -3,7 +3,7 @@
 // Expected Version: 10
 // Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, IO_API, TRY_WITH_RESOURCES, VAR
 import java.util.*;
-public class Edge_VarAllContexts {
+class Edge_VarAllContexts {
     void test() {
         var x = 10;
         var s = "hello";

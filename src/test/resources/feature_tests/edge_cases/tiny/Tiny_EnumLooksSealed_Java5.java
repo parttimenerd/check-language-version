@@ -4,6 +4,6 @@
 
 enum Status { PENDING, RUNNING, DONE }
 
-public class Tiny_EnumLooksSealed_Java5 {
+class Tiny_EnumLooksSealed_Java5 {
     Status state = Status.PENDING;
 }

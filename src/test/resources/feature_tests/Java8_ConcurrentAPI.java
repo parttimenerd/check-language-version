@@ -9,7 +9,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class Java8_ConcurrentAPI {
+class Java8_ConcurrentAPI {
     public void testConcurrentAPI() throws Exception {
         // ExecutorService
         ExecutorService executor = Executors.newFixedThreadPool(4);

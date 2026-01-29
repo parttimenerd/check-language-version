@@ -4,7 +4,7 @@
 // Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, GENERICS
 import java.util.*;
 
-public class Edge_CollectionFactoryAllTypes {
+class Edge_CollectionFactoryAllTypes {
     void test() {
         List<String> list = List.of("a", "b", "c");
         Set<Integer> set = Set.of(1, 2, 3);

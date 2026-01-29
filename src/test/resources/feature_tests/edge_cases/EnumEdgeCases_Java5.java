@@ -3,7 +3,7 @@
 // Required Features: ALPHA3_ARRAY_SYNTAX, ANNOTATIONS, DIAMOND_OPERATOR, ENUMS, FOR_EACH, GENERICS, INNER_CLASSES, REFLECTION
 import java.util.*;
 
-public class EnumEdgeCases_Java5 {
+class EnumEdgeCases_Java5 {
 
     // Java 5: Basic enum
     enum Day {

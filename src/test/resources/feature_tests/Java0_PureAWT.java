@@ -5,7 +5,7 @@ import java.awt.Frame;
 import java.awt.Label;
 import java.awt.Panel;
 
-public class Java0_PureAWT {
+class Java0_PureAWT {
     public Frame createWindow() {
         Frame frame = new Frame("Simple AWT");
         frame.setSize(300, 200);

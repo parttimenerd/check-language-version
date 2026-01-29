@@ -2,6 +2,6 @@
 // Test: Octal literal (0 prefix)
 // Expected Version: 0
 // Required Features:
-public class Edge_OctalLiteral {
+class Edge_OctalLiteral {
     int octal = 0777;
 }

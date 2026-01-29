@@ -4,7 +4,7 @@
 import java.util.*;
 import java.util.function.*;
 
-public class DiamondOperatorEdgeCases_Java9 {
+class DiamondOperatorEdgeCases_Java9 {
 
     // Java 7: Basic diamond operator
     public void testBasicDiamond() {

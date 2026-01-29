@@ -7,7 +7,7 @@ import javax.swing.JFrame;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-public class Java6_SwingWorker {
+class Java6_SwingWorker {
 
     public void testSwingWorker() {
         // SwingWorker<Result type, Intermediate type>

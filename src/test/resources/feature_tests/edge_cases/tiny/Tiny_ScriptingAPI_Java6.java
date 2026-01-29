@@ -2,6 +2,6 @@
 // Expected Version: 6
 // Required Features: SCRIPTING_API
 import javax.script.ScriptEngine;
-public class Tiny_ScriptingAPI_Java6 {
+class Tiny_ScriptingAPI_Java6 {
     ScriptEngine engine;
 }

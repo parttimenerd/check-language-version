@@ -1,7 +1,7 @@
 // Java 14 feature: Multiple labels in switch case
 // Expected Version: 14
 // Required Features: SWITCH_EXPRESSIONS, SWITCH_MULTIPLE_LABELS
-public class Java14_SwitchMultipleLabels {
+class Java14_SwitchMultipleLabels {
     public String getQuarter(int month) {
         // Multiple labels per case
         return switch (month) {

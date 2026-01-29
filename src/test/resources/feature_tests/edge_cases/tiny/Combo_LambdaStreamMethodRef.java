@@ -3,7 +3,7 @@
 // Expected Version: 8
 // Required Features: AUTOBOXING, LAMBDAS, METHOD_REFERENCES, STREAM_API
 import java.util.stream.*;
-public class Combo_LambdaStreamMethodRef {
+class Combo_LambdaStreamMethodRef {
     public void test() {
         Stream.of(1, 2, 3)
             .filter(x -> x > 1)

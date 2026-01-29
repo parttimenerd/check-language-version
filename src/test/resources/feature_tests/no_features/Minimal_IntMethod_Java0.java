@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: Simple method declaration
-public class Minimal_IntMethod_Java0 {
+class Minimal_IntMethod_Java0 {
     int get() {
         return 1;
     }

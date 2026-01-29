@@ -4,7 +4,7 @@
 // Scoped Values enable sharing of immutable data within and across threads
 import java.lang.ScopedValue;
 
-public class Java25_ScopedValues {
+class Java25_ScopedValues {
     // Declare a scoped value
     private static final ScopedValue<String> USER = ScopedValue.newInstance();
     private static final ScopedValue<Integer> REQUEST_ID = ScopedValue.newInstance();

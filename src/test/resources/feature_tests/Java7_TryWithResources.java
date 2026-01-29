@@ -3,7 +3,7 @@
 // Required Features: ALPHA3_ARRAY_SYNTAX, IO_API, TRY_WITH_RESOURCES
 import java.io.*;
 
-public class Java7_TryWithResources {
+class Java7_TryWithResources {
     public String readFile(String path) throws IOException {
         try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
             return reader.readLine();

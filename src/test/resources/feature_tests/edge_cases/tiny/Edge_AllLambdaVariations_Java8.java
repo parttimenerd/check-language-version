@@ -3,7 +3,7 @@
 // Expected Version: 8
 // Required Features: GENERICS, LAMBDAS
 import java.util.function.*;
-public class Edge_AllLambdaVariations_Java8 {
+class Edge_AllLambdaVariations_Java8 {
     void test() {
         Runnable r1 = () -> {};
         Runnable r2 = () -> System.out.println("hi");

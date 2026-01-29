@@ -4,7 +4,7 @@
 
 import org.omg.CORBA.*;
 
-public class Tiny_CORBA_Java2 {
+class Tiny_CORBA_Java2 {
     void test() {
         ORB orb = null;
     }

@@ -4,6 +4,6 @@
 
 import java.io.*;
 
-public class Tiny_Serial_Java1 implements Serializable {
+class Tiny_Serial_Java1 implements Serializable {
     private int x;
 }

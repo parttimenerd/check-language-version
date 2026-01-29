@@ -4,7 +4,7 @@
 
 record Point(int x, int y) {}
 
-public class Tiny_RecPattern_Java21 {
+class Tiny_RecPattern_Java21 {
     void test(Object o) {
         if (o instanceof Point(int x, int y)) {
             System.out.println(x + y);

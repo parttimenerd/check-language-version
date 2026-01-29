@@ -4,6 +4,6 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class Tiny_ListOnly_Java2 {
+class Tiny_ListOnly_Java2 {
     List list = new ArrayList();
 }

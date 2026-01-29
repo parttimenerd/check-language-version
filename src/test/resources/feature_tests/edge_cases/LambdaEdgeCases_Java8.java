@@ -5,7 +5,7 @@ import java.util.*;
 import java.util.function.*;
 import java.util.stream.*;
 
-public class LambdaEdgeCases_Java8 {
+class LambdaEdgeCases_Java8 {
 
     public void testBasicLambdas() {
         // No parameters

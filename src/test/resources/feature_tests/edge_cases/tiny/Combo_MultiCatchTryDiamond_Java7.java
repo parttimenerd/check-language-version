@@ -4,7 +4,7 @@
 // Required Features: COLLECTIONS_FRAMEWORK, DIAMOND_OPERATOR, GENERICS, IO_API, MULTI_CATCH, TRY_WITH_RESOURCES
 import java.io.*;
 import java.util.*;
-public class Combo_MultiCatchTryDiamond_Java7 {
+class Combo_MultiCatchTryDiamond_Java7 {
     void test() {
         try (FileReader fr = new FileReader("test.txt")) {
             List<String> list = new ArrayList<>();

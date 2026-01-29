@@ -2,6 +2,6 @@
 // Expected Version: 17
 // Required Features: RANDOM_GENERATOR
 import java.util.random.RandomGenerator;
-public class Tiny_RandomGenerator_Java17 {
+class Tiny_RandomGenerator_Java17 {
     RandomGenerator rng = RandomGenerator.getDefault();
 }

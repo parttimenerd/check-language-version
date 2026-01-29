@@ -4,7 +4,7 @@
 // Required Features: ANNOTATIONS, COLLECTIONS_FRAMEWORK, ENUMS, FOR_EACH, GENERICS
 import java.util.*;
 
-public class Combo_AnnotationsEnumsGenericsForEach {
+class Combo_AnnotationsEnumsGenericsForEach {
     enum Status { ACTIVE, INACTIVE }
 
     @SuppressWarnings("unchecked")

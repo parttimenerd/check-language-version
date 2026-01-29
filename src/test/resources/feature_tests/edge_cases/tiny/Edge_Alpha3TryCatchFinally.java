@@ -1,5 +1,5 @@
 // Required Features: ALPHA3_TRY_CATCH_FINALLY
-public class Edge_Alpha3TryCatchFinally {
+class Edge_Alpha3TryCatchFinally {
     void test() {
         try {
             System.out.println("x");

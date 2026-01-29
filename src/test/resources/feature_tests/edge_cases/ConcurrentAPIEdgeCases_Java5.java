@@ -6,7 +6,7 @@ import java.util.concurrent.atomic.*;
 import java.util.concurrent.locks.*;
 import java.util.*;
 
-public class ConcurrentAPIEdgeCases_Java5 {
+class ConcurrentAPIEdgeCases_Java5 {
 
     // Java 5: ExecutorService
     public void testExecutorService() throws Exception {
@@ -130,19 +130,5 @@ public class ConcurrentAPIEdgeCases_Java5 {
                 lock.unlockRead(readStamp);
             }
         }
-    }
-
-    // Java 9: CompletableFuture enhancements
-    public void testCompletableFutureJava9() throws Exception {
-        CompletableFuture<String> future = CompletableFuture.supplyAsync(() -> "result");
-
-        // completeOnTimeout (Java 9)
-        future.completeOnTimeout("timeout", 1, TimeUnit.SECONDS);
-
-        // orTimeout (Java 9)
-        future.orTimeout(1, TimeUnit.SECONDS);
-
-        // copy (Java 9)
-        CompletableFuture<String> copy = future.copy();
     }
 }

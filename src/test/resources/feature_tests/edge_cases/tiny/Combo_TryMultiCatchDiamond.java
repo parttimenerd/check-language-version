@@ -3,7 +3,7 @@
 // Expected Version: 7
 // Required Features: DIAMOND_OPERATOR, GENERICS, IO_API, MULTI_CATCH, TRY_WITH_RESOURCES, COLLECTIONS_FRAMEWORK
 import java.io.*;
-public class Combo_TryMultiCatchDiamond {
+class Combo_TryMultiCatchDiamond {
     public void test() {
         java.util.List<String> list = new java.util.ArrayList<>();
         try (FileInputStream fis = new FileInputStream("f.txt")) {

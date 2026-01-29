@@ -3,7 +3,7 @@
 // Required Features: ALPHA3_ARRAY_SYNTAX, ANNOTATIONS, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, INNER_CLASSES, VARARGS
 import java.util.*;
 
-public class VarargsEdgeCases_Java5 {
+class VarargsEdgeCases_Java5 {
 
     // Basic varargs method
     public void printAll(String... items) {

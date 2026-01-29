@@ -1,5 +1,5 @@
 // Required Features: ALPHA2_TRY_FINALLY
-public class Edge_Alpha2TryFinally {
+class Edge_Alpha2TryFinally {
     void test() {
         try {
             System.out.println("x");

@@ -8,4 +8,4 @@ enum Color {
     Color(int r, int g, int b) { this.r = r; this.g = g; this.b = b; }
 }
 
-public class Tiny_EnumLooksRecord_Java5 {}
+class Tiny_EnumLooksRecord_Java5 {}

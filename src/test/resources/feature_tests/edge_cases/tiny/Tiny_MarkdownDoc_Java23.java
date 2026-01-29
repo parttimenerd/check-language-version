@@ -6,7 +6,7 @@
 /// This is **markdown** documentation.
 /// - Item 1
 /// - Item 2
-public class Tiny_MarkdownDoc_Java23 {
+class Tiny_MarkdownDoc_Java23 {
     /// Returns the **sum** of `a` and `b`.
     public int add(int a, int b) { return a + b; }
 }

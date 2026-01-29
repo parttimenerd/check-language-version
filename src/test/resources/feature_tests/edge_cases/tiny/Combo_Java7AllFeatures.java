@@ -6,7 +6,7 @@
 import java.io.*;
 import java.util.*;
 
-public class Combo_Java7AllFeatures {
+class Combo_Java7AllFeatures {
     void test(String type) throws IOException {
         List<String> list = new ArrayList<>();
         int binary = 0b1010_1010;

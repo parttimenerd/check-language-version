@@ -4,7 +4,7 @@
 import java.util.List;
 import java.util.Arrays;
 
-public class Java5_ForEach {
+class Java5_ForEach {
     public void iterate() {
         List<String> list = Arrays.asList("a", "b", "c");
         for (String item : list) {

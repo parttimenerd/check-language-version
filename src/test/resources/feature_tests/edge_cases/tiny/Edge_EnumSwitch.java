@@ -3,6 +3,6 @@
 // Expected Version: 5
 // Required Features: ENUMS
 enum Edge_EnumSwitch { A }
-public class Tiny_EnumSwitch_Java5 {
+class Tiny_EnumSwitch_Java5 {
     void test(Edge_EnumSwitch e) { switch(e) { case A: } }
 }

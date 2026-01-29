@@ -4,7 +4,7 @@
 import static java.lang.Math.PI;
 import static java.lang.Math.sqrt;
 
-public class Java5_StaticImport {
+class Java5_StaticImport {
     public double circleArea(double radius) {
         return PI * radius * radius;
     }

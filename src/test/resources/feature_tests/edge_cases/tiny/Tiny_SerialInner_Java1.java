@@ -4,6 +4,6 @@
 // Optional Features: IO_API
 import java.io.Serializable;
 
-public class Tiny_SerialInner_Java1 {
+class Tiny_SerialInner_Java1 {
     class Data implements Serializable {}
 }

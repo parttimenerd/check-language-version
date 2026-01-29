@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: Basic control flow
-public class Minimal_IfElse_Java0 {
+class Minimal_IfElse_Java0 {
     int f(boolean b) {
         if (b) {
             return 1;

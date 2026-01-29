@@ -1,7 +1,7 @@
 // Java 5 feature: Varargs
 // Expected Version: 5
 // Required Features: FOR_EACH, VARARGS
-public class Java5_Varargs {
+class Java5_Varargs {
     public void printAll(String... messages) {
         for (String msg : messages) {
             System.out.println(msg);

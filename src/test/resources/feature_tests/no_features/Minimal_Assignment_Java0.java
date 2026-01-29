@@ -3,7 +3,7 @@
 // Optional Features:
 // Expected Version: 0
 // Test: Local assignment and return
-public class Minimal_Assignment_Java0 {
+class Minimal_Assignment_Java0 {
     int f() {
         int a = 0;
         a = a + 1;

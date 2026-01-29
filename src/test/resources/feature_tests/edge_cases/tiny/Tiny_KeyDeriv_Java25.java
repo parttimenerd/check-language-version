@@ -4,7 +4,7 @@
 
 import javax.crypto.*;
 
-public class Tiny_KeyDeriv_Java25 {
+class Tiny_KeyDeriv_Java25 {
     void test() throws Exception {
         KDF kdf = KDF.getInstance("HKDF-SHA256");
     }

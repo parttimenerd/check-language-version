@@ -3,7 +3,7 @@
 // Expected Version: 5
 // Required Features: COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.*;
-public class Edge_DeeplyNestedGenerics_Java5 {
+class Edge_DeeplyNestedGenerics_Java5 {
     Map<String, List<Set<Map<Integer, String>>>> complex;
     List<? extends Number> wildcardExtends;
     List<? super Integer> wildcardSuper;

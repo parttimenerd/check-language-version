@@ -5,12 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta property="og:type"               content="website" />
     <meta property="og:title"              content="Guess the Java version of a code snippet in this fun game" />
-    <meta property="og:description"        content="A game that let's you guess the Java version of snippets, from Java 1.0-alpha2 to Java 25" />
+    <meta property="og:description"        content="A game that let's you guess the Java version of snippets, from Java 1.0 to Java 25" />
     <meta property="og:image"              content="{%base_url%}img/screenshot.png" />
     <meta property="og:url"                content="{%base_url%}" />
     <meta name="twitter:card"              content="summary_large_image" />
     <meta name="twitter:title"             content="Guess the Java version of a code snippet in this fun game" />
-    <meta name="twitter:description"       content="A game that let's you guess the Java version of snippets, from Java 1.0-alpha2 to Java 25" />
+    <meta name="twitter:description"       content="A game that let's you guess the Java version of snippets, from Java 1.0 to Java 25" />
     <meta name="twitter:image"             content="{%base_url%}img/screenshot.png" />
     <title>Java Version Quiz</title>
     <style>
@@ -192,6 +192,30 @@
         function initQuiz() {
             const { onload } = lemonade;
 
+            // Base URL configured at build time (passed via CLI --base-url and rendered into the template).
+            // Used for robust share-link generation when the app is hosted behind proxies or under subpaths.
+            const TEMPLATE_BASE_URL = '{%base_url%}';
+            function canonicalBaseUrl() {
+                // At runtime this template variable is already substituted.
+                // Keep a safe fallback for local/file usage.
+                if (TEMPLATE_BASE_URL) return TEMPLATE_BASE_URL;
+                return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
+            }
+
+            // Alpha (Java 1.0-alpha*) questions are shipped in code.json but disabled by default.
+            // Enable with URL hash '#alpha' or '#alpha=1'.
+            const HAS_ALPHA_QUESTIONS = Array.isArray(quizData) && quizData.some(q => (q && typeof q.correct === 'number' && q.correct < 0));
+            function isAlphaEnabled() {
+                return hasAlphaEnabledInHash();
+            }
+            const MIN_ANSWER_VERSION = (isAlphaEnabled() && HAS_ALPHA_QUESTIONS) ? -3 : 0;
+
+            // Apply alpha filtering to the question pool when alpha is disabled.
+            const fullQuizData = quizData;
+            if (!isAlphaEnabled()) {
+                quizData = quizData.filter(q => !(q && typeof q.correct === 'number' && q.correct < 0));
+            }
+
             // Fisher-Yates shuffle
             function shuffleArray(array) {
                 var arr = array.slice();
@@ -292,23 +316,25 @@
                 return decodeQuestionFromHashPayload(payload);
             }
 
-            function setHashFromQuestionPayload(payload) {
+            function hasAlphaEnabledInHash() {
                 var hash = window.location.hash || '';
-                var params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
-                params.set('question', payload);
-                var newHash = '#' + params.toString();
-                if (window.history && window.history.replaceState) {
-                    window.history.replaceState(null, '', newHash);
-                } else {
-                    window.location.hash = params.toString();
-                }
+                if (!hash.startsWith('#')) return false;
+                var params = new URLSearchParams(hash.slice(1));
+                // Accept '#alpha' and '#alpha=1' (URLSearchParams treats '#alpha' as key with empty value).
+                if (!params.has('alpha')) return false;
+                var v = params.get('alpha');
+                return v === '' || v === '1' || v === 'true';
             }
 
-            function clearQuestionFromHash() {
+            function setAlphaEnabledInHash(enabled) {
                 var hash = window.location.hash || '';
-                if (!hash.startsWith('#') || hash.length <= 1) return;
-                var params = new URLSearchParams(hash.slice(1));
-                params.delete('question');
+                var params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+                if (enabled) {
+                    // Use an explicit value for clarity.
+                    params.set('alpha', '1');
+                } else {
+                    params.delete('alpha');
+                }
                 var next = params.toString();
                 var newHash = next ? ('#' + next) : '';
                 if (window.history && window.history.replaceState) {
@@ -317,6 +343,55 @@
                     window.location.hash = next;
                 }
             }
+
+            // Clear only the deep-link question payload from the hash, keeping other flags (e.g. #alpha=1).
+            function clearQuestionFromHash() {
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#')) return;
+
+                var params = new URLSearchParams(hash.slice(1));
+                if (!params.has('question')) return;
+
+                params.delete('question');
+                var next = params.toString();
+                var newHash = next ? ('#' + next) : '';
+
+                if (window.history && window.history.replaceState) {
+                    window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
+                } else {
+                    // Assigning '' clears the hash.
+                    window.location.hash = next;
+                }
+            }
+
+            function updateAlphaLink(el) {
+                if (!el) return;
+                if (!HAS_ALPHA_QUESTIONS) {
+                    el.style.display = 'none';
+                    return;
+                }
+                el.style.display = '';
+                el.textContent = isAlphaEnabled() ? 'Disable Java Alpha' : 'Enable Java Alpha';
+                // Make it correct right away without relying on click handlers.
+                el.href = isAlphaEnabled() ? '#alpha=0' : '#alpha=1';
+                el.onclick = function (e) {
+                    e.preventDefault();
+                    setAlphaEnabledInHash(!isAlphaEnabled());
+                    window.location.reload();
+                };
+            }
+
+            function buildHashForShareLink(questionPayload) {
+                 var params = new URLSearchParams();
+                 if (questionPayload) {
+                     params.set('question', questionPayload);
+                 }
+                 if (isAlphaEnabled()) {
+                     params.set('alpha', '1');
+                 }
+                 var s = params.toString();
+                 return s ? ('#' + s) : '';
+             }
 
             // Format Java version for display (-3 → "1.0-α1", -2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
             function formatVersion(version) {
@@ -340,7 +415,7 @@
             // at least one lower and one higher wrong answer.
             // Lower versions (< Java 9) have 60% higher probability of being chosen.
             function generateWrongAnswers(correct) {
-                var MIN_VERSION = -3;
+                var MIN_VERSION = MIN_ANSWER_VERSION;
                 var MAX_VERSION = 25;
                 var LOWER_VERSION_THRESHOLD = 9;
                 var LOWER_VERSION_WEIGHT = 1.6; // 60% higher probability
@@ -406,30 +481,49 @@
             // Shuffle questions at start, unless we start from a hash-question.
             // Hash decoding is async due to compression streams.
             getQuestionFromHash().then(function(hashQuestion) {
-                if (!hashQuestion) {
-                    quizData = shuffleArray(quizData);
-                }
+                 if (!hashQuestion) {
+                     quizData = shuffleArray(quizData);
+                 }
 
-                function Quiz() {
-                    const self = this;
+                 function Quiz() {
+                     const self = this;
 
-                    // State
-                    self.startedFromHash = !!hashQuestion;
-                    self.currentIndex = 0;
-                    self.currentQuestionFromHashOnly = null;
+                     // Refs
+                     self.alphaToggleEl = null;
 
-                    if (hashQuestion) {
-                        var idx = findQuestionIndex(hashQuestion, quizData);
-                        if (idx >= 0) {
-                            self.currentIndex = idx;
-                            self.currentQuestion = quizData[self.currentIndex];
+                     // State
+                     self.startedFromHash = !!hashQuestion;
+                     self.currentIndex = 0;
+                     self.currentQuestionFromHashOnly = null;
+
+                     if (hashQuestion) {
+                        // Try to find the hash question in the original full dataset first,
+                        // then map it into the currently active (possibly alpha-filtered) dataset.
+                        var fullIdx = findQuestionIndex(hashQuestion, fullQuizData);
+                        if (fullIdx >= 0) {
+                            // If the question exists in the active pool, use that; otherwise keep it as standalone.
+                            var idx = findQuestionIndex(hashQuestion, quizData);
+                            if (idx >= 0) {
+                                self.currentIndex = idx;
+                                self.currentQuestion = quizData[self.currentIndex];
+                            } else {
+                                self.currentQuestionFromHashOnly = hashQuestion;
+                                self.currentQuestion = self.currentQuestionFromHashOnly;
+                            }
                         } else {
-                            self.currentQuestionFromHashOnly = hashQuestion;
-                            self.currentQuestion = self.currentQuestionFromHashOnly;
+                            // Unknown payload (possibly from an older build)
+                            var idx = findQuestionIndex(hashQuestion, quizData);
+                            if (idx >= 0) {
+                                self.currentIndex = idx;
+                                self.currentQuestion = quizData[self.currentIndex];
+                            } else {
+                                self.currentQuestionFromHashOnly = hashQuestion;
+                                self.currentQuestion = self.currentQuestionFromHashOnly;
+                            }
                         }
-                    } else {
-                        self.currentQuestion = quizData[self.currentIndex];
-                    }
+                     } else {
+                         self.currentQuestion = quizData[self.currentIndex];
+                     }
 
                     self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
                     self.answered = false;
@@ -446,6 +540,9 @@
                         if (self.incorrectEl) {
                             self.incorrectEl.textContent = self.incorrectCount;
                         }
+
+                        // Alpha toggle link
+                        updateAlphaLink(self.alphaToggleEl);
 
                         // Share link: always visible and always points to the *currently shown* question.
                         // We keep the page URL clean (no hash changes) by only updating the link's href.
@@ -467,9 +564,12 @@
                                     // Only apply if this is still the latest update.
                                     if (self._shareLinkUpdateToken !== myUpdateToken) return;
 
-                                    var url = new URL(window.location.href);
+                                    // Build a canonical share URL (robust with reverse proxies / subpaths).
+                                    // Preserve FULL URL's query params (if any) and include '#alpha' if enabled.
+                                    var url = new URL('index.html', canonicalBaseUrl());
+                                    url.search = window.location.search;
                                     // Note: set the hash only on the share link URL, not on the page itself.
-                                    url.hash = 'question=' + payload;
+                                    url.hash = buildHashForShareLink(payload);
                                     self.shareLinkEl.href = url.toString();
                                 } catch (e) {
                                     // Keep it as '#' if anything goes wrong.
@@ -535,13 +635,21 @@
 
                                 let featuresHtml = '';
                                 if (self.currentQuestion.features && self.currentQuestion.features.length) {
-                                    // Sort features by version (highest to lowest)
-                                    const sortedFeatures = self.currentQuestion.features.slice().sort((a, b) => b.version - a.version);
+                                    // In non-alpha mode, hide alpha-only detected features (negative version).
+                                    const visibleFeatures = isAlphaEnabled()
+                                        ? self.currentQuestion.features
+                                        : self.currentQuestion.features.filter(f => typeof f.version !== 'number' || f.version >= 0);
+                                    if (!visibleFeatures.length) {
+                                        // nothing
+                                    } else {
+                                     // Sort features by version (highest to lowest)
+                                    const sortedFeatures = visibleFeatures.slice().sort((a, b) => b.version - a.version);
                                     featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong><div>' +
                                         sortedFeatures.map(f =>
                                             `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
                                         ).join('') + '</div></div>';
-                                }
+                                    }
+                                 }
 
                                 self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
                                     <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
@@ -552,8 +660,10 @@
                     };
 
                     onload(() => {
-                        updateUI();
-                    });
+                        // Ensure alpha link is correct on first paint.
+                        updateAlphaLink(self.alphaToggleEl);
+                         updateUI();
+                     });
 
                     window.quizSelect = (option) => {
                         if (self.answered) return;
@@ -615,11 +725,13 @@
                         <div class="options" :ref="self.optionsEl"></div>
                         <div :ref="self.feedbackEl"></div>
                         <div class="disclaimer">
-                            Score: <span title="Correctly vs incorrectly answered questions since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span></span>
-                            <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
-                            <span style="padding-left: 1em">This is just a fun quiz and may contain errors. Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
-                            <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>
-                        </div>
+                             Score: <span title="Correctly vs incorrectly answered questions since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span></span>
+                             <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
+                             <a style="padding-left: 1em" :ref="self.alphaToggleEl" href="#alpha=1">Enable Java Alpha</a>
+                             <span style="padding-left: 1em">This is just a fun quiz and may contain errors.</span><br/>
+                             <span>Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
+                             <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a> (new snippets as issues)
+                         </div>
                     </div>`;
                 }
 

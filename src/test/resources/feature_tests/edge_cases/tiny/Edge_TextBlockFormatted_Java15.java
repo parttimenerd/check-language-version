@@ -2,7 +2,7 @@
 // Test: Testing text blocks with the formatted() method
 // Expected Version: 15
 // Required Features: TEXT_BLOCKS
-public class Edge_TextBlockFormatted_Java15 {
+class Edge_TextBlockFormatted_Java15 {
     String html = """
         <html>
             <body>

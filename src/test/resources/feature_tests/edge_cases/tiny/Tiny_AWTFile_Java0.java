@@ -4,7 +4,7 @@
 import java.awt.Image;
 import java.io.File;
 
-public class Tiny_AWTFile_Java0 {
+class Tiny_AWTFile_Java0 {
     File f;
     Image img;
 }

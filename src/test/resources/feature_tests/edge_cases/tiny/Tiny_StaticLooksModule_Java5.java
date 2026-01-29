@@ -5,6 +5,6 @@
 import static java.lang.System.out;
 import static java.util.Arrays.asList;
 
-public class Tiny_StaticLooksModule_Java5 {
+class Tiny_StaticLooksModule_Java5 {
     void test() { out.println(asList(1, 2, 3)); }
 }

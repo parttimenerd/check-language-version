@@ -2,5 +2,5 @@
 // Expected Version: 11
 // Required Features: FLIGHT_RECORDER
 import jdk.jfr.Event;
-public class Tiny_FlightRecorder_Java11 extends Event {
+class Tiny_FlightRecorder_Java11 extends Event {
 }

@@ -3,7 +3,7 @@
 // Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS
 import java.util.*;
 
-public class AutoboxingEdgeCases_Java5 {
+class AutoboxingEdgeCases_Java5 {
 
     private Integer fieldInt = 42;
     private Double fieldDouble = 3.14;

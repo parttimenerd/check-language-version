@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_DiamondAnon_Java9 {
+class Tiny_DiamondAnon_Java9 {
     Comparator<String> c = new Comparator<>() {
         public int compare(String a, String b) { return 0; }
     };

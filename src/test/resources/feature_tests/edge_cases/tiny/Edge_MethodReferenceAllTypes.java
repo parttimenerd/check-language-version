@@ -4,7 +4,7 @@
 // Required Features: GENERICS, METHOD_REFERENCES
 import java.util.function.*;
 
-public class Edge_MethodReferenceAllTypes {
+class Edge_MethodReferenceAllTypes {
     void test() {
         // Static method reference
         Function<String, Integer> f1 = Integer::parseInt;

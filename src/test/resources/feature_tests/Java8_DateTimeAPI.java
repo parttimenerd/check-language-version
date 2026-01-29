@@ -10,7 +10,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * Test file for Java 8 Date and Time API feature.
  */
-public class Java8_DateTimeAPI {
+class Java8_DateTimeAPI {
     public void testDateTime() {
         LocalDate today = LocalDate.now();
         LocalTime now = LocalTime.now();

@@ -5,7 +5,7 @@ import java.util.concurrent.*;
 import java.time.*;
 import java.util.*;
 
-public class VirtualThreadsEdgeCases_Java21 {
+class VirtualThreadsEdgeCases_Java21 {
 
     // Java 21: Thread.ofVirtual()
     public void testOfVirtual() throws Exception {

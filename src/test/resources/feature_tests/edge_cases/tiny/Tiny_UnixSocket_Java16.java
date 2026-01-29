@@ -4,7 +4,7 @@
 
 import java.net.*;
 
-public class Tiny_UnixSocket_Java16 {
+class Tiny_UnixSocket_Java16 {
     void test() {
         UnixDomainSocketAddress addr = null;
     }

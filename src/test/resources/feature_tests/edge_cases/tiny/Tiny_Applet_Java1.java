@@ -3,5 +3,5 @@
 // Expected Version: 0
 // Required Features: APPLET
 import java.applet.Applet;
-public class Tiny_Applet_Java1 extends Applet {
+class Tiny_Applet_Java1 extends Applet {
 }

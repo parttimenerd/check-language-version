@@ -1,7 +1,7 @@
 // Edge case: Fully qualified names without any imports
 // Expected Version: 11
 // Required Features: AUTOBOXING, COLLECTIONS_FRAMEWORK, DATE_TIME_API, GENERICS, HTTP_CLIENT, OPTIONAL, STREAM_API
-public class FullyQualifiedNames_NoImports {
+class FullyQualifiedNames_NoImports {
 
     public void testFullyQualifiedTypes() {
         // Java 8: Stream API - fully qualified

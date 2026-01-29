@@ -3,6 +3,6 @@
 // Required Features: NIO
 import java.nio.ByteBuffer;
 
-public class Tiny_NIOBuffer_Java4 {
+class Tiny_NIOBuffer_Java4 {
     ByteBuffer buf = ByteBuffer.allocate(1024);
 }

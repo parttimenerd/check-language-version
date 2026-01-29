@@ -2,6 +2,6 @@
 // Expected Version: 1
 // Required Features: JDBC
 import java.sql.Connection;
-public class Tiny_JDBC_Java1 {
+class Tiny_JDBC_Java1 {
     Connection c;
 }

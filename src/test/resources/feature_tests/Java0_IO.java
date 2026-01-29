@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.IOException;
 
-public class Java0_IO {
+class Java0_IO {
     public void copyStream(InputStream in, OutputStream out) throws IOException {
         byte[] buffer = new byte[1024];
         int bytesRead;

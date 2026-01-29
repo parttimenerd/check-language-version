@@ -2,7 +2,7 @@
 // Expected Version: 8
 // Required Features: DATE_TIME_API
 import java.time.*;
-public class Tiny_DateTime_Java8 {
+class Tiny_DateTime_Java8 {
     LocalDate d = LocalDate.now();
     LocalDateTime dt = LocalDateTime.now();
 }

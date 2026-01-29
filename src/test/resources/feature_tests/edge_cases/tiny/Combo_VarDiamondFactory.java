@@ -3,7 +3,7 @@
 // Expected Version: 10
 // Required Features: COLLECTIONS_FRAMEWORK, COLLECTION_FACTORY_METHODS, DIAMOND_OPERATOR, GENERICS, VAR
 import java.util.*;
-public class Combo_VarDiamondFactory {
+class Combo_VarDiamondFactory {
     public void test() {
         // Diamond operator requires explicit type on left side
         List<String> list = new ArrayList<>();

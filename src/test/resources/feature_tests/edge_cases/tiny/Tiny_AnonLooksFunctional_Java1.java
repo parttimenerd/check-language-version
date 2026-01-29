@@ -4,7 +4,7 @@
 
 import java.util.*;
 
-public class Tiny_AnonLooksFunctional_Java1 {
+class Tiny_AnonLooksFunctional_Java1 {
     Comparator c = new Comparator() {
         public int compare(Object a, Object b) { return 0; }
     };

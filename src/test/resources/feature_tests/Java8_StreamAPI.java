@@ -4,7 +4,7 @@
 import java.util.stream.*;
 import java.util.*;
 
-public class Java8_StreamAPI {
+class Java8_StreamAPI {
     public void method() {
         List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);
 

@@ -2,6 +2,8 @@
 // Expected Version: 16
 // Required Features: PATTERN_MATCHING_INSTANCEOF
 
-public class Tiny_PatternAssign_Java16 {
-    boolean b = "x" instanceof String s && s.isEmpty();
+class Tiny_PatternAssign_Java16 {
+    void method(Object x) {
+        boolean b = x instanceof String s && s.isEmpty();
+    }
 }

@@ -6,7 +6,7 @@ import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.OptionalDouble;
 
-public class Java8_Optional {
+class Java8_Optional {
     public void testOptional() {
         // Create Optional instances
         Optional<String> name = Optional.of("John");

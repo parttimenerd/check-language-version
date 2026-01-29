@@ -7,4 +7,4 @@ import java.lang.annotation.*;
 @interface As { A[] value(); }
 
 @A(1) @A(2)
-public class Tiny_RepeatAnno_Java8 {}
+class Tiny_RepeatAnno_Java8 {}

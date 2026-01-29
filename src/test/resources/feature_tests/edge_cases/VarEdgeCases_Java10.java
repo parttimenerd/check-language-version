@@ -4,7 +4,7 @@
 import java.util.*;
 import java.util.function.*;
 
-public class VarEdgeCases_Java10 {
+class VarEdgeCases_Java10 {
 
     public void testBasicVar() {
         // Basic var with primitives

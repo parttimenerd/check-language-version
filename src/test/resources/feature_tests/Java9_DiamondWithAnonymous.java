@@ -4,7 +4,7 @@
 import java.util.Comparator;
 import java.util.concurrent.Callable;
 
-public class Java9_DiamondWithAnonymous {
+class Java9_DiamondWithAnonymous {
     public void testDiamondWithAnonymous() {
         // Before Java 9: had to specify type arguments for anonymous classes
         // Comparator<String> comp = new Comparator<String>() { ... };

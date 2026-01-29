@@ -4,6 +4,6 @@
 
 import java.util.function.Predicate;
 
-public class Tiny_VarLambda_Java11 {
+class Tiny_VarLambda_Java11 {
     Predicate<String> f = (var a) -> a.isEmpty();
 }

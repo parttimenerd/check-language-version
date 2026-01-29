@@ -2,7 +2,7 @@
 // Test: Var keyword (Java 10)
 // Expected Version: 10
 // Required Features: VAR
-public class Tiny_Var_Java10 {
+class Tiny_Var_Java10 {
     public void test() {
         var x = 42;
         var s = "hello";

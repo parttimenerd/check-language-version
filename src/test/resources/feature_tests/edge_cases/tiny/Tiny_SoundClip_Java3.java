@@ -3,6 +3,6 @@
 // Required Features: JAVA_SOUND
 import javax.sound.sampled.Clip;
 
-public class Tiny_SoundClip_Java3 {
+class Tiny_SoundClip_Java3 {
     Clip clip;
 }

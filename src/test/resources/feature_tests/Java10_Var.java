@@ -2,7 +2,7 @@
 // Expected Version: 10
 // Required Features: COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, VAR
 import java.util.*;
-public class Java10_Var {
+class Java10_Var {
     public void method() {
         var list = new ArrayList<String>();
         var map = new HashMap<String, Integer>();

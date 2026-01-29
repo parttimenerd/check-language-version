@@ -2,6 +2,6 @@
 // Expected Version: 5
 // Required Features: ANNOTATIONS
 
-public class Tiny_AnnoParam_Java5 {
+class Tiny_AnnoParam_Java5 {
     void test(@Deprecated String s) {}
 }

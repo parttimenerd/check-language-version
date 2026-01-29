@@ -3,7 +3,7 @@
 // Expected Version: 8
 // Required Features: GENERICS, METHOD_REFERENCES
 import java.util.function.*;
-public class Edge_AllMethodReferences_Java8 {
+class Edge_AllMethodReferences_Java8 {
     void test() {
         // Static method reference
         Function<String, Integer> f1 = Integer::parseInt;

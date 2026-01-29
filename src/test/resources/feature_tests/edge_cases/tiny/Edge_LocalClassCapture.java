@@ -2,7 +2,7 @@
 // Test: Testing local classes that capture local variables and method parameters
 // Expected Version: 1
 // Required Features: INNER_CLASSES
-public class Edge_LocalClassCapture {
+class Edge_LocalClassCapture {
     void test(final int param) {
         final int local = 10;
 

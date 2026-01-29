@@ -4,7 +4,7 @@
 import java.io.*;
 import java.sql.*;
 
-public class ExceptionEdgeCases_Java7 {
+class ExceptionEdgeCases_Java7 {
 
     // Pre-Java 7: Separate catch blocks
     public void testSeparateCatch() {
@@ -38,7 +38,7 @@ public class ExceptionEdgeCases_Java7 {
     }
 
     // Java 7: Multi-catch with common supertype
-    public void testMultiCatchWithSupertype() {
+    public void testMultiCatchWithSupertype() throws SQLException {
         try {
             riskyOperation();
         } catch (FileNotFoundException | EOFException e) {
@@ -95,6 +95,6 @@ public class ExceptionEdgeCases_Java7 {
     }
 
     private void riskyOperation() throws IOException, SQLException {
-        // Simulated risky operation
+        throw new SQLException("");
     }
 }

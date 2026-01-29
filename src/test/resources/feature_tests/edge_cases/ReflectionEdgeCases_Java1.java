@@ -5,7 +5,7 @@ import java.lang.reflect.*;
 import java.lang.annotation.Annotation;
 import java.util.*;
 
-public class ReflectionEdgeCases_Java1 {
+class ReflectionEdgeCases_Java1 {
 
     // Java 1.1: Basic reflection - getting Class object
     public void testGetClass() {

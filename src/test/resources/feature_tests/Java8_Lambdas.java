@@ -4,7 +4,7 @@
 import java.util.function.*;
 import java.util.*;
 
-public class Java8_Lambdas {
+class Java8_Lambdas {
     public void testLambdas() {
         Runnable r = () -> System.out.println("Hello");
 

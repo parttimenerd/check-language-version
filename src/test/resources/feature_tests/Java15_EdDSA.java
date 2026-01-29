@@ -6,7 +6,7 @@ import java.security.spec.*;
 import java.security.interfaces.EdECPublicKey;
 import java.security.interfaces.EdECPrivateKey;
 
-public class Java15_EdDSA {
+class Java15_EdDSA {
     public void testEdDSA() throws Exception {
         // Generate EdDSA key pair (Ed25519)
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("Ed25519");

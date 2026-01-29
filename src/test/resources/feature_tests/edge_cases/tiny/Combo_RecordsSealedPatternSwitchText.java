@@ -2,7 +2,7 @@
 // Test: Combination of records, sealed classes, pattern matching, switch expressions, and text blocks
 // Expected Version: 21
 // Required Features: INNER_CLASSES, RECORDS, RECORD_PATTERNS, SEALED_CLASSES, SWITCH_EXPRESSIONS, SWITCH_PATTERN_MATCHING, TEXT_BLOCKS
-public class Combo_RecordsSealedPatternSwitchText {
+class Combo_RecordsSealedPatternSwitchText {
     sealed interface Shape permits Circle, Square {}
     record Circle(double radius) implements Shape {}
     record Square(double side) implements Shape {}

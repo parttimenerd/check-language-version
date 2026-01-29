@@ -4,7 +4,7 @@
 
 import java.security.spec.*;
 
-public class Tiny_EdDSA_Java15 {
+class Tiny_EdDSA_Java15 {
     void test() {
         NamedParameterSpec spec = NamedParameterSpec.ED25519;
     }

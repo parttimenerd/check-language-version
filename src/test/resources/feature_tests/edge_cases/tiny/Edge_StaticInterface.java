@@ -2,7 +2,7 @@
 // Test: static keyword in interface method
 // Expected Version: 8
 // Required Features: STATIC_INTERFACE_METHODS, INNER_CLASSES
-public class Edge_StaticInterface {
+class Edge_StaticInterface {
     interface I { static int get() { return 1; } }
     int x = I.get();
 }

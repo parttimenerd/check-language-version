@@ -4,7 +4,7 @@
 import javax.sound.sampled.AudioFormat;
 import javax.swing.JSlider;
 
-public class Tiny_SoundSwing_Java3 {
+class Tiny_SoundSwing_Java3 {
     JSlider volume = new JSlider();
     AudioFormat fmt;
 }

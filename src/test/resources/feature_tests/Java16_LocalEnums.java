@@ -2,7 +2,7 @@
 // Expected Version: 16
 // Required Features: ENUMS, LOCAL_ENUMS, SWITCH_EXPRESSIONS
 
-public class Java16_LocalEnums {
+class Java16_LocalEnums {
 
     // Java 16 allows enums, interfaces, and records inside methods
     // This is part of JEP 395 (Records) which allows local declarations

@@ -2,7 +2,7 @@
 // Expected Version: 9
 // Required Features: PROCESS_API
 
-public class Tiny_Process_Java9 {
+class Tiny_Process_Java9 {
     void test() {
         ProcessHandle ph = ProcessHandle.current();
         long pid = ph.pid();

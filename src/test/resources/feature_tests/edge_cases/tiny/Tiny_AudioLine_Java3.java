@@ -4,7 +4,7 @@
 import javax.sound.sampled.Line;
 import javax.sound.sampled.Mixer;
 
-public class Tiny_AudioLine_Java3 {
+class Tiny_AudioLine_Java3 {
     Line line;
     Mixer mixer;
 }

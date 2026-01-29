@@ -6,7 +6,7 @@ import java.util.SequencedSet;
 import java.util.SequencedMap;
 import java.util.*;
 
-public class Java21_SequencedCollections {
+class Java21_SequencedCollections {
     public void method() {
         // SequencedCollection methods
         LinkedList<String> list = new LinkedList<>();

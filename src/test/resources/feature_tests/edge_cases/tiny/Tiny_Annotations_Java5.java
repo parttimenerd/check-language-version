@@ -2,7 +2,7 @@
 // Test: Annotations (Java 5)
 // Expected Version: 5
 // Required Features: ANNOTATIONS
-public class Tiny_Annotations_Java5 {
+class Tiny_Annotations_Java5 {
     @Deprecated
     public void oldMethod() {}
 

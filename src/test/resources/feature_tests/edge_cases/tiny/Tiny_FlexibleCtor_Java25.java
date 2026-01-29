@@ -2,7 +2,7 @@
 // Expected Version: 25
 // Required Features: FLEXIBLE_CONSTRUCTOR_BODIES
 
-public class Tiny_FlexibleCtor_Java25 {
+class Tiny_FlexibleCtor_Java25 {
     int x;
     Tiny_FlexibleCtor_Java25(int x) {
         if (x < 0) x = 0;

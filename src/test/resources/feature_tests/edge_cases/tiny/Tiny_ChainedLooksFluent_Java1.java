@@ -2,7 +2,7 @@
 // Expected Version: 1
 // Required Features: INNER_CLASSES
 
-public class Tiny_ChainedLooksFluent_Java1 {
+class Tiny_ChainedLooksFluent_Java1 {
     class Builder {
         Builder a() { return this; }
         Builder b() { return this; }

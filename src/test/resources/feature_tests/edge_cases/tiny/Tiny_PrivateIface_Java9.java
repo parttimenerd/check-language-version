@@ -7,4 +7,4 @@ interface I {
     default void m() { h(); }
 }
 
-public class Tiny_PrivateIface_Java9 implements I {}
+class Tiny_PrivateIface_Java9 implements I {}

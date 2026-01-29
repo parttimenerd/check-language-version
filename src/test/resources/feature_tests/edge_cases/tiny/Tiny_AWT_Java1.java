@@ -3,6 +3,6 @@
 // Expected Version: 0
 // Required Features: AWT
 import java.awt.Frame;
-public class Tiny_AWT_Java1 {
+class Tiny_AWT_Java1 {
     Frame f = new Frame();
 }

@@ -4,7 +4,7 @@
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
-public class Java7_ForkJoin {
+class Java7_ForkJoin {
     public void testForkJoin() {
         ForkJoinPool pool = ForkJoinPool.commonPool();
 

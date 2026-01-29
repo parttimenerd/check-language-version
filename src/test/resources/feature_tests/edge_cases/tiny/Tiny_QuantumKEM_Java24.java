@@ -4,7 +4,7 @@
 
 import javax.crypto.kem.*;
 
-public class Tiny_QuantumKEM_Java24 {
+class Tiny_QuantumKEM_Java24 {
     void test() {
         // ML-KEM classes are in javax.crypto.kem package (Java 24)
     }

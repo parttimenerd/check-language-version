@@ -3,7 +3,7 @@
 // Expected Version: 5
 // Required Features: FOR_EACH, ENUMS, STATIC_IMPORT
 import static java.lang.System.out;
-public class Combo_ForEachEnumStatic_Java5 {
+class Combo_ForEachEnumStatic_Java5 {
     enum Color { RED, GREEN, BLUE }
     void test() {
         for (Color c : Color.values()) {

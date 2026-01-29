@@ -1,7 +1,7 @@
 // Java 21 feature: Switch case null, default
 // Expected Version: 21
 // Required Features: SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT
-public class Java21_SwitchNullDefault {
+class Java21_SwitchNullDefault {
     public String process(String input) {
         return switch (input) {
             case "A" -> "Option A";

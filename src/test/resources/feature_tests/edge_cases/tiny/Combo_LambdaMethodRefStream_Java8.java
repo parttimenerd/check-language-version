@@ -5,7 +5,7 @@
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
-public class Combo_LambdaMethodRefStream_Java8 {
+class Combo_LambdaMethodRefStream_Java8 {
     void test() {
         List<String> list = Arrays.asList("a", "b", "c");
         // Explicit Stream type for STREAM_API detection

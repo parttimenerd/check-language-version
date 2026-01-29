@@ -3,7 +3,7 @@
 // Required Features: ALPHA3_ARRAY_SYNTAX, AUTOBOXING, COLLECTIONS_FRAMEWORK, FOR_EACH, GENERICS, VARARGS
 import java.util.*;
 
-public class ForEachEdgeCases_Java5 {
+class ForEachEdgeCases_Java5 {
 
     // Java 5: Basic for-each with array
     public void testForEachArray() {

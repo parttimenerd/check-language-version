@@ -4,7 +4,7 @@
 
 import java.lang.foreign.*;
 
-public class Tiny_FFM_Java22 {
+class Tiny_FFM_Java22 {
     void test() {
         Arena arena = Arena.ofConfined();
         MemorySegment seg = arena.allocate(100);

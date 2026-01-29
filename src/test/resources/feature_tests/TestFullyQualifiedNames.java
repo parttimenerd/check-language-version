@@ -3,7 +3,7 @@
 // Required Features: AUTOBOXING, AWT, BASE64_API, COLLECTIONS_FRAMEWORK, CONCURRENT_API, DATE_TIME_API, DIAMOND_OPERATOR, GENERICS, HEX_FORMAT, HTTP_CLIENT, LAMBDAS, NIO, NIO2, OPTIONAL, REGEX, STREAM_API, SWING, VIRTUAL_THREADS
 // This file uses fully qualified class names without imports
 
-public class TestFullyQualifiedNames {
+class TestFullyQualifiedNames {
 
     public void testJava8Features() {
         // Stream API - fully qualified

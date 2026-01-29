@@ -3,7 +3,7 @@
 // Expected Version: 5
 // Required Features: ANNOTATIONS, AUTOBOXING, COLLECTIONS_FRAMEWORK, ENUMS, FOR_EACH, GENERICS, VARARGS
 import java.util.*;
-public class Combo_Java5AllFeatures {
+class Combo_Java5AllFeatures {
     enum Priority { LOW, MEDIUM, HIGH }
 
     @SuppressWarnings("unchecked")

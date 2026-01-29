@@ -1,7 +1,7 @@
 // Edge case: Pattern matching variations
 // Expected Version: 21
 // Required Features: PATTERN_MATCHING_INSTANCEOF, RECORDS, RECORD_PATTERNS, SWITCH_EXPRESSIONS, SWITCH_NULL_DEFAULT, SWITCH_PATTERN_MATCHING
-public class PatternMatchingEdgeCases_Java21 {
+class PatternMatchingEdgeCases_Java21 {
 
     record Point(int x, int y) {}
     record Line(Point start, Point end) {}

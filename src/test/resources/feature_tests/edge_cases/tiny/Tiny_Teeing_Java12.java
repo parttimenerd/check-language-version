@@ -5,7 +5,7 @@
 import java.util.stream.*;
 import java.util.*;
 
-public class Tiny_Teeing_Java12 {
+class Tiny_Teeing_Java12 {
     void test() {
         var r = List.of(1, 2, 3).stream().collect(
             Collectors.teeing(

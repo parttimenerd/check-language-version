@@ -4,7 +4,7 @@
 // Required Features: AUTOBOXING, COLLECTORS_TEEING, LAMBDAS, STREAM_API, STREAM_GATHERERS
 import java.util.stream.*;
 import java.util.stream.Gatherers;
-public class Combo_GatherersTeeing_Java24 {
+class Combo_GatherersTeeing_Java24 {
     void test() {
         Stream.of(1, 2, 3)
             .collect(Collectors.teeing(

@@ -11,4 +11,4 @@ import java.lang.annotation.Repeatable;
 @interface As { Edge_RepeatAnnotation[] value(); }
 @Edge_RepeatAnnotation(1)
 @Edge_RepeatAnnotation(2)
-public class Tiny_RepeatAnno_Java8 {}
+class Tiny_RepeatAnno_Java8 {}

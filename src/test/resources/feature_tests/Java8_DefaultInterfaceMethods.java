@@ -1,7 +1,7 @@
 // Java 8 feature: Default methods in interfaces
 // Expected Version: 8
 // Required Features: ANNOTATIONS, DEFAULT_INTERFACE_METHODS, INNER_CLASSES
-public class Java8_DefaultInterfaceMethods {
+class Java8_DefaultInterfaceMethods {
     interface MyInterface {
         void abstractMethod();
 

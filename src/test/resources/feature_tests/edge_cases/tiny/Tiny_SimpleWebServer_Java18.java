@@ -5,7 +5,7 @@
 import com.sun.net.httpserver.SimpleFileServer;
 import java.net.InetSocketAddress;
 import java.nio.file.Path;
-public class Tiny_SimpleWebServer_Java18 {
+class Tiny_SimpleWebServer_Java18 {
     void test() {
         // SimpleFileServer is the Java 18 Simple Web Server (JEP 408)
         var server = SimpleFileServer.createFileServer(

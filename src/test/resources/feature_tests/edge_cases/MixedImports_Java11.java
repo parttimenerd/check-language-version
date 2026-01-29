@@ -6,7 +6,7 @@ import java.net.http.HttpRequest;
 import java.util.stream.*;
 import java.util.*;
 
-public class MixedImports_Java11 {
+class MixedImports_Java11 {
 
     public void testMixedImports() throws Exception {
         // Explicit import

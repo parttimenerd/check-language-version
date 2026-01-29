@@ -293,6 +293,8 @@ public class FeatureDetectionTest {
         } catch (FileNotFoundException e) {
             fail("Failed to parse file: " + spec.file.getName() + " - " + e.getMessage());
             return;
+        } catch (FeatureChecker.ParseFailureException e) {
+            throw new RuntimeException(e);
         }
 
         assertNotNull(result, "Parse should succeed for " + spec.file.getName());

@@ -5,7 +5,7 @@
 /**
  * Test file for Java 7 Strings in switch feature.
  */
-public class Java7_StringsInSwitch {
+class Java7_StringsInSwitch {
     public void testStringsInSwitch(String day) {
         switch (day) {
             case "Monday":

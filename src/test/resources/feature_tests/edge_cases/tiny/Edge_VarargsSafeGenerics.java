@@ -4,7 +4,7 @@
 // Required Features: ANNOTATIONS, AUTOBOXING, COLLECTIONS_FRAMEWORK, GENERICS, VARARGS
 import java.util.*;
 
-public class Edge_VarargsSafeGenerics {
+class Edge_VarargsSafeGenerics {
     @SafeVarargs
     final <T> List<T> asList(T... elements) {
         return Arrays.asList(elements);

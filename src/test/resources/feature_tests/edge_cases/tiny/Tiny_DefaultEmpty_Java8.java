@@ -4,4 +4,4 @@
 
 interface I { default void m() {} }
 
-public class Tiny_DefaultEmpty_Java8 implements I {}
+class Tiny_DefaultEmpty_Java8 implements I {}

@@ -4,7 +4,7 @@
 
 import com.sun.net.httpserver.SimpleFileServer;
 
-public class Tiny_WebServer_Java18 {
+class Tiny_WebServer_Java18 {
     void test() throws Exception {
         var server = SimpleFileServer.createFileServer(
             new java.net.InetSocketAddress(8080),

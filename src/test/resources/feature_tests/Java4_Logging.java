@@ -8,7 +8,7 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.FileHandler;
 import java.io.IOException;
 
-public class Java4_Logging {
+class Java4_Logging {
     // Get a logger for this class
     private static final Logger LOGGER = Logger.getLogger(Java4_Logging.class.getName());
 

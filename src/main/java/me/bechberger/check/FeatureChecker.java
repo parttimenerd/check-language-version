@@ -109,6 +109,8 @@ public class FeatureChecker {
         JAX_WS(6, true, "javax.xml.ws"),
         STAX(6, true, "javax.xml.stream"),
         SWING_WORKER(6, true, "javax.swing.SwingWorker"),
+        HTTP_SERVER(6, true, "com.sun.net.httpserver.HttpServer"),
+        CONSOLE(6, true, "java.io.Console"),
 
         // Java 7 features (Java7Validator: remove genericsWithoutDiamondOperator, noBinaryIntegerLiterals,
         //                  noUnderscoresInIntegerLiterals, replace tryWithoutResources, replace noMultiCatch)
@@ -182,9 +184,6 @@ public class FeatureChecker {
         HEX_FORMAT(17, true, "java.util.HexFormat"),
         DESERIALIZATION_FILTERS(9, true, "Deserialization filters"),
 
-        // Java 6 features
-        HTTP_SERVER(6, true, "com.sun.net.httpserver.HttpServer"),
-
         // Java 18 features
         SIMPLE_WEB_SERVER(18, true, "com.sun.net.httpserver.SimpleFileServer"),
         INET_ADDRESS_RESOLVER(18, true, "java.net.spi.InetAddressResolverProvider"),
@@ -205,7 +204,9 @@ public class FeatureChecker {
         FOREIGN_FUNCTION_API(22, true, "Foreign function API"),
 
         // Java 23 features - Markdown Documentation Comments
+        // Java 23 features - Markdown Documentation Comments
         MARKDOWN_DOC_COMMENTS(23, false, "Markdown doc comments"),
+        IO_CLASS(25, true, "java.io.IO (but preview in Java 23)"),
 
         // Java 24 features - Class-File API, Stream Gatherers
         STREAM_GATHERERS(24, true, "Stream gatherers"),
@@ -220,7 +221,12 @@ public class FeatureChecker {
         KEY_DERIVATION_API(25, true, "Key derivation"),
         MODULE_IMPORTS(25, false, "Module imports"),
         FLEXIBLE_CONSTRUCTOR_BODIES(25, false, "Flexible constructor bodies"),
-        COMPACT_SOURCE_FILES(25, false, "Compact source files");
+        /**
+         * Unqualified use of `IO` without an explicit `import java.io.IO;`.
+         * In Java 25, compact source files include a default import for java.io.IO.
+         */
+        IMPLICITLY_IMPORTED_IO_CLASS(25, false, "Implicitly imported java.io.IO"),
+        COMPACT_SOURCE_FILES(25, false, "Compact source files (incl. instance main methods and default java.io.IO import)");
 
         private final int javaVersion;
         private final boolean libraryFeature;
@@ -440,6 +446,7 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("javax.xml.ws", JavaFeature.JAX_WS),
         TypeFeatureRule.pkg("javax.xml.stream", JavaFeature.STAX),
         TypeFeatureRule.types("javax.swing", JavaFeature.SWING_WORKER, "SwingWorker"),
+        TypeFeatureRule.types("java.io", JavaFeature.CONSOLE, "Console"),
 
         // === Java 7 ===
         TypeFeatureRule.types("java.util.concurrent", JavaFeature.FORK_JOIN,
@@ -509,6 +516,9 @@ public class FeatureChecker {
         // === Java 22 ===
         TypeFeatureRule.pkg("java.lang.foreign", JavaFeature.FOREIGN_FUNCTION_API),
 
+        // === Java 23 ===
+        TypeFeatureRule.types("java.io", JavaFeature.IO_CLASS, "IO"),
+
         // === Java 24 ===
         TypeFeatureRule.types("java.util.stream", JavaFeature.STREAM_GATHERERS, "Gatherer", "Gatherers"),
         TypeFeatureRule.pkg("java.lang.classfile", JavaFeature.CLASS_FILE_API),
@@ -519,13 +529,13 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("javax.crypto.kdf", JavaFeature.KEY_DERIVATION_API),
         TypeFeatureRule.types("javax.crypto", JavaFeature.KEY_DERIVATION_API, "KDF")
     );
-
     /**
      * Index of rules by package for efficient lookup.
      */
     private static final Map<String, List<TypeFeatureRule>> RULES_BY_PACKAGE;
 
     static {
+
         Map<String, List<TypeFeatureRule>> index = new HashMap<>();
         for (TypeFeatureRule rule : TYPE_FEATURE_RULES) {
             index.computeIfAbsent(rule.packageName, k -> new ArrayList<>()).add(rule);
@@ -618,6 +628,7 @@ public class FeatureChecker {
 
     private static final JavaParser parser = new JavaParser(
             new ParserConfiguration().setLanguageLevel(ParserConfiguration.LanguageLevel.BLEEDING_EDGE)
+                    .setAttributeComments(false)
     );
     static {
         fixJavaValidator(parser);
@@ -1002,13 +1013,25 @@ public class FeatureChecker {
         return new PreprocessResult(withoutEnums, false, true);
     }
 
+    static class ParseFailureException extends Exception {
+        public ParseFailureException(String message) {
+            super(message);
+        }
+
+        public ParseFailureException(String message, List<Problem> problems) {
+            super(message + "\nProblems: " + problems.stream()
+                    .map(Problem::toString)
+                    .collect(java.util.stream.Collectors.joining("\n")));
+        }
+    }
+
     /**
      * Parse a file and detect all Java language features used, considering only features
      *
      * @param file The Java source file
      * @return FeatureCheckResult containing all detected features, or null if parsing failed
      */
-    public static FeatureCheckResult check(File file) throws FileNotFoundException {
+    public static FeatureCheckResult check(File file) throws FileNotFoundException, ParseFailureException {
         // Read file content for preprocessing
         String sourceCode;
         try {
@@ -1025,7 +1048,7 @@ public class FeatureChecker {
             // Parse the preprocessed source code
             parseResult = parser.parse(new java.io.StringReader(preprocessResult.processedSource()));
         } catch (StackOverflowError e) {
-            return null;
+            throw new ParseFailureException("Parsing failed due to stack overflow for file: " + file.getAbsolutePath());
         }
 
         // If parsing failed, try to fix local enums and retry
@@ -1050,7 +1073,7 @@ public class FeatureChecker {
         }
 
         if (!parseResult.isSuccessful() || parseResult.getResult().isEmpty()) {
-            return null;
+            throw new ParseFailureException("Parsing failed for file: " + file.getAbsolutePath(), parseResult.getProblems());
         }
 
         CompilationUnit cu = parseResult.getResult().get();
@@ -1164,12 +1187,69 @@ public class FeatureChecker {
         private final Set<String> explicitImports = new java.util.HashSet<>();
         private final Set<String> fullyQualifiedTypesUsed = new java.util.HashSet<>();
 
+        // Track IO usage: in Java 25 it's default-imported (part of the same JEP as compact source files).
+        // Shadowed declarations must not count.
+        private boolean hasExplicitIoImport = false;
+        private boolean refersToUnqualifiedIO = false;
+        private boolean hasAnyIoDeclaration = false;
+
+        /**
+         * Tracks whether a type named "IO" is declared in the current lexical scope chain.
+         * We use this to avoid treating unqualified usages of "IO" as referring to java.io.IO
+         * when a user-declared IO type shadows it.
+         */
+        private final Deque<Integer> ioTypeDeclarationsPerScope = new ArrayDeque<>();
+
         FeatureVisitor(Consumer<JavaFeature> featureConsumer) {
             this.featureConsumer = featureConsumer;
         }
 
         private void addFeature(JavaFeature feature) {
             featureConsumer.accept(feature);
+        }
+
+        private void pushScope() {
+            ioTypeDeclarationsPerScope.push(0);
+        }
+
+        private void popScope() {
+            if (!ioTypeDeclarationsPerScope.isEmpty()) {
+                ioTypeDeclarationsPerScope.pop();
+            }
+        }
+
+        private void declareTypeIfIo(String simpleName) {
+            if (simpleName == null) return;
+            if (simpleName.equals("IO")) {
+                // Ensure there is always at least one scope (CompilationUnit)
+                if (ioTypeDeclarationsPerScope.isEmpty()) {
+                    pushScope();
+                }
+                ioTypeDeclarationsPerScope.push(ioTypeDeclarationsPerScope.pop() + 1);
+            }
+        }
+
+        private boolean isIoTypeShadowedInScopeChain() {
+            for (Integer c : ioTypeDeclarationsPerScope) {
+                if (c != null && c > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /**
+         * Record an unqualified usage of the identifier "IO" as a type name.
+         * Only counts as java.io.IO if there is no IO type declared in the current or parent scope.
+         */
+        private void recordUnqualifiedIoTypeUsageIfNotShadowed() {
+            if (!isIoTypeShadowedInScopeChain()) {
+                refersToUnqualifiedIO = true;
+                addFeature(JavaFeature.IO_CLASS);
+                if (!hasExplicitIoImport) {
+                    addFeature(JavaFeature.IMPLICITLY_IMPORTED_IO_CLASS);
+                }
+            }
         }
 
         /**
@@ -1440,26 +1520,67 @@ public class FeatureChecker {
             return null;
         }
 
+        private String extractFullyQualifiedNameFromName(com.github.javaparser.ast.expr.Name name) {
+            if (name == null) return null;
+            if (name.getQualifier().isPresent()) {
+                String q = extractFullyQualifiedNameFromName(name.getQualifier().get());
+                return q == null ? null : q + "." + name.getIdentifier();
+            }
+            return name.getIdentifier();
+        }
+
         /**
          * Check if a name looks like a fully qualified class name (starts with lowercase package).
          */
         private boolean looksLikeFullyQualifiedName(String name) {
             if (name == null || name.isEmpty()) return false;
-            // FQN typically starts with lowercase (package) and contains dots
-            // e.g., "java.util.List", "javax.swing.JFrame"
             return name.contains(".") && Character.isLowerCase(name.charAt(0));
         }
 
-        /**
-         * Visit method calls to detect:
-         * - Fully qualified static method calls (e.g., java.util.List.of())
-         * - Generics
-         * - Virtual Threads API
-         * - String API methods (Java 11-12)
-         * - Stream.toList() (Java 16)
-         * - Collection factory methods (Java 9)
-         * - Files API methods (Java 11-12)
-         */
+        @Override
+        public void visit(NameExpr n, Void arg) {
+            String name = n.getNameAsString();
+            if (name.equals("IO")) {
+                recordUnqualifiedIoTypeUsageIfNotShadowed();
+            }
+
+            // JavaParser stores qualified names like java.io.IO as a Name with qualifiers.
+            // NameExpr only gives us the last segment as SimpleName, so we reconstruct a Name
+            // from a FieldAccessExpr-like chain when possible by parsing the expression string.
+            String fqn = n.toString();
+            if (looksLikeFullyQualifiedName(fqn)) {
+                fullyQualifiedTypesUsed.add(fqn);
+                detectFeaturesFromTypeName(fqn);
+            }
+            super.visit(n, arg);
+        }
+
+        @Override
+        public void visit(ImportDeclaration n, Void arg) {
+            if (n.isStatic()) {
+                addFeature(JavaFeature.STATIC_IMPORT);
+            }
+            // Java 25: Module imports
+            if (n.isModule()) {
+                addFeature(JavaFeature.MODULE_IMPORTS);
+            }
+
+            String importName = n.getNameAsString();
+            boolean isWildcard = n.isAsterisk();
+
+            if (isWildcard) {
+                wildcardImports.add(importName);
+            } else {
+                explicitImports.add(importName);
+                if (importName.equals("java.io.IO")) {
+                    hasExplicitIoImport = true;
+                }
+            }
+
+            detectFeaturesFromImport(importName, isWildcard);
+            super.visit(n, arg);
+        }
+
         @Override
         public void visit(MethodCallExpr n, Void arg) {
             // Check for fully qualified name usage
@@ -1468,6 +1589,12 @@ public class FeatureChecker {
                 if (looksLikeFullyQualifiedName(fqn)) {
                     fullyQualifiedTypesUsed.add(fqn);
                     detectFeaturesFromTypeName(fqn);
+                }
+
+                // Unqualified IO.<method>(...)
+                if (scope.isNameExpr() && scope.asNameExpr().getNameAsString().equals("IO")) {
+                    // This is a type-name-like usage.
+                    recordUnqualifiedIoTypeUsageIfNotShadowed();
                 }
             });
 
@@ -1582,35 +1709,45 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noInnerClasses
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
-            if (!n.isTopLevelType()) {
-                addFeature(JavaFeature.INNER_CLASSES);
+            if (n.getNameAsString().equals("IO")) {
+                hasAnyIoDeclaration = true;
+                declareTypeIfIo("IO");
             }
-            // Check for generics (type parameters on class/interface declaration)
-            if (n.getTypeParameters().isNonEmpty()) {
-                addFeature(JavaFeature.GENERICS);
-            }
-            // Check for local interfaces (Java 16)
-            n.getParentNode().ifPresent(p -> {
-                if (p instanceof LocalClassDeclarationStmt && n.isInterface()) {
-                    addFeature(JavaFeature.LOCAL_INTERFACES);
+
+            pushScope();
+            try {
+                if (!n.isTopLevelType()) {
+                    addFeature(JavaFeature.INNER_CLASSES);
                 }
-            });
-            // Check for sealed classes (Java 17)
-            if (n.hasModifier(Modifier.Keyword.SEALED) || n.hasModifier(Modifier.Keyword.NON_SEALED)) {
-                addFeature(JavaFeature.SEALED_CLASSES);
+                // Check for generics (type parameters on class/interface declaration)
+                if (n.getTypeParameters().isNonEmpty()) {
+                    addFeature(JavaFeature.GENERICS);
+                }
+                // Check for local interfaces (Java 16)
+                n.getParentNode().ifPresent(p -> {
+                    if (p instanceof LocalClassDeclarationStmt && n.isInterface()) {
+                        addFeature(JavaFeature.LOCAL_INTERFACES);
+                    }
+                });
+                // Check for sealed classes (Java 17)
+                if (n.hasModifier(Modifier.Keyword.SEALED) || n.hasModifier(Modifier.Keyword.NON_SEALED)) {
+                    addFeature(JavaFeature.SEALED_CLASSES);
+                }
+                if (n.getPermittedTypes().isNonEmpty()) {
+                    addFeature(JavaFeature.SEALED_CLASSES);
+                }
+                // Check for strictfp (Java 1.2)
+                if (n.hasModifier(Modifier.Keyword.STRICTFP)) {
+                    addFeature(JavaFeature.STRICTFP);
+                }
+                // Check for compact source files (Java 25)
+                if (n.isCompact()) {
+                    addFeature(JavaFeature.COMPACT_SOURCE_FILES);
+                }
+                super.visit(n, arg);
+            } finally {
+                popScope();
             }
-            if (n.getPermittedTypes().isNonEmpty()) {
-                addFeature(JavaFeature.SEALED_CLASSES);
-            }
-            // Check for strictfp (Java 1.2)
-            if (n.hasModifier(Modifier.Keyword.STRICTFP)) {
-                addFeature(JavaFeature.STRICTFP);
-            }
-            // Check for compact source files (Java 25)
-            if (n.isCompact()) {
-                addFeature(JavaFeature.COMPACT_SOURCE_FILES);
-            }
-            super.visit(n, arg);
         }
 
         // === Java 1.1: Reflection ===
@@ -1676,18 +1813,27 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noEnums
         @Override
         public void visit(EnumDeclaration n, Void arg) {
-            addFeature(JavaFeature.ENUMS);
-            // Check for strictfp (Java 1.2)
-            if (n.hasModifier(Modifier.Keyword.STRICTFP)) {
-                addFeature(JavaFeature.STRICTFP);
+            if (n.getNameAsString().equals("IO")) {
+                hasAnyIoDeclaration = true;
+                declareTypeIfIo("IO");
             }
-            // Check for local enums (Java 16)
-            n.getParentNode().ifPresent(p -> {
-                if (p instanceof LocalClassDeclarationStmt) {
-                    addFeature(JavaFeature.LOCAL_ENUMS);
+            pushScope();
+            try {
+                addFeature(JavaFeature.ENUMS);
+                // Check for strictfp (Java 1.2)
+                if (n.hasModifier(Modifier.Keyword.STRICTFP)) {
+                    addFeature(JavaFeature.STRICTFP);
                 }
-            });
-            super.visit(n, arg);
+                // Check for local enums (Java 16)
+                n.getParentNode().ifPresent(p -> {
+                    if (p instanceof LocalClassDeclarationStmt) {
+                        addFeature(JavaFeature.LOCAL_ENUMS);
+                    }
+                });
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
         }
 
         // === Java 5: Autoboxing ===
@@ -1884,8 +2030,13 @@ public class FeatureChecker {
 
         @Override
         public void visit(AnnotationDeclaration n, Void arg) {
-            addFeature(JavaFeature.ANNOTATIONS);
-            super.visit(n, arg);
+            declareTypeIfIo(n.getNameAsString());
+            pushScope();
+            try {
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
         }
 
         // === Java 5: Varargs ===
@@ -1908,35 +2059,6 @@ public class FeatureChecker {
             addFeature(JavaFeature.FOR_EACH);
             super.visit(n, arg);
         }
-
-        // === Java 5: Static imports ===
-        // Based on Java1_0Validator.noStaticImports
-        @Override
-        public void visit(ImportDeclaration n, Void arg) {
-            if (n.isStatic()) {
-                addFeature(JavaFeature.STATIC_IMPORT);
-            }
-            // Java 25: Module imports
-            if (n.isModule()) {
-                addFeature(JavaFeature.MODULE_IMPORTS);
-            }
-
-            String importName = n.getNameAsString();
-            boolean isWildcard = n.isAsterisk();
-
-            // Track imports for later type matching
-            if (isWildcard) {
-                wildcardImports.add(importName);
-            } else {
-                explicitImports.add(importName);
-            }
-
-            // Detect features from imports using helper methods
-            detectFeaturesFromImport(importName, isWildcard);
-
-            super.visit(n, arg);
-        }
-
 
         // === Java 1.0-alpha2/-3: try/finally forms ===
         @Override
@@ -2062,6 +2184,10 @@ public class FeatureChecker {
         @Override
         public void visit(MethodReferenceExpr n, Void arg) {
             addFeature(JavaFeature.METHOD_REFERENCES);
+            // IO::println
+            if (n.getScope().isTypeExpr() && n.getScope().asTypeExpr().getType().asString().equals("IO")) {
+                recordUnqualifiedIoTypeUsageIfNotShadowed();
+            }
             super.visit(n, arg);
         }
 
@@ -2152,8 +2278,17 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noRecordDeclaration
         @Override
         public void visit(RecordDeclaration n, Void arg) {
-            addFeature(JavaFeature.RECORDS);
-            super.visit(n, arg);
+            if (n.getNameAsString().equals("IO")) {
+                hasAnyIoDeclaration = true;
+                declareTypeIfIo("IO");
+            }
+            pushScope();
+            try {
+                addFeature(JavaFeature.RECORDS);
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
         }
 
         // === Java 16: Pattern matching for instanceof ===
@@ -2226,12 +2361,44 @@ public class FeatureChecker {
             });
             super.visit(n, arg);
         }
+
+        @Override
+        public void visit(CompilationUnit n, Void arg) {
+            pushScope();
+            try {
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
+        }
+
+        @Override
+        public void visit(BlockStmt n, Void arg) {
+            pushScope();
+            try {
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
+        }
+
+        @Override
+        public void visit(LocalClassDeclarationStmt n, Void arg) {
+            // Local classes can shadow java.io.IO when named IO.
+            declareTypeIfIo(n.getClassDeclaration().getNameAsString());
+            pushScope();
+            try {
+                super.visit(n, arg);
+            } finally {
+                popScope();
+            }
+        }
     }
 
     /**
      * Main method for testing.
      */
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) throws FileNotFoundException, ParseFailureException {
         if (args.length == 0) {
             // Test all feature test files
             File featureTestDir = new File("feature_tests");
@@ -2282,7 +2449,7 @@ public class FeatureChecker {
         }
     }
 
-    private static void testFeatureFile(File file) throws FileNotFoundException {
+    private static void testFeatureFile(File file) throws FileNotFoundException, ParseFailureException {
         // Extract expected Java version from filename
         // Supports: "Java14_..." -> 14, or "...EdgeCases_Java8.java" -> 8
         String name = file.getName();
@@ -2349,7 +2516,7 @@ public class FeatureChecker {
         System.out.println(sb);
     }
 
-    private static void testWithFile(File file) throws FileNotFoundException {
+    private static void testWithFile(File file) throws FileNotFoundException, ParseFailureException {
         System.out.println("\n=== Checking: " + file.getName() + " ===");
         if (!file.exists()) {
             System.out.println("File not found: " + file);

@@ -8,7 +8,7 @@ import java.lang.annotation.*;
     String value() default "";
 }
 
-public class Java5_Annotations {
+class Java5_Annotations {
     @Override
     public String toString() {
         return "test";

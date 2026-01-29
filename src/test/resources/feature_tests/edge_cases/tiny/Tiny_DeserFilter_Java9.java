@@ -4,7 +4,7 @@
 
 import java.io.*;
 
-public class Tiny_DeserFilter_Java9 {
+class Tiny_DeserFilter_Java9 {
     void test() {
         ObjectInputFilter f = ObjectInputFilter.Config.getSerialFilter();
     }
