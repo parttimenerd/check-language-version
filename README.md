@@ -31,6 +31,9 @@ It's all just an approximation.
 The matching of library features is limited, as we can only
 do type based checking, as we're not doing any semantic analysis.
 
+An example is the detection of Loom features like virtual threads,
+as they are used via methods and not via extra classes.
+
 Building
 --------
 

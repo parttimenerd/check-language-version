@@ -36,6 +36,9 @@
             border-radius: 8px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.1);
             padding: 24px;
+            box-sizing: border-box;
+            /* Avoid tiny reflows causing visible width jitter on narrow viewports */
+            overflow-x: hidden;
         }
         h1 {
             text-align: center;
@@ -57,6 +60,31 @@
             margin-bottom: 24px;
             font-size: 14px;
         }
+
+        /* Responsive: on narrow screens, make code + buttons slightly smaller */
+        @media (max-width: 520px) {
+            body {
+                padding: 12px;
+            }
+            #app {
+                padding: 16px;
+            }
+            .code-container {
+                font-size: 12.5px;
+            }
+            button {
+                font-size: 14px;
+                padding: 10px;
+            }
+            .answers-left button {
+                width: 120px;
+            }
+            /* Keep the code block from feeling too tall on small screens */
+            pre[class*="language-"] {
+                height: calc(10 * 1.5em + 2em);
+            }
+        }
+
         /* Override prism margin */
         pre[class*="language-"] {
             margin: 0 !important;
@@ -72,26 +100,27 @@
         }
 
         /* All version buttons should have consistent width */
-        .options button {
+        .answers-left button {
             width: 140px;
         }
 
-        /* Answered layout: left-aligned buttons + a filling Next button on the right */
+        /*
+         * Keep a stable layout even after answering:
+         * - don't switch the container from grid -> flex (that can change intrinsic sizing)
+         * - reserve a right-hand column for the Next button
+         */
         .options.answered {
-            display: flex;
+            grid-template-columns: 1fr minmax(180px, 1fr);
             align-items: stretch;
-            gap: 12px;
         }
         .options.answered .answers-left {
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
         }
-        /* keep answer buttons fixed width; let Next expand */
         .options.answered .next-inline {
-            flex: 1;
+            width: 100%;
             min-width: 180px;
-            width: auto;
             background-color: #495057;
         }
         button {
@@ -104,9 +133,30 @@
             border-radius: 4px;
             transition: background 0.2s;
         }
-        button:hover {
-            background-color: #0056b3;
+
+        /*
+         * iOS Safari can keep :hover “stuck” after tapping a button.
+         * Only enable hover effects on devices that actually support hover.
+         */
+        @media (hover: hover) and (pointer: fine) {
+            button:hover {
+                background-color: #0056b3;
+            }
+            .next-btn:hover {
+                background-color: #343a40;
+            }
         }
+
+        /* Touch devices: use :active feedback instead of hover */
+        @media (hover: none) and (pointer: coarse) {
+            button:active {
+                background-color: #0056b3;
+            }
+            .next-btn:active {
+                background-color: #343a40;
+            }
+        }
+
         button:disabled {
             opacity: 0.7;
             cursor: not-allowed;
@@ -146,9 +196,8 @@
             margin-top: 20px;
             background-color: #495057;
         }
-        .next-btn:hover {
-            background-color: #343a40;
-        }
+        /* .next-btn:hover handled in media query above */
+
         .disclaimer {
             margin-top: 30px;
             padding: 10px;
@@ -532,13 +581,16 @@
                     self.correctCount = 0;
                     self.incorrectCount = 0;
 
+                    // Total answered so far (success + failures)
+                    self.totalCount = 0;
+
                     const updateUI = () => {
                         // Update scores in footer
                         if (self.correctEl) {
                             self.correctEl.textContent = self.correctCount;
                         }
-                        if (self.incorrectEl) {
-                            self.incorrectEl.textContent = self.incorrectCount;
+                        if (self.totalEl) {
+                            self.totalEl.textContent = self.totalCount;
                         }
 
                         // Alpha toggle link
@@ -669,6 +721,7 @@
                         if (self.answered) return;
                         self.answered = true;
                         self.selectedOption = option;
+                        self.totalCount++;
                         if (option === self.currentQuestion.correct) {
                             self.correctCount++;
                         } else {
@@ -725,7 +778,7 @@
                         <div class="options" :ref="self.optionsEl"></div>
                         <div :ref="self.feedbackEl"></div>
                         <div class="disclaimer">
-                             Score: <span title="Correctly vs incorrectly answered questions since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #dc3545;" :ref="self.incorrectEl">${self.incorrectCount}</span></span>
+                             Score: <span title="Correct answers / total answered since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #000;" :ref="self.totalEl">${self.totalCount}</span></span>
                              <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
                              <a style="padding-left: 1em" :ref="self.alphaToggleEl" href="#alpha=1">Enable Java Alpha</a>
                              <span style="padding-left: 1em">This is just a fun quiz and may contain errors.</span><br/>
