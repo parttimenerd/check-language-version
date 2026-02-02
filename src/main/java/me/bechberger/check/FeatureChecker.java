@@ -36,7 +36,6 @@ import static com.github.javaparser.FixValidators.fixJavaValidator;
  * JavaParser Validators</a>
  */
 public class FeatureChecker {
-
     /**
      * Enum representing Java language features and the version they were introduced.
      *
@@ -51,7 +50,6 @@ public class FeatureChecker {
 
         // Java 1.1 features (Java1_1Validator: remove noInnerClasses, noReflection)
         INNER_CLASSES(1, false, "Inner classes"),
-        REFLECTION(1, false, "Reflection"),
         JDBC(1, true, "java.sql"),
         RMI(1, true, "java.rmi"),
         JAVABEANS(1, true, "java.beans"),
@@ -1754,7 +1752,6 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noReflection
         @Override
         public void visit(ClassExpr n, Void arg) {
-            addFeature(JavaFeature.REFLECTION);
             super.visit(n, arg);
         }
 

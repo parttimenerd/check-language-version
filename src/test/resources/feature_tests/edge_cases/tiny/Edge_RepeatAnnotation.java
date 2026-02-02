@@ -1,7 +1,7 @@
 // Java 8 edge case: Repeatable annotations
 // Test: Same annotation used twice
 // Expected Version: 8
-// Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
+// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
 import java.lang.annotation.Repeatable;
 
 @Repeatable(As.class)

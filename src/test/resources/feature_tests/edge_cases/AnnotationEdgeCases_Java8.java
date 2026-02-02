@@ -1,6 +1,6 @@
 // Edge case: Annotation variations
 // Expected Version: 8
-// Required Features: TYPE_ANNOTATIONS, ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS
+// Required Features: TYPE_ANNOTATIONS, ANNOTATIONS, REPEATING_ANNOTATIONS
 import java.lang.annotation.*;
 import java.util.*;
 

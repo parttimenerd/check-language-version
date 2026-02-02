@@ -1,6 +1,6 @@
 // Tricky: Reflection with JDBC
 // Expected Version: 1
-// Required Features: REFLECTION, JDBC
+// Required Features: JDBC
 import java.sql.Driver;
 
 class Tiny_ReflectJDBC_Java1 {

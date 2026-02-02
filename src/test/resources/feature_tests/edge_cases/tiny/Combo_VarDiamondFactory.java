@@ -8,6 +8,6 @@ class Combo_VarDiamondFactory {
         // Diamond operator requires explicit type on left side
         List<String> list = new ArrayList<>();
         var immutable = List.of("a", "b", "c");
-        var x = "test"; // var usage
+        var x = "test";
     }
 }

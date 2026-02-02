@@ -1,7 +1,7 @@
 // Java 8 feature: Java8_RepeatingAnnotations
 // Test: Java8_RepeatingAnnotations
 // Expected Version: 8
-// Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS
+// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS
 import java.lang.annotation.*;
 
 /**

@@ -1,6 +1,6 @@
 // Test: Repeating annotations (Java 8)
 // Expected Version: 8
-// Required Features: ANNOTATIONS, REFLECTION, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
+// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
 import java.lang.annotation.*;
 class Tiny_RepeatingAnnotations_Java8 {
     @Repeatable(Schedules.class)
