@@ -1,6 +1,6 @@
 // Tiny: Reflection looks like method ref (Java 1)
 // Expected Version: 1
-// Required Features: REFLECTION
+// Required Features: REFLECTION, CLASS_PROPERTY
 
 import java.lang.reflect.*;
 

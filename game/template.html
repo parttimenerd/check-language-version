@@ -184,11 +184,119 @@
             margin-top: 10px;
             font-size: 0.9em;
         }
+
+        /* Feature accordion */
+        .feature-accordion {
+            margin-top: 6px;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+        .feature-accordion details {
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            margin: 6px 0;
+            padding: 0;
+        }
+        .feature-accordion summary {
+            list-style: none;
+            cursor: pointer;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center; /* stable vertical alignment for single-line header */
+            justify-content: space-between;
+            gap: 10px;
+            user-select: none;
+            line-height: 1.25;
+            white-space: nowrap; /* keep header to 1 line */
+        }
+        .feature-accordion summary::-webkit-details-marker {
+            display: none;
+        }
+        .feature-accordion summary::before {
+            /* Prevent some browsers from adding default marker space */
+            content: '';
+            display: none;
+        }
+        .feature-accordion .feature-title {
+            display: inline-flex;
+            align-items: baseline;
+            gap: 8px;
+            min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden; /* enable ellipsis */
+        }
+        .feature-accordion .feature-title .label {
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .feature-accordion .feature-title .meta {
+            opacity: 0.8;
+            font-size: 0.9em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .feature-accordion .chevron {
+            /* Reserve fixed space so title doesn't shift */
+            width: 1.2em;
+            height: 1.2em;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95em;
+            opacity: 0.75;
+            transition: none; /* no rotation; we swap glyphs instead */
+            flex: 0 0 auto;
+        }
+        .feature-accordion details[open] .chevron {
+            transform: none;
+        }
+        .feature-accordion details[open] summary .chevron::before {
+            content: "▲"; /* up arrow = open */
+        }
+        .feature-accordion details:not([open]) summary .chevron::before {
+            content: "▼"; /* down arrow = closed */
+        }
+        .feature-accordion .chevron {
+            /* hide any text content inside the chevron span */
+            color: inherit;
+        }
+        .feature-accordion .chevron {
+            font-family: inherit;
+        }
+        .feature-accordion .chevron {
+            line-height: 1;
+        }
+        .feature-accordion .chevron {
+            /* ensure text nodes don't affect layout */
+        }
+
+        /* Touch target size: ensure all interactive elements have a minimum size */
+        button, .feature-accordion summary {
+            min-height: 1em;
+        }
+
+        .feature-body {
+            padding-left: 1em;
+            padding-right: 1em;
+            padding-bottom: 1em;
+        }
+
+        /* Keep old styling used for non-expandable feature items */
         .feature-item {
             margin: 4px 0;
             padding: 4px 8px;
             background: rgba(0,0,0,0.05);
             border-radius: 3px;
+        }
+        .feature-list pre[class*="language-"] {
+            height: auto;
+            font-size: 0.8em;
+        }
+        h3 {
+            font-size: 1.05em;
         }
         .next-btn {
             display: block;
@@ -229,8 +337,40 @@
         let quizData = [];
         fetch('code.json')
             .then(response => response.json())
-            .then(data => {
-                quizData = data;
+            .then(raw => {
+                // Expected format:
+                // {
+                //   features: { FEATURE_NAME: { label, description, version }, ... },
+                //   entries: [ { code, correct, features: ["FOR_EACH", ...] }, ... ]
+                // }
+                if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+                    throw new Error('Unexpected code.json format: expected an object with keys {features, entries}.');
+                }
+
+                window.__FEATURES__ = raw.features || {};
+                quizData = raw.entries || [];
+
+                // Normalize features on each question: convert feature names -> rich objects.
+                quizData = (quizData || []).map(q => {
+                    if (!q) return q;
+                    const feats = q.features;
+                    if (!Array.isArray(feats) || feats.length === 0) {
+                        return { ...q, features: [] };
+                    }
+                    return {
+                        ...q,
+                        features: feats
+                            .map(name => {
+                                const meta = window.__FEATURES__ && window.__FEATURES__[name];
+                                if (!meta) {
+                                    return { name, label: name, version: undefined, description: '' };
+                                }
+                                return { name, label: meta.label || name, version: meta.version, description: meta.description || '' };
+                            })
+                            .filter(Boolean)
+                    };
+                });
+
                 initQuiz();
             })
             .catch(err => {
@@ -240,6 +380,105 @@
 
         function initQuiz() {
             const { onload } = lemonade;
+
+            // --- HTML escaping ---
+            // We sometimes build small HTML snippets via template strings. Anything that can be influenced
+            // by JSON input must be escaped to avoid breaking the DOM (and to prevent XSS).
+            function escapeHtml(value) {
+                const s = String(value ?? '');
+                return s
+                    .replace(/&/g, '&amp;')
+                    .replace(/</g, '&lt;')
+                    .replace(/>/g, '&gt;')
+                    .replace(/"/g, '&quot;')
+                    .replace(/'/g, '&#39;');
+            }
+
+            // --- Markdown rendering (markdown-it + Prism) ---
+            function ensureMarkdownIt() {
+                // markdown-it UMD sets a global `markdownit` function.
+                const factory = (typeof markdownit !== 'undefined') ? markdownit : (window && window.markdownit);
+                if (factory) {
+                    // Configure once.
+                    if (!window.__MD_IT__) {
+                        window.__MD_IT__ = factory({
+                            html: false,
+                            linkify: false,
+                            breaks: false,
+                            typographer: false
+                        });
+                    }
+                    return window.__MD_IT__;
+                }
+                return null;
+            }
+
+            function renderMarkdownToHtml(md) {
+                const mdi = ensureMarkdownIt();
+                if (!mdi) {
+                    return '<p><em>Markdown renderer not available (deps.js is outdated). Re-run generate_quiz.py to rebuild deps.js.</em></p>';
+                }
+                if (!md || !String(md).trim()) return '';
+                return mdi.render(String(md));
+            }
+
+            function renderDetectedFeaturesHtml(features) {
+                if (!features || !features.length) return '';
+
+                // Only expandable if description exists and is non-empty.
+                const expandable = (features || []).filter(f => (f && f.description && String(f.description).trim().length > 0));
+                const plain = (features || []).filter(f => !(f && f.description && String(f.description).trim().length > 0));
+
+                const parts = [];
+
+                if (plain.length) {
+                    parts.push(
+                        '<div>' +
+                        plain.map(f => `<div class="feature-item">${escapeHtml(f.label)} (Java ${escapeHtml(formatVersion(f.version))})</div>`).join('') +
+                        '</div>'
+                    );
+                }
+
+                if (expandable.length) {
+                    const detailsHtml = expandable.map(f => {
+                        const title = `${escapeHtml(f.label)} (Java ${escapeHtml(formatVersion(f.version))})`;
+                        // We *don't* render markdown here. We do it lazily on first open.
+                        return `
+<details class="feature" data-feature-name="${escapeHtml(f.name)}">
+  <summary>
+    <span class="feature-title"><span class="label">${title}</span></span>
+    <span class="chevron" aria-hidden="true"></span>
+  </summary>
+  <div class="feature-body">
+    <div class="md" data-md-unrendered="1"></div>
+  </div>
+</details>`;
+                    }).join('');
+
+                    parts.push(`<div class="feature-accordion">${detailsHtml}</div>`);
+                }
+
+                return parts.join('');
+            }
+
+            function attachLazyMarkdownRendering(feedbackEl) {
+                if (!feedbackEl) return;
+                const details = feedbackEl.querySelectorAll('details.feature');
+                details.forEach(d => {
+                    d.addEventListener('toggle', () => {
+                        if (!d.open) return;
+                        const mdBox = d.querySelector('.md[data-md-unrendered="1"]');
+                        if (!mdBox) return; // already rendered
+                        const featureName = d.getAttribute('data-feature-name');
+                        const meta = featureName && window.__FEATURES__ ? window.__FEATURES__[featureName] : null;
+                        const md = meta && meta.description ? String(meta.description) : '';
+                        mdBox.innerHTML = renderMarkdownToHtml(md);
+                        mdBox.removeAttribute('data-md-unrendered');
+                        // Highlight code blocks inside markdown (including non-java fences)
+                        setTimeout(() => Prism.highlightAllUnder(mdBox), 0);
+                    });
+                });
+            }
 
             // Base URL configured at build time (passed via CLI --base-url and rendered into the template).
             // Used for robust share-link generation when the app is hosted behind proxies or under subpaths.
@@ -691,22 +930,23 @@
                                     const visibleFeatures = isAlphaEnabled()
                                         ? self.currentQuestion.features
                                         : self.currentQuestion.features.filter(f => typeof f.version !== 'number' || f.version >= 0);
-                                    if (!visibleFeatures.length) {
-                                        // nothing
-                                    } else {
-                                     // Sort features by version (highest to lowest)
-                                    const sortedFeatures = visibleFeatures.slice().sort((a, b) => b.version - a.version);
-                                    featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong><div>' +
-                                        sortedFeatures.map(f =>
-                                            `<div class="feature-item">${f.label} (Java ${formatVersion(f.version)})</div>`
-                                        ).join('') + '</div></div>';
+                                    if (visibleFeatures.length) {
+                                        // Sort features by version (highest to lowest)
+                                        const sortedFeatures = visibleFeatures.slice().sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
+                                        featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
+                                            renderDetectedFeaturesHtml(sortedFeatures) +
+                                            '</div>';
                                     }
-                                 }
+                                }
 
                                 self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
                                     <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
                                     ${featuresHtml}
                                 </div>`;
+
+                                // Attach lazy markdown rendering only after we've injected the answer UI.
+                                // This makes rendering strictly "answer screen" only.
+                                attachLazyMarkdownRendering(self.feedbackEl);
                             }
                         }
                     };
@@ -782,8 +1022,7 @@
                              <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
                              <a style="padding-left: 1em" :ref="self.alphaToggleEl" href="#alpha=1">Enable Java Alpha</a>
                              <span style="padding-left: 1em">This is just a fun quiz and may contain errors.</span><br/>
-                             <span>Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>.</span>
-                             <a style="padding-left: 1em" href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a> (new snippets as issues)
+                             <span>Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a> from the <a href="https://sapmachine.io">SapMachine</a> team. Contribute via <a href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a></span>
                          </div>
                     </div>`;
                 }

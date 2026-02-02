@@ -147,7 +147,7 @@ public class Main implements Callable<Integer> {
                 continue;
             }
             featureLabels.put(feature.name(),
-                new me.bechberger.check.model.FeatureInfo(feature.getDescription(), feature.getJavaVersion()));
+                new me.bechberger.check.model.FeatureInfo(FeatureMarkdownDescriptions.markdown(feature), feature.getJavaVersion()));
         }
 
         Map<String, FileInfo> filesMap = new LinkedHashMap<>();

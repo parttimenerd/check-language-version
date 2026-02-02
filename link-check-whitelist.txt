@@ -1,0 +1,8 @@
+# Link check whitelist
+#
+# One URL per line.
+# These URLs are treated as valid by FeatureMarkdownLinksTest,
+# even when link checking is enabled. Use this for known-good URLs
+# that are flaky in CI (e.g., GitHub pages that sometimes time out).
+
+https://github.com/Marcono1234/HotJava-1.0-alpha/blob/master/hj-alpha3/hotjava/doc/misc/changes.html

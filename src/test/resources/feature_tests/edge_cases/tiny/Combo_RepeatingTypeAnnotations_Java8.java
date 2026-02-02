@@ -1,7 +1,7 @@
 // Java 8 combination: Repeating annotations + Type annotations
 // Test: Combination of repeating annotations with type annotations
 // Expected Version: 8
-// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS
+// Required Features: ANNOTATIONS, REPEATING_ANNOTATIONS, TYPE_ANNOTATIONS, CLASS_PROPERTY
 // Note: TYPE_ANNOTATIONS detection depends on how JavaParser represents annotations on types
 import java.lang.annotation.*;
 class Combo_RepeatingTypeAnnotations_Java8 {

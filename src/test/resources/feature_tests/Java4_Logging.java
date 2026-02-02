@@ -1,6 +1,6 @@
 // Java 4 feature: Logging API (java.util.logging)
 // Expected Version: 4
-// Required Features: IO_API, LOGGING, REFLECTION
+// Required Features: IO_API, LOGGING, CLASS_PROPERTY
 import java.util.logging.Logger;
 import java.util.logging.Level;
 import java.util.logging.Handler;

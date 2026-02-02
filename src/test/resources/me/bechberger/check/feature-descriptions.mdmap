@@ -1,0 +1,144 @@
+# Feature description rules for FeatureChecker.JavaFeature
+# File format: single resource with blocks separated by headers.
+# Each block documents one JavaFeature (enum name) and must follow the "Block Structure" below.
+# Lines starting with '#' are comments and ignored by the loader.
+
+# --------------------
+# Block format overview
+# --------------------
+# - Header: a single line starting at column 0 with the feature name prefixed by '@'
+#     Example: @AWT
+# - The block contains labeled sections (exact labels, case-sensitive) in the order listed below.
+# - No non-comment content is allowed before the first '@FEATURE' header.
+# - Feature blocks need to be separated by multiple newlines
+# - Be factual
+# - add references for all claims
+# - use inline code
+
+# --------------------
+# Block Structure (required sections, and exact labels)
+# --------------------
+# Each feature block MUST contain these sections in this order, split by a newline:
+# 1) Summary: <one-line summary text>
+#    - Single line immediately after the label. Max recommended length 160 chars.
+# 2) Details:
+#    - One or more Markdown paragraphs describing the feature, usage, and behavior.
+#    - with code examples (if possible)
+#    - mention and describe all newly introduced keywords (like sealed and non-sealed for SEALED_CLASSES)
+# 3) Example:
+#    - Exactly one fenced code block demonstrating the feature (use a language tag, e.g., ```java).
+#    - The code block MUST include at least one inline comment (// or /* */) explaining the snippet.
+# 4) Historical:
+#    - Short paragraph explaining when/how it was introduced and important historical notes.
+#      If none, write: Historical: N/A
+#    - mention Java version it got introduced
+#    - don't repeat yourself in Details and Historical
+# 5) Links:
+#    - A bullet list of labeled Markdown links (one per line). Each must be in form:
+#        - [Label](https://example.com)
+#    - Bare URLs (e.g., https://...) anywhere in the block are NOT allowed.
+#    - For library/API features include at least one official/reference link (Oracle/OpenJDK/JEP/JSR, etc.).
+
+# --------------------
+# Link rules and validation
+# --------------------
+# - All links must be labeled Markdown links: use descriptive labels (e.g., [Oracle Javadoc], [JEP 408], [Wikipedia]).
+# - Disallow bare urls: validator must fail if it finds an http(s) URL that is not the target of a Markdown link.
+# - Recommended regexes for automated validation:
+#     Header: ^@([A-Z0-9_]+)$
+#     Labeled link: \[([^\]]{3,})\]\((https?://[^\s)]+)\)
+#     Bare URL detection (fail if matches): (?<!\])https?://[^\s)]+
+# - Example block detection: fence start ^```([a-zA-Z0-9_-]+)\s*$ and closing ``` on its own line.
+# - Ensure example block contains at least one comment: look for '//' or '/*'.
+
+# --------------------
+# Historical
+# --------------------
+# - mention origin version, major milestones, deprecations or removals.
+# - indicate whether the feature is commonly used today and why (short reason optional).
+
+# --------------------
+# Examples (templates)
+# --------------------
+@AWT
+Summary: The Abstract Window Toolkit (AWT), Java's original GUI toolkit.
+
+Details:
+AWT provides basic windowing and UI components in package `java.awt`. AWT components are thin wrappers
+around native widgets on each platform which historically caused inconsistent look-and-feel and layout
+behavior across platforms. Higher-level toolkits (Swing, JavaFX) were introduced later to provide richer,
+consistent UI components.
+
+Example:
+```java
+// Create a simple AWT Frame and show it (illustrative, not headless-safe)
+import java.awt.Frame;
+import java.awt.Label;
+
+public class AwtExample {
+    public static void main(String[] args) {
+        Frame f = new Frame("Hello AWT"); // AWT top-level window
+        f.add(new Label("AWT example"));  // add a component
+        f.setSize(300, 120);
+        f.setVisible(true);
+    }
+}
+```
+
+Historical:
+Introduced in Java 1.0 as the first GUI toolkit for Java. Swing (since Java 1.2) built on top of/alongside
+AWT and offered a more consistent cross-platform UI. AWT remains relevant for low-level native integration
+and some legacy codebases.
+
+Links:
+- [Oracle AWT Javadoc](https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/java/awt/package-summary.html)
+- [AWT on Wikipedia](https://en.wikipedia.org/wiki/Abstract_Window_Toolkit)
+
+
+
+
+@APPLET
+Summary: The Applet API for embedding Java programs in web pages (obsolete).
+Details:
+The `java.applet` package allowed small Java programs (applets) to run inside browsers using the
+`<applet>` tag and a plugin-based JVM. Applets ran in a security sandbox and could be signed for extra
+privileges. Over time, plugin-based browser models and security concerns made applets impractical.
+
+Example:
+```java
+// Legacy applet example (browsers no longer support applets)
+import java.applet.Applet;
+import java.awt.Graphics;
+
+public class HelloApplet extends Applet {
+    @Override
+    public void paint(Graphics g) { // called by browser plugin
+        g.drawString("Hello Applet", 10, 20); // renders text
+    }
+}
+```
+
+Historical:
+Introduced early in Java's history to enable interactive web content. Applets declined in use after
+security incidents and the removal of NPAPI plugin support in major browsers; the API is deprecated/removed
+in modern Java distributions.
+
+Links:
+- [Applet Javadoc (Java 8)](https://docs.oracle.com/javase/8/docs/api/java/applet/package-summary.html)
+- [Why applets died (Wikipedia)](https://en.wikipedia.org/wiki/Java_applet)
+
+
+# --------------------
+# Notes for generators and validators
+# --------------------
+# - A generator may produce initial Summary/Details/Example/Links content,
+#   but the "Historical" field should be reviewed by a human to ensure accuracy.
+# - Validators should:
+#   * Assert header coverage: headers == EnumSet.allOf(JavaFeature.class)
+#   * Assert required sections exist and are in order per block
+#   * Fail on duplicate headers or empty example code blocks
+#   * Fail if any bare URL is present or non at all (every features needs a link)
+#   * Optionally check link reachability with a short timeout, store reachable links in file; make this optional for CI via a flag
+# - Keep blocks small and focused: prefer short examples and 2-4 paragraph details.
+
+# End of rules

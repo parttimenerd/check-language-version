@@ -21,10 +21,137 @@ MIN_LINES = 1
 MAX_LINES = 18
 MIN_VERSION = -3
 MAX_VERSION = 25
-LEMONADE_URL = 'https://lemonadejs.com/v5/lemonade.js'
+# LemonadeJS (UI framework)
+# Prefer jsDelivr (GitHub-backed) to avoid 403/404 issues.
+LEMONADE_URL = 'https://cdn.jsdelivr.net/gh/lemonadejs/lemonadejs@v5.0.4/dist/lemonade.min.js'
 PRISM_CSS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css'
 PRISM_JS_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js'
 PRISM_JAVA_URL = 'https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js'
+# Markdown renderer (used in the answer screen for feature descriptions)
+MARKDOWN_IT_URL = 'https://cdnjs.cloudflare.com/ajax/libs/markdown-it/13.0.1/markdown-it.min.js'
+
+# New format: one markdown file per feature
+FEATURES_DIR = 'src/main/resources/me/bechberger/check/features'
+
+# --------------------
+# Feature descriptions loader + validators
+# --------------------
+
+# Accept labels containing nested brackets (e.g., [`Type.method()`]) by matching greedily up to the last closing bracket before the URL.
+_MD_LABELED_LINK_RE = re.compile(r'\[(.+?)\]\((https?://[^\s)]+)\)')
+# Disallow bare URLs anywhere outside of markdown link targets
+# (From rules: (?<!\])https?://[^\s)]+)
+_MD_BARE_URL_RE = re.compile(r'(?<!\])https?://[^\s)]+')
+
+def _normalize_newlines(s: str) -> str:
+    return s.replace('\r\n', '\n').replace('\r', '\n')
+
+
+def _validate_feature_markdown(feature_name: str, md: str) -> None:
+    """Validate a single feature markdown file.
+
+    Rules are documented in `feature-descriptions.mdmap`.
+
+    We validate:
+    - required section headers exist and are H3: Summary/Details/Example/Historical/Links
+    - Links section has at least one labeled markdown link
+    - Example section has exactly one fenced code block with a language tag and includes a comment
+
+    Note: We intentionally do NOT fail or warn on bare URLs here; link/bare-URL checks are handled elsewhere.
+    """
+    md = _normalize_newlines(md)
+
+    # NOTE: Bare URL validation intentionally disabled for generate_quiz.py
+
+    # Required H3 sections in order
+    required_headers = [
+        '### Summary',
+        '### Details',
+        '### Example',
+        '### Historical',
+        '### Links',
+    ]
+
+    header_positions = []
+    for h in required_headers:
+        pos = md.find(h)
+        if pos < 0:
+            raise ValueError(f"Feature {feature_name}: missing required header {h}")
+        header_positions.append(pos)
+
+    if header_positions != sorted(header_positions):
+        raise ValueError(f"Feature {feature_name}: headers are not in required order: {required_headers}")
+
+    # Helper: slice section body between headers
+    def section_body(start_h: str, end_h: str | None) -> str:
+        start = md.find(start_h)
+        if start < 0:
+            return ''
+        start = start + len(start_h)
+        end = len(md) if end_h is None else md.find(end_h, start)
+        if end < 0:
+            end = len(md)
+        return md[start:end].strip()
+
+    example = section_body('### Example', '### Historical')
+    links = section_body('### Links', None)
+
+    # Example: exactly one fenced code block with language tag
+    fence_starts = [m.start() for m in re.finditer(r'^```[A-Za-z0-9_-]+\s*$', example, flags=re.MULTILINE)]
+    fence_ends = [m.start() for m in re.finditer(r'^```\s*$', example, flags=re.MULTILINE)]
+    if len(fence_starts) != 1 or len(fence_ends) != 1:
+        raise ValueError(f"Feature {feature_name}: Example must contain exactly one fenced code block with language tag")
+
+    if ('//' not in example) and ('/*' not in example):
+        raise ValueError(f"Feature {feature_name}: Example code block must contain a comment")
+
+    # Links: at least one labeled markdown link in a bullet list
+    link_lines = [ln.strip() for ln in links.split('\n') if ln.strip()]
+    if not link_lines:
+        raise ValueError(f"Feature {feature_name}: Links section is empty")
+    for ln in link_lines:
+        if not ln.startswith('- '):
+            raise ValueError(f"Feature {feature_name}: Links line must start with '- ': {ln}")
+        if not _MD_LABELED_LINK_RE.search(ln):
+            raise ValueError(f"Feature {feature_name}: Links must be labeled markdown links: {ln}")
+
+
+def load_feature_markdown_files(feature_names: set[str] | None = None) -> dict[str, str]:
+    """Load per-feature markdown descriptions.
+
+    Returns a mapping FEATURE_NAME -> markdown string.
+
+    If feature_names is provided, we only load those files and we error if the file is missing.
+    """
+    if not os.path.isdir(FEATURES_DIR):
+        print(f"Warning: {FEATURES_DIR} not found. Feature descriptions will be missing.")
+        return {}
+
+    out: dict[str, str] = {}
+
+    if feature_names is None:
+        md_files = [f for f in os.listdir(FEATURES_DIR) if f.endswith('.md')]
+        for fn in md_files:
+            name = fn[:-3]
+            path = os.path.join(FEATURES_DIR, fn)
+            with open(path, 'r', encoding='utf-8') as f:
+                md = f.read()
+            _validate_feature_markdown(name, md)
+            out[name] = _normalize_newlines(md).strip() + "\n"
+        return out
+
+    # Strict mode: require all enum features to have a file.
+    for name in sorted(feature_names):
+        path = os.path.join(FEATURES_DIR, f"{name}.md")
+        if not os.path.exists(path):
+            raise FileNotFoundError(f"Missing feature description file: {path}")
+        with open(path, 'r', encoding='utf-8') as f:
+            md = f.read()
+        _validate_feature_markdown(name, md)
+        out[name] = _normalize_newlines(md).strip() + "\n"
+
+    return out
+
 
 def parse_feature_enum(checker_path):
     """
@@ -209,8 +336,26 @@ def sanitize_code(code):
     return normalize_empty_lines(cleaned_code)
 
 def scan_files():
+    """Scan SOURCE_DIR and return quiz payload ({features, entries})."""
     feature_map = parse_feature_enum(FEATURE_CHECKER_PATH)
-    questions = []
+
+    # Load per-feature markdown descriptions and merge into feature metadata.
+    feature_markdown: dict[str, str] = {}
+    try:
+        feature_markdown = load_feature_markdown_files(set(feature_map.keys()) if feature_map else None)
+    except FileNotFoundError as e:
+        # Fail fast: keeping descriptions in sync is required for the game.
+        raise
+
+    features_out: dict[str, dict] = {}
+    for name, info in feature_map.items():
+        features_out[name] = {
+            'label': info.get('label'),
+            'description': feature_markdown.get(name, ''),
+            'version': info.get('version'),
+        }
+
+    entries = []
 
     for root, dirs, files in os.walk(SOURCE_DIR):
         for file in files:
@@ -241,7 +386,7 @@ def scan_files():
             # Extract required features
             # Format: // Required Features: A, B, C
             feat_match = re.search(r'Required Features:\s*(.*)', raw_content)
-            file_features = []
+            file_feature_names: list[str] = []
             required_features_text = None
             if feat_match:
                 required_features_text = (feat_match.group(1) or '').strip()
@@ -253,11 +398,7 @@ def scan_files():
                     if not f_name:
                         continue
                     if f_name in feature_map:
-                        file_features.append({
-                            'name': f_name,
-                            'label': feature_map[f_name]['label'],
-                            'version': feature_map[f_name]['version']
-                        })
+                        file_feature_names.append(f_name)
 
             # If the file explicitly declares no required features, treat it as Java 1.0-alpha1 (-3)
             # for the game dataset, regardless of filename/Expected Version.
@@ -286,15 +427,18 @@ def scan_files():
             if not sanitized.strip():
                 continue
 
-            # Prepare question (options generated in UI)
-            question = {
+            # Prepare entry (options generated in UI)
+            entry = {
                 'code': sanitized,
                 'correct': expected_version,
-                'features': file_features
+                'features': file_feature_names,
             }
-            questions.append(question)
+            entries.append(entry)
 
-    return questions
+    return {
+        'features': features_out,
+        'entries': entries,
+    }
 
 
 def load_alpha_questions():
@@ -468,9 +612,10 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
         lemonade_js = download_lemonade()
         prism_js = download_url(PRISM_JS_URL, "Error downloading Prism JS")
         prism_java = download_url(PRISM_JAVA_URL, "Error downloading Prism Java")
+        markdown_it = download_url(MARKDOWN_IT_URL, "Error downloading markdown-it")
 
-        # Write deps.js (LemonadeJS + PrismJS)
-        deps_content = f"""// Dependencies: LemonadeJS + PrismJS
+        # Write deps.js (LemonadeJS + PrismJS + markdown-it)
+        deps_content = f"""// Dependencies: LemonadeJS + PrismJS + markdown-it
 // Auto-generated - do not edit
 
 // === LemonadeJS ===
@@ -481,6 +626,9 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
 
 // === PrismJS Java Language ===
 {prism_java}
+
+// === markdown-it ===
+{markdown_it}
 """
         try:
             with open(OUTPUT_DEPS_JS, 'w', encoding='utf-8') as f:
@@ -518,7 +666,8 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
     # Write code.json (quiz data)
     with open(OUTPUT_CODE_JSON, 'w', encoding='utf-8') as f:
         json.dump(questions, f, indent=2)
-    print(f"Generated {OUTPUT_CODE_JSON} with {len(questions)} questions.")
+    entries_count = len(questions.get('entries', [])) if isinstance(questions, dict) else len(questions)
+    print(f"Generated {OUTPUT_CODE_JSON} with {entries_count} questions.")
 
     # Read and render template
     with open('game/template.html', 'r', encoding='utf-8') as f:
@@ -581,17 +730,44 @@ if __name__ == "__main__":
     else:
         qs = scan_files()
 
-        # Load and merge alpha questions with weight
-        if args.alpha_weight > 0:
+        # Load feature markdown once for use in alpha-only feature metadata.
+        # (scan_files() loads it internally; we also need it here when merging alpha entries.)
+        feature_map = parse_feature_enum(FEATURE_CHECKER_PATH)
+        feature_markdown = load_feature_markdown_files(set(feature_map.keys()) if feature_map else None)
+
+        # Load hand-crafted alpha questions too (keep compatibility)
+        alpha_weight = getattr(args, 'alpha_weight', 1)
+        if alpha_weight > 0:
             alpha_qs = load_alpha_questions()
             alpha1_qs = load_alpha1_questions()
-            # Duplicate alpha questions based on weight
-            for _ in range(args.alpha_weight):
-                qs.extend(alpha1_qs)
-                qs.extend(alpha_qs)
-            print(f"Added {len(alpha1_qs) * args.alpha_weight} alpha1 questions and {len(alpha_qs) * args.alpha_weight} alpha questions (weight={args.alpha_weight})")
 
-        if not qs:
-            print("No valid questions found.")
-        else:
-            generate_html(qs, goatcounter_url=args.goatcounter, base_url=args.base_url)
+            # Old alpha jsons have per-question feature objects; map to feature-name lists.
+            def _normalize_alpha(q):
+                feats = q.get('features', [])
+                if isinstance(feats, list) and feats and isinstance(feats[0], dict):
+                    q = dict(q)
+                    q['features'] = [f.get('name') for f in feats if f.get('name')]
+                return q
+
+            alpha_entries = [_normalize_alpha(q) for q in (alpha_qs + alpha1_qs)]
+
+            # Ensure feature registry has any alpha features that are referenced.
+            for q in alpha_entries:
+                for name in q.get('features', []) or []:
+                    if name and name not in qs['features']:
+                        # Alpha-only / historical feature: keep minimal metadata.
+                        qs['features'][name] = {
+                            'label': name,
+                            'description': feature_markdown.get(name, ''),
+                            'version': q.get('correct', -3),
+                        }
+
+            # Add alpha entries according to weight.
+            # If weight==1: include once, if >1 duplicates.
+            qs['entries'].extend(alpha_entries * alpha_weight)
+
+        # Shuffle after merging
+        random.shuffle(qs['entries'])
+
+        os.makedirs(OUTPUT_DIR, exist_ok=True)
+        generate_html(qs, goatcounter_url=args.goatcounter, base_url=args.base_url)

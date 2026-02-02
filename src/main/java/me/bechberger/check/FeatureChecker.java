@@ -16,6 +16,7 @@ import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.github.javaparser.JavaToken;
 import com.github.javaparser.TokenRange;
+import com.github.javaparser.quality.Nullable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -50,6 +51,8 @@ public class FeatureChecker {
 
         // Java 1.1 features (Java1_1Validator: remove noInnerClasses, noReflection)
         INNER_CLASSES(1, false, "Inner classes"),
+        CLASS_PROPERTY(1, false, ".class property"),
+        REFLECTION(1, true, "java.lang.reflect"),
         JDBC(1, true, "java.sql"),
         RMI(1, true, "java.rmi"),
         JAVABEANS(1, true, "java.beans"),
@@ -220,7 +223,7 @@ public class FeatureChecker {
         MODULE_IMPORTS(25, false, "Module imports"),
         FLEXIBLE_CONSTRUCTOR_BODIES(25, false, "Flexible constructor bodies"),
         /**
-         * Unqualified use of `IO` without an explicit `import java.io.IO;`.
+         * Unqualified use of `IO` without an explicit `import java.lang.IO;`.
          * In Java 25, compact source files include a default import for java.io.IO.
          */
         IMPLICITLY_IMPORTED_IO_CLASS(25, false, "Implicitly imported java.io.IO"),
@@ -406,6 +409,7 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("javax.sql", JavaFeature.JDBC),
         TypeFeatureRule.pkg("java.rmi", JavaFeature.RMI),
         TypeFeatureRule.pkg("java.beans", JavaFeature.JAVABEANS),
+        TypeFeatureRule.pkg("java.lang.reflect", JavaFeature.REFLECTION),
         TypeFeatureRule.types("java.io", JavaFeature.SERIALIZATION,
             "Serializable", "ObjectInputStream", "ObjectOutputStream", "Externalizable"),
 
@@ -1752,6 +1756,7 @@ public class FeatureChecker {
         // Based on Java1_0Validator.noReflection
         @Override
         public void visit(ClassExpr n, Void arg) {
+            addFeature(JavaFeature.CLASS_PROPERTY);
             super.visit(n, arg);
         }
 
