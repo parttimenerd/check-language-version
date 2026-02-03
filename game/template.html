@@ -330,47 +330,50 @@
     <div id="app"></div>
 
     <!-- Load dependencies (LemonadeJS + PrismJS) -->
-    <script src="deps.js"></script>
+    <script src="deps.js" defer></script>
 
-    <!-- Load quiz data -->
+    <!-- Load quiz data + bootstrap (run after parsing; waits for deps + json in parallel) -->
     <script>
-        let quizData = [];
-        fetch('code.json')
+        // Kick off fetching quiz entries as early as possible.
+        const quizDataPromise = fetch('code.json')
             .then(response => response.json())
             .then(raw => {
                 // Expected format:
-                // {
-                //   features: { FEATURE_NAME: { label, description, version }, ... },
-                //   entries: [ { code, correct, features: ["FOR_EACH", ...] }, ... ]
-                // }
+                // { entries: [ { code, correct, features: ["FOR_EACH", ...] }, ... ] }
                 if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-                    throw new Error('Unexpected code.json format: expected an object with keys {features, entries}.');
+                    throw new Error('Unexpected code.json format: expected an object with key {entries}.');
                 }
 
-                window.__FEATURES__ = raw.features || {};
-                quizData = raw.entries || [];
+                // descriptions.json is loaded lazily when the user opens a feature explanation.
+                window.__FEATURES__ = window.__FEATURES__ || null;
 
-                // Normalize features on each question: convert feature names -> rich objects.
-                quizData = (quizData || []).map(q => {
+                const entries = raw.entries || [];
+
+                // Keep features as NAMES for now. We'll map them to rich objects once we have descriptions.json.
+                return (entries || []).map(q => {
                     if (!q) return q;
                     const feats = q.features;
-                    if (!Array.isArray(feats) || feats.length === 0) {
-                        return { ...q, features: [] };
-                    }
                     return {
                         ...q,
-                        features: feats
-                            .map(name => {
-                                const meta = window.__FEATURES__ && window.__FEATURES__[name];
-                                if (!meta) {
-                                    return { name, label: name, version: undefined, description: '' };
-                                }
-                                return { name, label: meta.label || name, version: meta.version, description: meta.description || '' };
-                            })
-                            .filter(Boolean)
+                        features: Array.isArray(feats) ? feats.filter(Boolean) : []
                     };
                 });
+            });
 
+        // Resolve when deps.js has executed (it defines `lemonade` and `Prism`).
+        const depsReadyPromise = new Promise(resolve => {
+            const done = () => resolve();
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                if (window.lemonade && window.Prism) return resolve();
+            }
+            window.addEventListener('DOMContentLoaded', done, { once: true });
+        });
+
+        let quizData = [];
+
+        Promise.all([depsReadyPromise, quizDataPromise])
+            .then(([, data]) => {
+                quizData = data || [];
                 initQuiz();
             })
             .catch(err => {
@@ -416,7 +419,7 @@
             function renderMarkdownToHtml(md) {
                 const mdi = ensureMarkdownIt();
                 if (!mdi) {
-                    return '<p><em>Markdown renderer not available (deps.js is outdated). Re-run generate_quiz.py to rebuild deps.js.</em></p>';
+                    return '<p><em>Markdown renderer not available. Open an explanation (it will try to load deps_md.js).</em></p>';
                 }
                 if (!md || !String(md).trim()) return '';
                 return mdi.render(String(md));
@@ -465,10 +468,14 @@
                 if (!feedbackEl) return;
                 const details = feedbackEl.querySelectorAll('details.feature');
                 details.forEach(d => {
-                    d.addEventListener('toggle', () => {
+                    d.addEventListener('toggle', async () => {
                         if (!d.open) return;
                         const mdBox = d.querySelector('.md[data-md-unrendered="1"]');
                         if (!mdBox) return; // already rendered
+
+                        // Ensure we have feature metadata + markdown renderer only when needed.
+                        await Promise.all([ensureDescriptionsLoaded(), ensureMarkdownDepsLoaded()]);
+
                         const featureName = d.getAttribute('data-feature-name');
                         const meta = featureName && window.__FEATURES__ ? window.__FEATURES__[featureName] : null;
                         const md = meta && meta.description ? String(meta.description) : '';
@@ -478,6 +485,75 @@
                         setTimeout(() => Prism.highlightAllUnder(mdBox), 0);
                     });
                 });
+            }
+
+            // --- Lazy feature metadata + markdown deps ---
+            // descriptions.json contains feature labels/versions/descriptions and is only needed on the answer screen.
+            let _descriptionsPromise = null;
+            function ensureDescriptionsLoaded() {
+                if (_descriptionsPromise) return _descriptionsPromise;
+                _descriptionsPromise = fetch('descriptions.json')
+                    .then(r => r.json())
+                    .then(obj => {
+                        window.__FEATURES__ = (obj && obj.features) ? obj.features : {};
+                        return window.__FEATURES__;
+                    })
+                    .catch(() => {
+                        window.__FEATURES__ = {};
+                        return window.__FEATURES__;
+                    });
+                return _descriptionsPromise;
+            }
+
+            let _depsMdPromise = null;
+            function loadScriptOnce(src) {
+                return new Promise((resolve, reject) => {
+                    // If we already have it on the page, don't add again.
+                    const existing = document.querySelector(`script[src="${src}"]`);
+                    if (existing) {
+                        // If it already loaded, resolve; otherwise wait for its load event.
+                        if (existing.dataset.loaded === '1') return resolve();
+                        existing.addEventListener('load', () => resolve(), { once: true });
+                        existing.addEventListener('error', () => reject(new Error('Failed to load ' + src)), { once: true });
+                        return;
+                    }
+
+                    const s = document.createElement('script');
+                    s.src = src;
+                    s.async = true;
+                    s.onload = () => {
+                        s.dataset.loaded = '1';
+                        resolve();
+                    };
+                    s.onerror = () => reject(new Error('Failed to load ' + src));
+                    document.head.appendChild(s);
+                });
+            }
+
+            function ensureMarkdownDepsLoaded() {
+                // deps_md.js provides `markdownit`.
+                if ((typeof markdownit !== 'undefined') || (window && window.markdownit)) {
+                    return Promise.resolve();
+                }
+                if (_depsMdPromise) return _depsMdPromise;
+                _depsMdPromise = loadScriptOnce('deps_md.js').catch(() => undefined);
+                return _depsMdPromise;
+            }
+
+            function featureToRichObject(name) {
+                const meta = window.__FEATURES__ && window.__FEATURES__[name];
+                if (!meta) {
+                    return { name, label: name, version: undefined, description: '' };
+                }
+                return { name, label: meta.label || name, version: meta.version, description: meta.description || '' };
+            }
+
+            function getRichFeaturesForQuestion(question) {
+                const feats = question && question.features;
+                if (!Array.isArray(feats) || feats.length === 0) return [];
+                // If already rich objects, keep them.
+                if (feats[0] && typeof feats[0] === 'object') return feats;
+                return feats.map(featureToRichObject).filter(Boolean);
             }
 
             // Base URL configured at build time (passed via CLI --base-url and rendered into the template).
@@ -924,14 +1000,17 @@
                                 const resultText = isCorrect ? 'Correct!' : 'Wrong!';
                                 const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
 
+                                // Features for display:
+                                // - if we don't have descriptions yet, show plain list
+                                // - if/when descriptions are loaded, the accordion + explanations will work
                                 let featuresHtml = '';
-                                if (self.currentQuestion.features && self.currentQuestion.features.length) {
-                                    // In non-alpha mode, hide alpha-only detected features (negative version).
+                                const richFeatures = getRichFeaturesForQuestion(self.currentQuestion);
+
+                                if (richFeatures && richFeatures.length) {
                                     const visibleFeatures = isAlphaEnabled()
-                                        ? self.currentQuestion.features
-                                        : self.currentQuestion.features.filter(f => typeof f.version !== 'number' || f.version >= 0);
+                                        ? richFeatures
+                                        : richFeatures.filter(f => typeof f.version !== 'number' || f.version >= 0);
                                     if (visibleFeatures.length) {
-                                        // Sort features by version (highest to lowest)
                                         const sortedFeatures = visibleFeatures.slice().sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
                                         featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
                                             renderDetectedFeaturesHtml(sortedFeatures) +
@@ -944,8 +1023,6 @@
                                     ${featuresHtml}
                                 </div>`;
 
-                                // Attach lazy markdown rendering only after we've injected the answer UI.
-                                // This makes rendering strictly "answer screen" only.
                                 attachLazyMarkdownRendering(self.feedbackEl);
                             }
                         }
@@ -954,7 +1031,32 @@
                     onload(() => {
                         // Ensure alpha link is correct on first paint.
                         updateAlphaLink(self.alphaToggleEl);
-                         updateUI();
+                        updateUI();
+
+                        // After first render, start fetching feature descriptions + markdown deps in the background.
+                        // This keeps the initial load lean, but makes opening explanations fast.
+                        const prefetchAfterFirstPaint = () => {
+                            // Fire and forget; any failures are handled gracefully.
+                            ensureDescriptionsLoaded();
+                            ensureMarkdownDepsLoaded();
+                        };
+
+                        // Schedule *after* the browser had a chance to paint.
+                        // This avoids delaying the initial response/interaction with an arbitrary timeout.
+                        const schedulePrefetch = () => {
+                            if (window.requestIdleCallback) {
+                                window.requestIdleCallback(prefetchAfterFirstPaint, { timeout: 1500 });
+                            } else {
+                                // Next tick after paint.
+                                setTimeout(prefetchAfterFirstPaint, 0);
+                            }
+                        };
+
+                        if (window.requestAnimationFrame) {
+                            window.requestAnimationFrame(() => schedulePrefetch());
+                        } else {
+                            schedulePrefetch();
+                        }
                      });
 
                     window.quizSelect = (option) => {

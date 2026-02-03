@@ -15,7 +15,11 @@ FEATURE_CHECKER_PATH = 'src/main/java/me/bechberger/check/FeatureChecker.java'
 OUTPUT_DIR = 'game/dist'
 OUTPUT_HTML = os.path.join(OUTPUT_DIR, 'index.html')
 OUTPUT_DEPS_JS = os.path.join(OUTPUT_DIR, 'deps.js')
+# Late-loaded deps (only needed on answer/explanation screen)
+OUTPUT_DEPS_MD_JS = os.path.join(OUTPUT_DIR, 'deps_md.js')
 OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
+# Late-loaded feature metadata (labels/versions/descriptions)
+OUTPUT_DESCRIPTIONS_JSON = os.path.join(OUTPUT_DIR, 'descriptions.json')
 OUTPUT_PRISM_CSS = os.path.join(OUTPUT_DIR, 'prism.css')
 MIN_LINES = 1
 MAX_LINES = 18
@@ -602,20 +606,27 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
     # but the generated share links will likely be wrong.
 
     # === Dependencies: download once and cache in OUTPUT_DIR ===
-    # If deps.js already exists in OUTPUT_DIR, reuse it and don't re-download JS libs
-    deps_js_cached = os.path.exists(OUTPUT_DEPS_JS)
+    # We split deps into:
+    # - deps.js      : LemonadeJS + Prism (needed for initial render)
+    # - deps_md.js   : markdown-it (only needed when opening feature explanations)
+    deps_core_cached = os.path.exists(OUTPUT_DEPS_JS)
+    deps_md_cached = os.path.exists(OUTPUT_DEPS_MD_JS)
 
-    if deps_js_cached:
-        print(f"Using cached {OUTPUT_DEPS_JS}; skipping JS dependency downloads.")
+    if deps_core_cached and deps_md_cached:
+        print(f"Using cached {OUTPUT_DEPS_JS} and {OUTPUT_DEPS_MD_JS}; skipping JS dependency downloads.")
     else:
-        # Download dependencies
-        lemonade_js = download_lemonade()
-        prism_js = download_url(PRISM_JS_URL, "Error downloading Prism JS")
-        prism_java = download_url(PRISM_JAVA_URL, "Error downloading Prism Java")
-        markdown_it = download_url(MARKDOWN_IT_URL, "Error downloading markdown-it")
+        # Download dependencies as needed
+        lemonade_js = None
+        prism_js = None
+        prism_java = None
+        markdown_it = None
 
-        # Write deps.js (LemonadeJS + PrismJS + markdown-it)
-        deps_content = f"""// Dependencies: LemonadeJS + PrismJS + markdown-it
+        if not deps_core_cached:
+            lemonade_js = download_lemonade()
+            prism_js = download_url(PRISM_JS_URL, "Error downloading Prism JS")
+            prism_java = download_url(PRISM_JAVA_URL, "Error downloading Prism Java")
+
+            deps_content = f"""// Dependencies: LemonadeJS + PrismJS
 // Auto-generated - do not edit
 
 // === LemonadeJS ===
@@ -626,16 +637,33 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
 
 // === PrismJS Java Language ===
 {prism_java}
+"""
+            try:
+                with open(OUTPUT_DEPS_JS, 'w', encoding='utf-8') as f:
+                    f.write(deps_content)
+                print(f"Generated {OUTPUT_DEPS_JS}")
+            except Exception as e:
+                print(f"Error writing {OUTPUT_DEPS_JS}: {e}")
+        else:
+            print(f"Using cached {OUTPUT_DEPS_JS}; skipping core JS dependency downloads.")
+
+        if not deps_md_cached:
+            markdown_it = download_url(MARKDOWN_IT_URL, "Error downloading markdown-it")
+
+            deps_md_content = f"""// Dependency: markdown-it
+// Auto-generated - do not edit
 
 // === markdown-it ===
 {markdown_it}
 """
-        try:
-            with open(OUTPUT_DEPS_JS, 'w', encoding='utf-8') as f:
-                f.write(deps_content)
-            print(f"Generated {OUTPUT_DEPS_JS}")
-        except Exception as e:
-            print(f"Error writing {OUTPUT_DEPS_JS}: {e}")
+            try:
+                with open(OUTPUT_DEPS_MD_JS, 'w', encoding='utf-8') as f:
+                    f.write(deps_md_content)
+                print(f"Generated {OUTPUT_DEPS_MD_JS}")
+            except Exception as e:
+                print(f"Error writing {OUTPUT_DEPS_MD_JS}: {e}")
+        else:
+            print(f"Using cached {OUTPUT_DEPS_MD_JS}; skipping markdown-it download.")
 
     # Prism CSS: cache separately (used in template <style>)
     if os.path.exists(OUTPUT_PRISM_CSS):
@@ -663,11 +691,20 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
 
     # If deps.js was cached, we don't need to set lemonade_js/prism_js/prism_java variables here
 
-    # Write code.json (quiz data)
+    # Write quiz payload split into:
+    # - code.json          : only the entries (needed at startup)
+    # - descriptions.json  : feature metadata (needed only when showing explanations)
+    if not isinstance(questions, dict) or 'entries' not in questions:
+        raise ValueError("Expected questions to be a dict with keys {'features','entries'}")
+
     with open(OUTPUT_CODE_JSON, 'w', encoding='utf-8') as f:
-        json.dump(questions, f, indent=2)
-    entries_count = len(questions.get('entries', [])) if isinstance(questions, dict) else len(questions)
+        json.dump({'entries': questions.get('entries', [])}, f, indent=2)
+    entries_count = len(questions.get('entries', []))
     print(f"Generated {OUTPUT_CODE_JSON} with {entries_count} questions.")
+
+    with open(OUTPUT_DESCRIPTIONS_JSON, 'w', encoding='utf-8') as f:
+        json.dump({'features': questions.get('features', {})}, f, indent=2)
+    print(f"Generated {OUTPUT_DESCRIPTIONS_JSON} with {len(questions.get('features', {}))} features.")
 
     # Read and render template
     with open('game/template.html', 'r', encoding='utf-8') as f:
