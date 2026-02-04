@@ -842,6 +842,21 @@
                 return shuffleArray(options);
             }
 
+            // Find a question in a list by matching its stable fields.
+            // Returns the index or -1 if not found.
+            function findQuestionIndex(question, list) {
+                if (!question || !Array.isArray(list)) return -1;
+                for (var i = 0; i < list.length; i++) {
+                    var q = list[i];
+                    if (!q) continue;
+                    // Match by code + correct answer. Code is the unique identifier in our dataset.
+                    if (q.correct === question.correct && q.code === question.code) {
+                        return i;
+                    }
+                }
+                return -1;
+            }
+
             // Shuffle questions at start, unless we start from a hash-question.
             // Hash decoding is async due to compression streams.
             getQuestionFromHash().then(function(hashQuestion) {
