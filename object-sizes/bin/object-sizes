@@ -1,0 +1,61 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Runs the object-sizes jar twice:
+#  - once without compact object headers
+#  - once with compact object headers
+#
+# It appends the second run into the same JSON output (merging by class).
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+JAR="${JAR:-${ROOT_DIR}/target/object-sizes.jar}"
+
+if [[ ! -f "${JAR}" ]]; then
+  echo "Missing jar at: ${JAR}" >&2
+  echo "Run: mvn package" >&2
+  exit 1
+fi
+
+# Extract --output FILE from CLI args (default: object-sizes.json)
+OUTPUT=""
+ARGS=()
+while (( "$#" )); do
+  case "$1" in
+    --output)
+      shift
+      OUTPUT="${1:-}"
+      ARGS+=("--output" "${OUTPUT}")
+      shift
+      ;;
+    --output=*)
+      OUTPUT="${1#--output=}"
+      ARGS+=("--output" "${OUTPUT}")
+      shift
+      ;;
+    *)
+      ARGS+=("$1")
+      shift
+      ;;
+  esac
+done
+
+if [[ -z "${OUTPUT}" ]]; then
+  OUTPUT="object-sizes.json"
+  ARGS=("--output" "${OUTPUT}" "${ARGS[@]}")
+fi
+
+COMMON_JAVA_OPTS=(
+  "-Djdk.attach.allowAttachSelf"
+  "-XX:+EnableDynamicAgentLoading"
+)
+
+# First run: compact headers disabled (overwrite output)
+java "${COMMON_JAVA_OPTS[@]}" -XX:-UseCompactObjectHeaders -jar "${JAR}" \
+  "${ARGS[@]}" \
+  --compact-headers false
+
+# Second run: compact headers enabled (append/merge)
+java "${COMMON_JAVA_OPTS[@]}" -XX:+UseCompactObjectHeaders -jar "${JAR}" \
+  "${ARGS[@]}" \
+  --append \
+  --compact-headers true

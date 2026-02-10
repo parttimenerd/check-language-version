@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+JOL_JAR="${JOL_JAR:-${ROOT_DIR}/.tools/jol/jol-cli-latest.jar}"
+
+if [[ ! -f "${JOL_JAR}" ]]; then
+  echo "Missing JOL jar at: ${JOL_JAR}" >&2
+  echo "Run ./init.sh first (or set JOL_JAR)" >&2
+  exit 1
+fi
+
+exec "${JAVA_HOME:-""}/bin/java" -version >/dev/null 2>&1 || true
+
+# Use java from PATH by default.
+exec java -jar "${JOL_JAR}" "$@"
