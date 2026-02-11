@@ -943,6 +943,18 @@
                 return formatBytes(answerValue);
             }
 
+            function formatVersion(v) {
+                // Alpha versions are encoded as negatives:
+                // -3 = 1.0-α1, -2 = 1.0-α2, -1 = 1.0-α3
+                if (v === -3) return '1.0-α1';
+                if (v === -2) return '1.0-α2';
+                if (v === -1) return '1.0-α3';
+
+                // Legacy representation: 0 sometimes used for 1.0 GA in this dataset
+                if (v === 0) return '1.0';
+                return String(v);
+            }
+
             function quizTitle() {
                 return QUIZ_MODE === 'sizes' ? 'Guess the Object Size' : 'Guess the Java Version';
             }
@@ -1120,16 +1132,18 @@
 
             // Generate exactly 5 options (1 correct + 4 wrong), randomized.
             function generateOptions(question) {
-                var correct = question.correct;
-                var wrong = (question.kind === 'sizes') ? generateWrongSizes(correct) : generateWrongAnswers(correct);
-                var options = wrong.concat([correct]);
-                options = shuffleArray(options).slice(0, 5);
-                // For sizes: order buttons by size (ascending) to make guessing feel more sane.
-                if (question && question.kind === 'sizes') {
+                 var correct = question.correct;
+                 var wrong = (question.kind === 'sizes') ? generateWrongSizes(correct) : generateWrongAnswers(correct);
+                 var options = wrong.concat([correct]);
+                 options = shuffleArray(options).slice(0, 5);
+                // Order buttons by value (ascending) to make guessing feel more sane.
+                // For Java this yields: alpha (-3..-1), 1.0 (0), 2..25.
+                // For sizes this yields ascending bytes.
+                if (question && (question.kind === 'sizes' || question.kind === 'java')) {
                     options = options.slice().sort((a, b) => a - b);
                 }
-                return options;
-             }
+                 return options;
+              }
 
             // Find a question in a list by matching its stable fields.
             // Returns the index or -1 if not found.
