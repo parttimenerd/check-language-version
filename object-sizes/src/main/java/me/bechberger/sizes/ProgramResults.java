@@ -32,7 +32,39 @@ public final class ProgramResults {
             @JsonProperty("layout") List<GraphRow> layout,
             @JsonProperty("footprint") List<FootprintRow> footprint,
 
+            // Parsed output of ClassLayout.parseInstance(x).toPrintable() for the root value
+            // and for all reachable, non-primitive field values (cycle-safe).
+            @JsonProperty("classLayout") List<ParsedClassLayout> classLayout,
+
             @JsonProperty("UseCompactObjectHeaders") Boolean useCompactObjectHeaders
+    ) {
+    }
+
+    /** Parsed form of ClassLayout.parseInstance(x).toPrintable() ("object internals"). */
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ParsedClassLayout(
+            @JsonProperty("type") String type,
+            @JsonProperty("rows") List<ClassLayoutRow> rows,
+            @JsonProperty("instanceSize") Long instanceSize,
+            @JsonProperty("spaceLosses") SpaceLosses spaceLosses
+    ) {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record SpaceLosses(
+            @JsonProperty("internal") Long internal,
+            @JsonProperty("external") Long external,
+            @JsonProperty("total") Long total
+    ) {
+    }
+
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public record ClassLayoutRow(
+            @JsonProperty("offset") long offset,
+            @JsonProperty("size") long size,
+            @JsonProperty("type") String type,
+            @JsonProperty("description") String description,
+            @JsonProperty("value") String value
     ) {
     }
 
@@ -244,6 +276,149 @@ public final class ProgramResults {
         try {
             return Long.parseLong(v);
         } catch (Exception e) {
+            return null;
+        }
+    }
+
+    /**
+     * Best-effort parser for {@code ClassLayout#toPrintable()}.
+     *
+     * <p>Alignment rules in the table:
+     * <ul>
+     *   <li>OFF, SZ, TYPE are right-aligned within their columns</li>
+     *   <li>DESCRIPTION and VALUE are left-aligned</li>
+     * </ul>
+     */
+    public static ParsedClassLayout parseClassLayoutPrintable(String printable) {
+        if (printable == null || printable.isBlank()) {
+            return new ParsedClassLayout(null, List.of(), null, null);
+        }
+
+        String typeLine = null;
+        var rows = new ArrayList<ClassLayoutRow>();
+        Long instanceSize = null;
+        SpaceLosses spaceLosses = null;
+
+        ClassLayoutColumns cols = null;
+        boolean tableSeen = false;
+
+        for (String raw : printable.lines().toList()) {
+            String t = raw.trim();
+            if (t.isEmpty()) continue;
+
+            if (typeLine == null && t.endsWith(" object internals:")) {
+                typeLine = t;
+                continue;
+            }
+
+            if (!tableSeen && isClassLayoutHeaderLine(t)) {
+                cols = ClassLayoutColumns.fromHeaderLine(raw);
+                tableSeen = cols != null;
+                continue;
+            }
+
+            if (t.startsWith("Instance size:")) {
+                var m = java.util.regex.Pattern.compile("Instance size:\\s*(\\d+)\\s*bytes").matcher(t);
+                if (m.find()) instanceSize = Long.parseLong(m.group(1));
+                tableSeen = false;
+                continue;
+            }
+            if (t.startsWith("Space losses:")) {
+                // Example:
+                // Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
+                var m = java.util.regex.Pattern.compile(
+                        "Space losses:\\s*(\\d+)\\s*bytes internal\\s*\\+\\s*(\\d+)\\s*bytes external\\s*=\\s*(\\d+)\\s*bytes total"
+                ).matcher(t);
+                if (m.find()) {
+                    spaceLosses = new SpaceLosses(
+                            Long.parseLong(m.group(1)),
+                            Long.parseLong(m.group(2)),
+                            Long.parseLong(m.group(3))
+                    );
+                }
+                continue;
+            }
+
+            if (!tableSeen || cols == null) continue;
+
+            String offStr = cols.get("OFF", raw);
+            String szStr = cols.get("SZ", raw);
+            String type = cols.get("TYPE", raw);
+            String desc = cols.get("DESCRIPTION", raw);
+            String val = cols.get("VALUE", raw);
+
+            long off;
+            long sz;
+            try {
+                assert offStr != null;
+                off = Long.parseLong(offStr);
+                assert szStr != null;
+                sz = Long.parseLong(szStr);
+            } catch (Exception e) {
+                continue;
+            }
+
+            rows.add(new ClassLayoutRow(off, sz, type, desc, val));
+        }
+
+        String typeName = null;
+        if (typeLine != null) {
+            typeName = typeLine.substring(0, typeLine.length() - " object internals:".length()).trim();
+        }
+        return new ParsedClassLayout(typeName, rows, instanceSize, spaceLosses);
+    }
+
+    private static boolean isClassLayoutHeaderLine(String trimmedLine) {
+        return trimmedLine.startsWith("OFF")
+                && trimmedLine.contains("SZ")
+                && trimmedLine.contains("TYPE")
+                && trimmedLine.contains("DESCRIPTION");
+    }
+
+    private record Column(String name, int from, int to) {
+        String slice(String row) {
+            if (from > row.length()) {
+                return "";
+            }
+            if (to == -1) {
+                return row.substring(from).trim();
+            }
+            return row.substring(from, Math.min(to, row.length())).trim();
+        }
+    }
+
+    private static final class ClassLayoutColumns {
+        private final List<Column> cols;
+
+        private ClassLayoutColumns(List<Column> cols) {
+            this.cols = cols;
+        }
+
+        static ClassLayoutColumns fromHeaderLine(String rawHeaderLine) {
+            if (rawHeaderLine == null) return null;
+
+            List<Column> cols = new ArrayList<>();
+            int startOfOFF = rawHeaderLine.indexOf("OFF");
+            if (startOfOFF < 0) return null;
+            int startOfSZ = rawHeaderLine.indexOf("SZ", startOfOFF);
+            int startOfTYPE = rawHeaderLine.indexOf("TYPE", startOfSZ);
+            int startOfDESC = rawHeaderLine.indexOf("DESCRIPTION", startOfTYPE);
+            int startOfVALUE = rawHeaderLine.indexOf("VALUE", startOfDESC);
+
+            cols.add(new Column("OFF", 0, startOfOFF + 3));
+            cols.add(new Column("SZ", startOfOFF + 3, startOfSZ + 2));
+            cols.add(new Column("TYPE", startOfSZ + 2, startOfTYPE + 4));
+            cols.add(new Column("DESCRIPTION", startOfDESC, startOfVALUE));
+            cols.add(new Column("VALUE", startOfVALUE, -1));
+            return new ClassLayoutColumns(cols);
+        }
+
+        public String get(String name, String row) {
+            for (Column c : cols) {
+                if (c.name.equals(name)) {
+                    return c.slice(row);
+                }
+            }
             return null;
         }
     }

@@ -2,5 +2,7 @@ package me.bechberger.sizes.programs.primitives;
 
 /* A single byte field inside an object. */
 class ByteValue {
-    byte value = 1;
+    Holder value = new Holder((byte)1);
+
+    record Holder(byte value) {}
 }

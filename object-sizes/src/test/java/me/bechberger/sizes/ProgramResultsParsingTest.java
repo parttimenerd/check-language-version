@@ -9,6 +9,78 @@ import static org.junit.jupiter.api.Assertions.*;
 class ProgramResultsParsingTest {
 
     @Test
+    void parseClassLayoutPrintable_parsesRows_usingHeaderColumnWidths() {
+        String internals = """
+                me.bechberger.sizes.programs.pools.AutoboxNotCached1000_TwoRefs$Holder object internals:
+                OFF  SZ                TYPE DESCRIPTION               VALUE
+                  0   8                     (object header: mark)     0x0127891e8f2e8001 (Lilliput)
+                  8   4   java.lang.Integer Holder.a                  1000
+                 12   4   java.lang.Integer Holder.b                  1000
+                Instance size: 16 bytes
+                Space losses: 0 bytes internal + 0 bytes external = 0 bytes total
+                """;
+
+        var parsed = ProgramResults.parseClassLayoutPrintable(internals);
+        assertEquals("me.bechberger.sizes.programs.pools.AutoboxNotCached1000_TwoRefs$Holder", parsed.type());
+        assertEquals(3, parsed.rows().size());
+
+        var r0 = parsed.rows().get(0);
+        assertEquals(0, r0.offset());
+        assertEquals(8, r0.size());
+        assertEquals("", r0.type());
+        assertEquals("(object header: mark)", r0.description());
+        assertEquals("0x0127891e8f2e8001 (Lilliput)", r0.value());
+
+        var r1 = parsed.rows().get(1);
+        assertEquals(8, r1.offset());
+        assertEquals(4, r1.size());
+        assertEquals("java.lang.Integer", r1.type());
+        assertEquals("Holder.a", r1.description());
+        assertEquals("1000", r1.value());
+
+        assertEquals(16L, parsed.instanceSize());
+        assertEquals(new ProgramResults.SpaceLosses(0L, 0L, 0L), parsed.spaceLosses());
+    }
+
+    @Test
+    void parseClassLayoutPrintable_parsesWideTypeColumn_andAlignmentGap() {
+        String internals = """
+                me.bechberger.sizes.programs.circular.TwoNodeCycle$Node object internals:
+                OFF  SZ                                                      TYPE DESCRIPTION               VALUE
+                  0   8                                                           (object header: mark)     0x01275ed834043801 (Lilliput)
+                  8   4   me.bechberger.sizes.programs.circular.TwoNodeCycle.Node Node.other                (object)
+                 12   4                                                           (object alignment gap)
+                Instance size: 16 bytes
+                Space losses: 0 bytes internal + 4 bytes external = 4 bytes total
+                """;
+
+        var parsed = ProgramResults.parseClassLayoutPrintable(internals);
+        assertEquals("me.bechberger.sizes.programs.circular.TwoNodeCycle$Node", parsed.type());
+        assertEquals(3, parsed.rows().size());
+
+        var r0 = parsed.rows().get(0);
+        assertEquals(0, r0.offset());
+        assertEquals(8, r0.size());
+        assertEquals("", r0.type());
+        assertEquals("(object header: mark)", r0.description());
+        assertTrue(r0.value().startsWith("0x01275ed834043801"));
+
+        var r1 = parsed.rows().get(1);
+        assertEquals(8, r1.offset());
+        assertEquals(4, r1.size());
+        assertEquals("me.bechberger.sizes.programs.circular.TwoNodeCycle.Node", r1.type());
+        assertEquals("Node.other", r1.description());
+        assertEquals("(object)", r1.value());
+
+        var r2 = parsed.rows().get(2);
+        assertEquals(12, r2.offset());
+        assertEquals(4, r2.size());
+        assertEquals("", r2.type());
+        assertEquals("(object alignment gap)", r2.description());
+        assertEquals("", r2.value());
+    }
+
+    @Test
     void parseGraphLayoutPrintable_parsesRows() {
         String printable = """
                 whatever object graph:

@@ -4,15 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta property="og:type"               content="website" />
-    <meta property="og:title"              content="Guess the Java version of a code snippet in this fun game" />
-    <meta property="og:description"        content="A game that let's you guess the Java version of snippets, from Java 1.0 to Java 25" />
-    <meta property="og:image"              content="{%base_url%}img/screenshot.png" />
+    <meta property="og:title"              content="{%meta_og_title_java%}" />
+    <meta property="og:description"        content="{%meta_og_desc_java%}" />
+    <meta property="og:image"              content="{%og_image_url%}" />
     <meta property="og:url"                content="{%base_url%}" />
     <meta name="twitter:card"              content="summary_large_image" />
-    <meta name="twitter:title"             content="Guess the Java version of a code snippet in this fun game" />
-    <meta name="twitter:description"       content="A game that let's you guess the Java version of snippets, from Java 1.0 to Java 25" />
-    <meta name="twitter:image"             content="{%base_url%}img/screenshot.png" />
-    <title>Java Version Quiz</title>
+    <meta name="twitter:title"             content="{%meta_tw_title_java%}" />
+    <meta name="twitter:description"       content="{%meta_tw_desc_java%}" />
+    <meta name="twitter:image"             content="{%og_image_url%}" />
+    <title>{%meta_og_title_java%}</title>
     <style>
         {%prism_css%}
 
@@ -97,6 +97,15 @@
             grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             gap: 12px;
             margin-bottom: 24px;
+        }
+
+        .mode-hint {
+            margin: 6px 0 10px 0;
+            padding: 8px 10px;
+            background: rgba(0,0,0,0.05);
+            border-radius: 6px;
+            font-size: 0.9em;
+            text-align: center;
         }
 
         /* All version buttons should have consistent width */
@@ -324,6 +333,84 @@
         h1 {
             margin-top: 10px;
         }
+
+        /* Object sizes answer details */
+        .answer-details {
+            margin-top: 16px;
+        }
+        .answer-details h3 {
+            margin-bottom: 8px;
+        }
+        .table-wrap {
+            overflow-x: auto;
+            margin-top: 8px;
+        }
+        table.data {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        table.data th, table.data td {
+            border: 1px solid #dee2e6;
+            padding: 6px 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+        table.data th {
+            background: #f1f3f5;
+            font-weight: 600;
+        }
+        .pill {
+            display: inline-block;
+            padding: 2px 8px;
+            background: rgba(0,0,0,0.06);
+            border-radius: 999px;
+            font-size: 0.85em;
+        }
+        .subtle {
+            opacity: 0.8;
+        }
+
+        /* Class layout blocks (object internals) */
+        .class-layout-block {
+            margin: 10px 0 14px 0;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            background: #fafbfc;
+        }
+        .class-layout-title {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 10px;
+            margin: 0 0 8px 0;
+        }
+        .class-layout-title .type {
+            font-weight: 700;
+        }
+        .class-layout-meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            background: rgba(0,0,0,0.06);
+            font-size: 0.85em;
+        }
+        table.data.mono {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-size: 0.85em;
+        }
+        table.data.mono th, table.data.mono td {
+            white-space: nowrap;
+        }
+        table.data.mono td.wrap {
+            white-space: normal;
+        }
     </style>
 </head>
 <body>
@@ -334,31 +421,195 @@
 
     <!-- Load quiz data + bootstrap (run after parsing; waits for deps + json in parallel) -->
     <script>
+        // ---- Meta tags (OpenGraph/Twitter) ----
+        // We ship a single static HTML for both games; update meta tags at runtime based on #mode.
+        // Note: many crawlers don't execute JS, so the *default* meta values should still be sensible.
+        function setMetaContent(selector, value) {
+            try {
+                var el = document.querySelector(selector);
+                if (el) el.setAttribute('content', String(value ?? ''));
+            } catch (e) {
+                // ignore
+            }
+        }
+
+        function updateMetaForMode(mode) {
+            // Template-injected strings (no escaping needed: content attributes are quoted)
+            var titles = {
+                java: '{%meta_og_title_java%}',
+                sizes: '{%meta_og_title_sizes%}'
+            };
+            var descs = {
+                java: '{%meta_og_desc_java%}',
+                sizes: '{%meta_og_desc_sizes%}'
+            };
+
+            var m = (mode === 'sizes') ? 'sizes' : 'java';
+            var title = titles[m] || titles.java;
+            var desc = descs[m] || descs.java;
+
+            setMetaContent('meta[property="og:title"]', title);
+            setMetaContent('meta[property="og:description"]', desc);
+            setMetaContent('meta[name="twitter:title"]', title);
+            setMetaContent('meta[name="twitter:description"]', desc);
+
+            // Also update document title.
+            try { document.title = title; } catch (e) {}
+        }
+
+        // Quiz mode switch (same template supports both)
+        // Supported:
+        // - Java version quiz: default
+        // - Object sizes quiz: #mode=sizes
+        function fileExists(url) {
+            // Some static hosts don't support HEAD. Use a tiny GET with a Range request.
+            // Any 2xx/3xx response counts as "exists".
+            return fetch(url, {
+                method: 'GET',
+                cache: 'no-cache',
+                headers: { 'Range': 'bytes=0-0' }
+            })
+                .then(r => !!(r && (r.ok || (r.status >= 200 && r.status < 400))))
+                .catch(() => false);
+        }
+
+        function getQuizModeFromHash() {
+             var hash = window.location.hash || '';
+             if (!hash.startsWith('#')) return 'java';
+             var params = new URLSearchParams(hash.slice(1));
+             var mode = (params.get('mode') || '').trim().toLowerCase();
+             if (mode === 'sizes' || mode === 'object-sizes' || mode === 'objects') return 'sizes';
+             return 'java';
+        }
+
+        // Determine mode with graceful fallback depending on which JSON payloads exist in this build.
+        const REQUESTED_QUIZ_MODE = getQuizModeFromHash();
+        // These flags are injected by generate_quiz.py depending on which game is built.
+        const BUILD_HAS_JAVA = {%build_has_java%};
+        const BUILD_HAS_SIZES = {%build_has_sizes%};
+
+        const QUIZ_MODE_PROMISE = Promise.resolve((function() {
+            if (REQUESTED_QUIZ_MODE === 'sizes') {
+                if (BUILD_HAS_SIZES) return 'sizes';
+                if (BUILD_HAS_JAVA) return 'java';
+                return 'sizes';
+            }
+            if (BUILD_HAS_JAVA) return 'java';
+            if (BUILD_HAS_SIZES) return 'sizes';
+            return 'java';
+        })());
+
         // Kick off fetching quiz entries as early as possible.
-        const quizDataPromise = fetch('code.json')
-            .then(response => response.json())
-            .then(raw => {
-                // Expected format:
-                // { entries: [ { code, correct, features: ["FOR_EACH", ...] }, ... ] }
-                if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
-                    throw new Error('Unexpected code.json format: expected an object with key {entries}.');
-                }
+         const quizDataPromise = QUIZ_MODE_PROMISE.then(function(QUIZ_MODE) {
+              // expose for later use
+              window.__QUIZ_MODE__ = QUIZ_MODE;
 
-                // descriptions.json is loaded lazily when the user opens a feature explanation.
-                window.__FEATURES__ = window.__FEATURES__ || null;
+              // Deterministic pseudo-random choice helper (so variants don't flip on reload).
+              // Seed can be overridden via URL (?seed=123 or #seed=123).
+              function getSeedOverride() {
+                  try {
+                      // query string first
+                      var qs = new URLSearchParams((window.location && window.location.search) ? window.location.search.slice(1) : '');
+                      var s = (qs.get('seed') || '').trim();
+                      if (s) return s;
+                      // then hash
+                      var h = (window.location && window.location.hash) ? window.location.hash : '';
+                      if (h && h.startsWith('#')) {
+                          var hs = new URLSearchParams(h.slice(1));
+                          s = (hs.get('seed') || '').trim();
+                          if (s) return s;
+                      }
+                  } catch (e) {
+                      // ignore
+                  }
+                  return '';
+              }
 
-                const entries = raw.entries || [];
+              // Simple 32-bit FNV-1a hash.
+              function fnv1a32(str) {
+                  var h = 0x811c9dc5;
+                  for (var i = 0; i < str.length; i++) {
+                      h ^= str.charCodeAt(i);
+                      // h *= 16777619 (with 32-bit overflow)
+                      h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+                  }
+                  return h >>> 0;
+              }
 
-                // Keep features as NAMES for now. We'll map them to rich objects once we have descriptions.json.
-                return (entries || []).map(q => {
-                    if (!q) return q;
-                    const feats = q.features;
-                    return {
-                        ...q,
-                        features: Array.isArray(feats) ? feats.filter(Boolean) : []
-                    };
+              function chooseBooleanDeterministic(key) {
+                  var seed = getSeedOverride();
+                  var n = fnv1a32(String(seed) + '|' + String(key));
+                  return (n & 1) === 1;
+              }
+
+               if (QUIZ_MODE === 'sizes') {
+                   return fetch('object-sizes.json')
+                     .then(r => r.json())
+                     .then(raw => {
+                         if (!Array.isArray(raw)) {
+                             throw new Error('Unexpected object-sizes.json format: expected an array of entries.');
+                         }
+                         // Normalize into our internal question format:
+                         // { kind:'sizes', code: sanitizedCode, rawCode: code, rating, correct: totalSizeBytes, layoutVariants: [...] }
+                         return raw.map(e => {
+                             if (!e) return null;
+                             var variants = Array.isArray(e.layout) ? e.layout : [];
+                             var nonCompact = variants.find(v => v && v.UseCompactObjectHeaders === false);
+                             var compact = variants.find(v => v && v.UseCompactObjectHeaders === true);
+                             // Randomly choose between compact and non-compact when both exist.
+                             // Choice is deterministic per question key.
+                             var questionKey = (e['class'] || '') + '|' + ((e.sanitizedCode || e.code || '').trim());
+                             var preferCompact = chooseBooleanDeterministic(questionKey);
+                             var chosen = (preferCompact ? (compact || nonCompact) : (nonCompact || compact)) || variants[0] || null;
+
+                             var totalSize = chosen && typeof chosen.totalSize === 'number' ? chosen.totalSize : null;
+                             if (typeof totalSize !== 'number') return null;
+
+                             return {
+                                 kind: 'sizes',
+                                 className: e['class'] || '',
+                                 code: (e.sanitizedCode || '').trim(),
+                                 rawCode: (e.code || '').trim(),
+                                 rating: (typeof e.rating === 'number' ? e.rating : null),
+                                 correct: totalSize,
+                                 layoutChosen: chosen,
+                                 layoutAll: variants
+                             };
+                         }).filter(Boolean);
+                     });
+             }
+
+            // Java quiz (default)
+            if (!BUILD_HAS_JAVA) {
+                throw new Error('Java quiz data (code.json) is not available in this build.');
+            }
+
+            return fetch('code.json')
+                .then(response => response.json())
+                .then(raw => {
+                    // Expected format:
+                    // { entries: [ { code, correct, features: ["FOR_EACH", ...] }, ... ] }
+                    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+                        throw new Error('Unexpected code.json format: expected an object with key {entries}.');
+                    }
+
+                    // descriptions.json is loaded lazily when the user opens a feature explanation.
+                    window.__FEATURES__ = window.__FEATURES__ || null;
+
+                    const entries = raw.entries || [];
+
+                    // Keep features as NAMES for now. We'll map them to rich objects once we have descriptions.json.
+                    return (entries || []).map(q => {
+                        if (!q) return q;
+                        const feats = q.features;
+                        return {
+                            ...q,
+                            kind: 'java',
+                            features: Array.isArray(feats) ? feats.filter(Boolean) : []
+                        };
+                    });
                 });
-            });
+        });
 
         // Resolve when deps.js has executed (it defines `lemonade` and `Prism`).
         const depsReadyPromise = new Promise(resolve => {
@@ -378,24 +629,28 @@
             })
             .catch(err => {
                 console.error('Failed to load quiz data:', err);
-                document.getElementById('app').innerHTML = '<p>Error loading quiz data. Make sure code.json exists.</p>';
+                document.getElementById('app').innerHTML = '<p>Error loading quiz data. Make sure the required JSON exists.</p>';
             });
 
         function initQuiz() {
-            const { onload } = lemonade;
+             const { onload } = lemonade;
 
-            // --- HTML escaping ---
-            // We sometimes build small HTML snippets via template strings. Anything that can be influenced
-            // by JSON input must be escaped to avoid breaking the DOM (and to prevent XSS).
-            function escapeHtml(value) {
-                const s = String(value ?? '');
-                return s
-                    .replace(/&/g, '&amp;')
-                    .replace(/</g, '&lt;')
-                    .replace(/>/g, '&gt;')
-                    .replace(/"/g, '&quot;')
-                    .replace(/'/g, '&#39;');
-            }
+            // Resolved quiz mode (decided earlier based on hash + which JSON files exist).
+            // This must be a stable value for the lifetime of the page.
+            const QUIZ_MODE = (window && window.__QUIZ_MODE__) ? window.__QUIZ_MODE__ : getQuizModeFromHash();
+
+             // --- HTML escaping ---
+             // We sometimes build small HTML snippets via template strings. Anything that can be influenced
+             // by JSON input must be escaped to avoid breaking the DOM (and to prevent XSS).
+             function escapeHtml(value) {
+                 const s = String(value ?? '');
+                 return s
+                     .replace(/&/g, '&amp;')
+                     .replace(/</g, '&lt;')
+                     .replace(/>/g, '&gt;')
+                     .replace(/"/g, '&quot;')
+                     .replace(/'/g, '&#39;');
+             }
 
             // --- Markdown rendering (markdown-it + Prism) ---
             function ensureMarkdownIt() {
@@ -491,6 +746,10 @@
             // descriptions.json contains feature labels/versions/descriptions and is only needed on the answer screen.
             let _descriptionsPromise = null;
             function ensureDescriptionsLoaded() {
+                if (QUIZ_MODE !== 'java' || !BUILD_HAS_JAVA) {
+                    window.__FEATURES__ = {};
+                    return Promise.resolve(window.__FEATURES__);
+                }
                 if (_descriptionsPromise) return _descriptionsPromise;
                 _descriptionsPromise = fetch('descriptions.json')
                     .then(r => r.json())
@@ -531,14 +790,15 @@
             }
 
             function ensureMarkdownDepsLoaded() {
-                // deps_md.js provides `markdownit`.
-                if ((typeof markdownit !== 'undefined') || (window && window.markdownit)) {
-                    return Promise.resolve();
-                }
-                if (_depsMdPromise) return _depsMdPromise;
-                _depsMdPromise = loadScriptOnce('deps_md.js').catch(() => undefined);
-                return _depsMdPromise;
-            }
+                if (QUIZ_MODE !== 'java' || !BUILD_HAS_JAVA) return Promise.resolve();
+                 // deps_md.js provides `markdownit`.
+                 if ((typeof markdownit !== 'undefined') || (window && window.markdownit)) {
+                     return Promise.resolve();
+                 }
+                 if (_depsMdPromise) return _depsMdPromise;
+                 _depsMdPromise = loadScriptOnce('deps_md.js').catch(() => undefined);
+                 return _depsMdPromise;
+             }
 
             function featureToRichObject(name) {
                 const meta = window.__FEATURES__ && window.__FEATURES__[name];
@@ -566,9 +826,98 @@
                 return window.location.origin + window.location.pathname.replace(/[^/]*$/, '');
             }
 
+            // --- Hash helpers (alpha toggle + share link) ---
+            // Alpha toggle is only meaningful for the Java quiz.
+            function hasAlphaEnabledInHash() {
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#')) return false;
+                var params = new URLSearchParams(hash.slice(1));
+                var a = (params.get('alpha') || '').trim().toLowerCase();
+                return a === '1' || a === 'true' || a === 'yes' || a === 'on';
+            }
+
+            function updateAlphaLink(alphaLinkEl) {
+                if (!alphaLinkEl) return;
+                if (QUIZ_MODE !== 'java') {
+                    alphaLinkEl.style.display = 'none';
+                    return;
+                }
+                // Toggle between enabled/disabled states.
+                if (hasAlphaEnabledInHash()) {
+                    alphaLinkEl.textContent = 'Disable Java Alpha';
+                    alphaLinkEl.href = '#alpha=0';
+                } else {
+                    alphaLinkEl.textContent = 'Enable Java Alpha';
+                    alphaLinkEl.href = '#alpha=1';
+                }
+            }
+
+            function buildHashForShareLink(payload) {
+                // Preserve alpha toggle if present.
+                var parts = [];
+                if (QUIZ_MODE === 'java' && hasAlphaEnabledInHash()) parts.push('alpha=1');
+                if (payload) parts.push('q=' + encodeURIComponent(payload));
+                return parts.length ? ('#' + parts.join('&')) : '';
+            }
+
+            function clearQuestionFromHash() {
+                // Remove only the 'q' parameter; keep others (like alpha/mode).
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#')) return;
+                var params = new URLSearchParams(hash.slice(1));
+                if (!params.has('q')) return;
+                params.delete('q');
+                var next = params.toString();
+                window.history.replaceState(null, '', window.location.pathname + window.location.search + (next ? ('#' + next) : ''));
+            }
+
+            async function encodeQuestionToHashPayload(question) {
+                // Minimal, stable encoding: base64url of JSON with the key fields.
+                // (No compression to keep this self-contained/offline.)
+                var q = question || {};
+                var payloadObj = {
+                    kind: q.kind || 'java',
+                    code: q.code || '',
+                    correct: q.correct
+                };
+                var jsonStr = JSON.stringify(payloadObj);
+                // btoa expects latin1; our code is mostly ASCII but may contain unicode.
+                var utf8 = encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, function(_m, p1) {
+                    return String.fromCharCode(parseInt(p1, 16));
+                });
+                var b64 = btoa(utf8).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+                return b64;
+            }
+
+            async function getQuestionFromHash() {
+                var hash = window.location.hash || '';
+                if (!hash.startsWith('#')) return null;
+                var params = new URLSearchParams(hash.slice(1));
+                var b64 = params.get('q');
+                if (!b64) return null;
+                try {
+                    var s = b64.replace(/-/g, '+').replace(/_/g, '/');
+                    while (s.length % 4) s += '=';
+                    var latin1 = atob(s);
+                    var jsonStr = decodeURIComponent(Array.prototype.map.call(latin1, function(c) {
+                        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+                    }).join(''));
+                    var obj = JSON.parse(jsonStr);
+                    if (!obj || typeof obj !== 'object') return null;
+                    // Ensure the minimum expected shape.
+                    return {
+                        kind: obj.kind || 'java',
+                        code: obj.code || '',
+                        correct: obj.correct
+                    };
+                } catch (e) {
+                    return null;
+                }
+            }
+
             // Alpha (Java 1.0-alpha*) questions are shipped in code.json but disabled by default.
             // Enable with URL hash '#alpha' or '#alpha=1'.
-            const HAS_ALPHA_QUESTIONS = Array.isArray(quizData) && quizData.some(q => (q && typeof q.correct === 'number' && q.correct < 0));
+            const HAS_ALPHA_QUESTIONS = (QUIZ_MODE === 'java') && Array.isArray(quizData) && quizData.some(q => (q && typeof q.correct === 'number' && q.correct < 0));
             function isAlphaEnabled() {
                 return hasAlphaEnabledInHash();
             }
@@ -577,7 +926,25 @@
             // Apply alpha filtering to the question pool when alpha is disabled.
             const fullQuizData = quizData;
             if (!isAlphaEnabled()) {
-                quizData = quizData.filter(q => !(q && typeof q.correct === 'number' && q.correct < 0));
+                if (QUIZ_MODE === 'java') {
+                    quizData = quizData.filter(q => !(q && typeof q.correct === 'number' && q.correct < 0));
+                }
+            }
+
+            function formatBytes(n) {
+                if (typeof n !== 'number' || !isFinite(n)) return String(n);
+                return n + ' B';
+            }
+
+            function questionAnswerLabel(question, answerValue) {
+                if (!question || question.kind === 'java') {
+                    return 'Java ' + formatVersion(answerValue);
+                }
+                return formatBytes(answerValue);
+            }
+
+            function quizTitle() {
+                return QUIZ_MODE === 'sizes' ? 'Guess the Object Size' : 'Guess the Java Version';
             }
 
             // Fisher-Yates shuffle
@@ -592,186 +959,72 @@
                 return arr;
             }
 
-            // --- Deep link helpers (index.html#question=...) ---
-            // Payload format: base64url( gzip(JSON(question)) )
-            function base64UrlEncodeFromBytes(bytes) {
-                var binary = '';
-                for (var i = 0; i < bytes.length; i++) {
-                    binary += String.fromCharCode(bytes[i]);
-                }
-                return btoa(binary)
-                    .replace(/\+/g, '-')
-                    .replace(/\//g, '_')
-                    .replace(/=+$/g, '');
-            }
+            // Bias the first questions toward lower rating (simpler programs) for the object-sizes quiz.
+            // After the intro slice, progressively bias toward higher ratings (harder programs)
+            // as the quiz progresses, while still occasionally including lower-rated ones.
+            function biasEasyFirst(items, introCount) {
+                if (!Array.isArray(items) || items.length === 0) return items;
+                if (QUIZ_MODE !== 'sizes') return shuffleArray(items);
 
-            function base64UrlDecodeToBytes(b64url) {
-                var b64 = b64url.replace(/-/g, '+').replace(/_/g, '/');
-                while (b64.length % 4 !== 0) {
-                    b64 += '=';
-                }
-                var binary = atob(b64);
-                var bytes = new Uint8Array(binary.length);
-                for (var i = 0; i < binary.length; i++) {
-                    bytes[i] = binary.charCodeAt(i);
-                }
-                return bytes;
-            }
+                var n = Math.max(0, Math.min(introCount || 0, items.length));
+                var remaining = items.slice();
+                var chosen = [];
 
-            function compress(string, encoding) {
-                if (!window.CompressionStream) {
-                    return Promise.resolve(new TextEncoder().encode(string).buffer);
-                }
-                const byteArray = new TextEncoder().encode(string);
-                const cs = new CompressionStream(encoding);
-                const writer = cs.writable.getWriter();
-                writer.write(byteArray);
-                writer.close();
-                return new Response(cs.readable).arrayBuffer();
-            }
-
-            function decompress(byteArray, encoding) {
-                if (!window.DecompressionStream) {
-                    return Promise.resolve(new TextDecoder().decode(byteArray));
-                }
-                const cs = new DecompressionStream(encoding);
-                const writer = cs.writable.getWriter();
-                writer.write(byteArray);
-                writer.close();
-                return new Response(cs.readable).arrayBuffer().then(function (arrayBuffer) {
-                    return new TextDecoder().decode(arrayBuffer);
-                });
-            }
-
-            async function encodeQuestionToHashPayload(question) {
-                var payload = {
-                    code: question.code,
-                    correct: question.correct
-                };
-                if (question.features && question.features.length) {
-                    payload.features = question.features;
+                function clamp(v, lo, hi) {
+                    return Math.max(lo, Math.min(hi, v));
                 }
 
-                var json = JSON.stringify(payload);
-                var compressed = await compress(json, 'gzip');
-                return base64UrlEncodeFromBytes(new Uint8Array(compressed));
-            }
+                // Easy-intro weight: lower rating => higher weight.
+                function easyWeight(q) {
+                    var r = (q && typeof q.rating === 'number' && isFinite(q.rating)) ? q.rating : 3;
+                    r = clamp(r, 1, 10);
+                    return 1 / r;
+                }
 
-            async function decodeQuestionFromHashPayload(payload) {
-                try {
-                    var bytes = base64UrlDecodeToBytes(payload);
-                    var json = await decompress(bytes, 'gzip');
-                    var obj = JSON.parse(json);
-                    if (!obj || typeof obj.code !== 'string' || typeof obj.correct !== 'number') {
-                        return null;
+                // Progressive weight: higher rating => higher weight, steeper over time.
+                // as the quiz progresses, while still occasionally including lower-rated ones.
+                function hardWeight(q, position, total) {
+                    var r = (q && typeof q.rating === 'number' && isFinite(q.rating)) ? q.rating : 3;
+                    r = clamp(r, 1, 10);
+
+                    // 0.0 at start, 1.0 near end
+                    var t = total > 1 ? (position / (total - 1)) : 1;
+                    // start mild, end steep
+                    var exp = 1.2 + 2.1 * t;
+                    // +1 keeps some chance for low-rated entries even late
+                    return Math.pow(r, exp) + 1;
+                }
+
+                function weightedPickIndex(list, weightFn) {
+                    var total = 0;
+                    for (var i = 0; i < list.length; i++) total += weightFn(list[i]);
+                    var x = Math.random() * total;
+                    for (var i = 0; i < list.length; i++) {
+                        x -= weightFn(list[i]);
+                        if (x <= 0) return i;
                     }
-                    return obj;
-                } catch (e) {
-                    return null;
+                    return list.length - 1;
                 }
-            }
 
-            function getQuestionFromHash() {
-                var hash = window.location.hash || '';
-                if (!hash.startsWith('#')) return Promise.resolve(null);
-                var params = new URLSearchParams(hash.slice(1));
-                var payload = params.get('question');
-                if (!payload) return Promise.resolve(null);
-                return decodeQuestionFromHashPayload(payload);
-            }
-
-            function hasAlphaEnabledInHash() {
-                var hash = window.location.hash || '';
-                if (!hash.startsWith('#')) return false;
-                var params = new URLSearchParams(hash.slice(1));
-                // Accept '#alpha' and '#alpha=1' (URLSearchParams treats '#alpha' as key with empty value).
-                if (!params.has('alpha')) return false;
-                var v = params.get('alpha');
-                return v === '' || v === '1' || v === 'true';
-            }
-
-            function setAlphaEnabledInHash(enabled) {
-                var hash = window.location.hash || '';
-                var params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
-                if (enabled) {
-                    // Use an explicit value for clarity.
-                    params.set('alpha', '1');
-                } else {
-                    params.delete('alpha');
+                // Pick an easy-ish intro.
+                for (var i = 0; i < n; i++) {
+                    var idx = weightedPickIndex(remaining, easyWeight);
+                    chosen.push(remaining[idx]);
+                    remaining.splice(idx, 1);
                 }
-                var next = params.toString();
-                var newHash = next ? ('#' + next) : '';
-                if (window.history && window.history.replaceState) {
-                    window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
-                } else {
-                    window.location.hash = next;
-                }
-            }
 
-            // Clear only the deep-link question payload from the hash, keeping other flags (e.g. #alpha=1).
-            function clearQuestionFromHash() {
-                var hash = window.location.hash || '';
-                if (!hash.startsWith('#')) return;
-
-                var params = new URLSearchParams(hash.slice(1));
-                if (!params.has('question')) return;
-
-                params.delete('question');
-                var next = params.toString();
-                var newHash = next ? ('#' + next) : '';
-
-                if (window.history && window.history.replaceState) {
-                    window.history.replaceState(null, '', window.location.pathname + window.location.search + newHash);
-                } else {
-                    // Assigning '' clears the hash.
-                    window.location.hash = next;
+                // Pick the rest with increasing probability for higher ratings.
+                var rest = [];
+                while (remaining.length) {
+                    var pos = chosen.length + rest.length;
+                    var idx = weightedPickIndex(remaining, function(q) {
+                        return hardWeight(q, pos, items.length);
+                    });
+                    rest.push(remaining[idx]);
+                    remaining.splice(idx, 1);
                 }
-            }
 
-            function updateAlphaLink(el) {
-                if (!el) return;
-                if (!HAS_ALPHA_QUESTIONS) {
-                    el.style.display = 'none';
-                    return;
-                }
-                el.style.display = '';
-                el.textContent = isAlphaEnabled() ? 'Disable Java Alpha' : 'Enable Java Alpha';
-                // Make it correct right away without relying on click handlers.
-                el.href = isAlphaEnabled() ? '#alpha=0' : '#alpha=1';
-                el.onclick = function (e) {
-                    e.preventDefault();
-                    setAlphaEnabledInHash(!isAlphaEnabled());
-                    window.location.reload();
-                };
-            }
-
-            function buildHashForShareLink(questionPayload) {
-                 var params = new URLSearchParams();
-                 if (questionPayload) {
-                     params.set('question', questionPayload);
-                 }
-                 if (isAlphaEnabled()) {
-                     params.set('alpha', '1');
-                 }
-                 var s = params.toString();
-                 return s ? ('#' + s) : '';
-             }
-
-            // Format Java version for display (-3 → "1.0-α1", -2 → "1.0-α2", -1 → "1.0-α3", 0 → "1.0", 1 → "1.1", ..., 4 → "1.4", 5+ → "5", "6", etc.)
-            function formatVersion(version) {
-                if (version === -3) {
-                    return "1.0-α1";
-                }
-                if (version === -2) {
-                    return "1.0-α2";
-                }
-                if (version === -1) {
-                    return "1.0-α3";
-                }
-                if (version <= 4) {
-                    return "1." + version;
-                }
-                return String(version);
+                return chosen.concat(rest);
             }
 
             // Generate wrong answers for a given correct version.
@@ -835,12 +1088,48 @@
                 return wrong;
             }
 
-            // Generate options (correct + 4 wrong, shuffled)
-            function generateOptions(correct) {
-                var wrong = generateWrongAnswers(correct);
-                var options = wrong.concat([correct]);
-                return shuffleArray(options);
+            function generateWrongSizes(correctSize) {
+                // Sample plausible wrong sizes from the global pool of seen correct sizes.
+                var pool = (quizData || []).map(q => q && typeof q.correct === 'number' ? q.correct : null).filter(v => typeof v === 'number');
+                // De-dup
+                pool = Array.from(new Set(pool));
+                if (pool.length === 0) {
+                    // fallback around the correct answer
+                    pool = [correctSize - 16, correctSize - 8, correctSize + 8, correctSize + 16, correctSize + 24].filter(v => v > 0);
+                }
+                // Remove correct if present
+                pool = pool.filter(v => v !== correctSize);
+                var wrong = [];
+                while (wrong.length < 4 && pool.length) {
+                    var idx = Math.floor(Math.random() * pool.length);
+                    wrong.push(pool[idx]);
+                    pool.splice(idx, 1);
+                }
+                // If still short, fill with nearby multiples of 8
+                var step = 8;
+                var candidate = correctSize;
+                while (wrong.length < 4) {
+                    candidate += step;
+                    if (candidate !== correctSize && wrong.indexOf(candidate) === -1) wrong.push(candidate);
+                    if (wrong.length >= 4) break;
+                    var low = correctSize - (wrong.length * step);
+                    if (low > 0 && low !== correctSize && wrong.indexOf(low) === -1) wrong.push(low);
+                }
+                return wrong.slice(0, 4);
             }
+
+            // Generate exactly 5 options (1 correct + 4 wrong), randomized.
+            function generateOptions(question) {
+                var correct = question.correct;
+                var wrong = (question.kind === 'sizes') ? generateWrongSizes(correct) : generateWrongAnswers(correct);
+                var options = wrong.concat([correct]);
+                options = shuffleArray(options).slice(0, 5);
+                // For sizes: order buttons by size (ascending) to make guessing feel more sane.
+                if (question && question.kind === 'sizes') {
+                    options = options.slice().sort((a, b) => a - b);
+                }
+                return options;
+             }
 
             // Find a question in a list by matching its stable fields.
             // Returns the index or -1 if not found.
@@ -860,292 +1149,566 @@
             // Shuffle questions at start, unless we start from a hash-question.
             // Hash decoding is async due to compression streams.
             getQuestionFromHash().then(function(hashQuestion) {
-                 if (!hashQuestion) {
-                     quizData = shuffleArray(quizData);
-                 }
+                  if (!hashQuestion) {
+                     // For sizes: bias easy questions early. For java: plain shuffle.
+                     quizData = biasEasyFirst(quizData, 25);
+                  }
 
-                 function Quiz() {
-                     const self = this;
+                  function Quiz() {
+                      const self = this;
 
-                     // Refs
-                     self.alphaToggleEl = null;
+                      // Refs
+                      self.alphaToggleEl = null;
+                      self.otherQuizLinkEl = null;
 
-                     // State
-                     self.startedFromHash = !!hashQuestion;
-                     self.currentIndex = 0;
-                     self.currentQuestionFromHashOnly = null;
+                      // State
+                      self.startedFromHash = !!hashQuestion;
+                      self.currentIndex = 0;
+                      self.currentQuestionFromHashOnly = null;
 
-                     if (hashQuestion) {
-                        // Try to find the hash question in the original full dataset first,
-                        // then map it into the currently active (possibly alpha-filtered) dataset.
-                        var fullIdx = findQuestionIndex(hashQuestion, fullQuizData);
-                        if (fullIdx >= 0) {
-                            // If the question exists in the active pool, use that; otherwise keep it as standalone.
-                            var idx = findQuestionIndex(hashQuestion, quizData);
-                            if (idx >= 0) {
-                                self.currentIndex = idx;
-                                self.currentQuestion = quizData[self.currentIndex];
-                            } else {
-                                self.currentQuestionFromHashOnly = hashQuestion;
-                                self.currentQuestion = self.currentQuestionFromHashOnly;
+                      if (hashQuestion) {
+                          // Try to find the hash question in the original full dataset first,
+                          // then map it into the currently active (possibly alpha-filtered) dataset.
+                          var fullIdx = findQuestionIndex(hashQuestion, fullQuizData);
+                          if (fullIdx >= 0) {
+                              // If the question exists in the active pool, use that; otherwise keep it as standalone.
+                              var idx = findQuestionIndex(hashQuestion, quizData);
+                              if (idx >= 0) {
+                                  self.currentIndex = idx;
+                                  self.currentQuestion = quizData[self.currentIndex];
+                              } else {
+                                  self.currentQuestionFromHashOnly = hashQuestion;
+                                  self.currentQuestion = self.currentQuestionFromHashOnly;
+                              }
+                          } else {
+                              // Unknown payload (possibly from an older build)
+                              var idx = findQuestionIndex(hashQuestion, quizData);
+                              if (idx >= 0) {
+                                  self.currentIndex = idx;
+                                  self.currentQuestion = quizData[self.currentIndex];
+                              } else {
+                                  self.currentQuestionFromHashOnly = hashQuestion;
+                                  self.currentQuestion = self.currentQuestionFromHashOnly;
+                              }
+                          }
+                       } else {
+                           self.currentQuestion = quizData[self.currentIndex];
+                       }
+
+                     self.options = generateOptions(self.currentQuestion);
+                     self.answered = false;
+                     self.selectedOption = null;
+                     self.questionsCount = quizData.length;
+                     self.correctCount = 0;
+                     self.incorrectCount = 0;
+
+                     // Total answered so far (success + failures)
+                     self.totalCount = 0;
+
+                     function renderSizesDetailsHtml(question) {
+                         if (!question || question.kind !== 'sizes') return '';
+
+                         var chosen = question.layoutChosen;
+                         if (!chosen) return '';
+
+                         function prettifyJvmTypeName(t) {
+                             // Convert JVM internal names like "[I", "[Ljava.lang.String;" to nicer forms.
+                             if (!t) return '';
+                             var s = String(t);
+
+                             // Descriptor form without leading array brackets (occasionally shows up):
+                             // "Ljava.lang.String;" -> "java.lang.String"
+                             if (!s.startsWith('[') && s.endsWith(';') && s.startsWith('L')) {
+                                 return s.slice(1, -1);
+                             }
+
+                             // If not an array descriptor, return as-is.
+                             if (!s.startsWith('[')) return s;
+
+                             var dims = 0;
+                             while (s.charAt(dims) === '[') dims++;
+                             var base = s.slice(dims);
+
+                             var primMap = {
+                                 'Z': 'boolean',
+                                 'B': 'byte',
+                                 'C': 'char',
+                                 'S': 'short',
+                                 'I': 'int',
+                                 'J': 'long',
+                                 'F': 'float',
+                                 'D': 'double'
+                             };
+
+                             var name = '';
+                             if (primMap[base]) {
+                                 name = primMap[base];
+                             } else if (base.startsWith('L') && base.endsWith(';')) {
+                                 name = base.slice(1, -1);
+                             } else {
+                                 name = base;
+                             }
+
+                             for (var i = 0; i < dims; i++) name += '[]';
+                             return name;
+                         }
+
+                          function renderFootprintTable(rows) {
+                              rows = Array.isArray(rows) ? rows : [];
+                              if (!rows.length) return '<div class="subtle">No footprint data.</div>';
+                              var head = '<tr><th>count</th><th>avg</th><th>sum</th><th>description</th></tr>';
+                              var body = rows.map(r => {
+                                  return '<tr>' +
+                                      '<td>' + escapeHtml(r.count) + '</td>' +
+                                      '<td>' + escapeHtml(formatBytes(r.avg)) + '</td>' +
+                                      '<td>' + escapeHtml(formatBytes(r.sum)) + '</td>' +
+                                      '<td>' + escapeHtml(prettifyJvmTypeName(r.description)) + '</td>' +
+                                      '</tr>';
+                              }).join('');
+                              return '<div class="table-wrap"><table class="data">' + head + body + '</table></div>';
+                          }
+
+                         function renderLayoutTable(rows) {
+                             rows = Array.isArray(rows) ? rows : [];
+                             if (!rows.length) return '<div class="subtle">No layout data.</div>';
+
+                             // Hide placeholder/noise rows
+                             rows = rows.filter(r => {
+                                 if (!r) return false;
+                                 var t = String(r.type || '').trim();
+                                 var p = String(r.path || '').trim();
+                                 var v = String(r.value || '').trim();
+                                 return !(t === '(something else)' || p === '(something else)' || v === '(something else)');
+                             });
+
+                             if (!rows.length) return '<div class="subtle">No layout data.</div>';
+                              var head = '<tr><th>size</th><th>type</th><th>path</th><th>value</th></tr>';
+                              var body = rows.map(r => {
+                                  return '<tr>' +
+                                      '<td>' + escapeHtml(formatBytes(r.size)) + '</td>' +
+                                      '<td>' + escapeHtml(prettifyJvmTypeName(r.type)) + '</td>' +
+                                      '<td>' + escapeHtml(r.path) + '</td>' +
+                                      '<td>' + escapeHtml(r.value) + '</td>' +
+                                      '</tr>';
+                              }).join('');
+                              return '<div class="table-wrap"><table class="data">' + head + body + '</table></div>';
+                          }
+
+                         function renderClassLayouts(classLayouts) {
+                             classLayouts = Array.isArray(classLayouts) ? classLayouts : [];
+                             if (!classLayouts.length) return '<div class="subtle">No class layout data.</div>';
+
+                             function isNonZeroNumber(x) {
+                                 return typeof x === 'number' && isFinite(x) && x !== 0;
+                             }
+
+                             function spaceLossesTag(spaceLosses) {
+                                 if (!spaceLosses) return '';
+
+                                 // New (parsed) form: { internal, external, total }
+                                 if (typeof spaceLosses === 'object') {
+                                     var internal = Number(spaceLosses.internal);
+                                     var external = Number(spaceLosses.external);
+                                     var total = Number(spaceLosses.total);
+
+                                     // Only show when there is any loss.
+                                     if (!(isNonZeroNumber(internal) || isNonZeroNumber(external) || isNonZeroNumber(total))) {
+                                         return '';
+                                     }
+                                     // Prefer total if present.
+                                     if (isFinite(total)) {
+                                         return '<span class="tag">Space losses: ' + escapeHtml(String(total)) + ' B total</span>';
+                                     }
+                                     // Fallback formatting.
+                                     return '<span class="tag">Space losses: ' + escapeHtml(String(internal)) + ' B internal + ' + escapeHtml(String(external)) + ' B external</span>';
+                                 }
+
+                                 // Legacy string form: "Space losses: 0 bytes internal + 4 bytes external = 4 bytes total"
+                                 var s = String(spaceLosses);
+                                 var m = s.match(/Space\s+losses:\s*(\d+)\s*bytes\s*internal\s*\+\s*(\d+)\s*bytes\s*external\s*=\s*(\d+)\s*bytes\s*total/i);
+                                 if (m) {
+                                     var internal = Number(m[1]);
+                                     var external = Number(m[2]);
+                                     var total = Number(m[3]);
+                                     if (!(isNonZeroNumber(internal) || isNonZeroNumber(external) || isNonZeroNumber(total))) return '';
+                                     return '<span class="tag">Space losses: ' + escapeHtml(String(total)) + ' B total</span>';
+                                 }
+
+                                 // Unknown format: show only if it doesn't look like all-zero.
+                                 if (s.includes('= 0 bytes total')) return '';
+                                 return '<span class="tag">' + escapeHtml(s) + '</span>';
+                             }
+
+                             function renderClassLayoutValueCell(value) {
+                                var s = String(value ?? '').trim();
+
+                                // Example:
+                                // 0x000001f583fe9801 (hash: 0xf583fe98; age: 0)
+                                var m = s.match(/^(0x[0-9a-fA-F]+)\s*\(hash:\s*(0x[0-9a-fA-F]+);\s*age:\s*(\d+)\)\s*$/);
+                                if (m) {
+                                    var addr = m[1];
+                                    var hash = m[2];
+                                    var age = m[3];
+                                    return (
+                                        '<span>' +
+                                        escapeHtml(addr) +
+                                        '<span class="pill" style="margin-right:6px;">hash ' + escapeHtml(hash) + '</span>' +
+                                        '<span class="pill">age ' + escapeHtml(age) + '</span>' +
+                                        '</span>'
+                                    );
+                                }
+
+                                // Example:
+                                // 0x01113260af3fe801 (Lilliput)
+                                m = s.match(/^(0x[0-9a-fA-F]+)\s*\(([^)]+)\)\s*$/);
+                                if (m) {
+                                    var addr = m[1];
+                                    var tag = m[2];
+                                    return (
+                                        '<span>' +
+                                        escapeHtml(addr) +
+                                        '<span class="pill">' + escapeHtml(tag) + '</span>' +
+                                        '</span>'
+                                    );
+                                }
+
+                                return escapeHtml(s);
                             }
-                        } else {
-                            // Unknown payload (possibly from an older build)
-                            var idx = findQuestionIndex(hashQuestion, quizData);
-                            if (idx >= 0) {
-                                self.currentIndex = idx;
-                                self.currentQuestion = quizData[self.currentIndex];
-                            } else {
-                                self.currentQuestionFromHashOnly = hashQuestion;
-                                self.currentQuestion = self.currentQuestionFromHashOnly;
-                            }
-                        }
-                     } else {
-                         self.currentQuestion = quizData[self.currentIndex];
+
+                             function renderOne(cl) {
+                                 if (!cl) return '';
+                                 var title = prettifyJvmTypeName(cl.type || '') || '(unknown type)';
+                                 var rows = Array.isArray(cl.rows) ? cl.rows : [];
+
+                                 var metaParts = [];
+                                 if (cl.instanceSize != null) {
+                                     metaParts.push('<span class="tag">Instance size: ' + escapeHtml(formatBytes(cl.instanceSize)) + '</span>');
+                                 }
+                                var sl = spaceLossesTag(cl.spaceLosses);
+                                if (sl) metaParts.push(sl);
+                                 var metaHtml = metaParts.length ? ('<div class="class-layout-meta">' + metaParts.join('') + '</div>') : '';
+
+                                 var headerHtml = `
+<div class="class-layout-title">
+  <div class="type">${escapeHtml(title)}</div>
+  ${metaHtml}
+</div>`;
+
+                                 if (!rows.length) {
+                                     return `
+<div class="class-layout-block">
+  ${headerHtml}
+  <div class="subtle">No parsed class layout rows.</div>
+</div>`;
+                                 }
+
+                                 var head = '<tr><th>offset</th><th>size</th><th>type</th><th>description</th><th>value</th></tr>';
+                                 var body = rows.map(r => {
+                                     return '<tr>' +
+                                         '<td>' + escapeHtml(r.offset) + '</td>' +
+                                         '<td>' + escapeHtml(r.size) + '</td>' +
+                                         '<td>' + escapeHtml(prettifyJvmTypeName(r.type || '')) + '</td>' +
+                                         '<td class="wrap">' + escapeHtml(r.description || '') + '</td>' +
+                                         '<td class="wrap">' + renderClassLayoutValueCell(r.value || '') + '</td>' +
+                                         '</tr>';
+                                 }).join('');
+
+                                 return `
+<div class="class-layout-block">
+  ${headerHtml}
+  <div class="table-wrap"><table class="data mono">${head}${body}</table></div>
+</div>`;
+                             }
+
+                             return classLayouts.map(renderOne).join('');
+                         }
+
+                         var coh = (chosen.UseCompactObjectHeaders === true) ? 'Compact headers: ON' : 'Compact headers: OFF';
+
+                         return `
+   <div class="answer-details">
+     <h3>Footprint</h3>
+     ${renderFootprintTable(chosen.footprint)}
+     <h3>Layout</h3>
+     ${renderLayoutTable(chosen.layout)}
+    <h3>Class layouts</h3>
+    ${renderClassLayouts(chosen.classLayout)}
+    <details style="margin-top: 12px;">
+      <summary class="subtle">Show full code (non-sanitized)</summary>
+      <div class="code-container" style="margin-top:8px;">
+        <pre><code class="language-java">${escapeHtml(question.rawCode || '')}</code></pre>
+      </div>
+    </details>
+   </div>`;
                      }
 
-                    self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
-                    self.answered = false;
-                    self.selectedOption = null;
-                    self.questionsCount = quizData.length;
-                    self.correctCount = 0;
-                    self.incorrectCount = 0;
+                     const updateUI = () => {
+                         // Update scores in footer
+                         if (self.correctEl) {
+                             self.correctEl.textContent = self.correctCount;
+                         }
+                         if (self.totalEl) {
+                             self.totalEl.textContent = self.totalCount;
+                         }
 
-                    // Total answered so far (success + failures)
-                    self.totalCount = 0;
+                         // Alpha toggle link
+                         if (QUIZ_MODE === 'java') {
+                             updateAlphaLink(self.alphaToggleEl);
+                         } else if (self.alphaToggleEl) {
+                             self.alphaToggleEl.style.display = 'none';
+                         }
 
-                    const updateUI = () => {
-                        // Update scores in footer
-                        if (self.correctEl) {
-                            self.correctEl.textContent = self.correctCount;
-                        }
-                        if (self.totalEl) {
-                            self.totalEl.textContent = self.totalCount;
-                        }
+                         // Cross-link to the other quiz (optional, configured at build time)
+                         if (self.otherQuizLinkEl) {
+                              const base = '{%other_game_url%}';
+                              if (!base) {
+                                  self.otherQuizLinkEl.style.display = 'none';
+                              } else {
+                                  self.otherQuizLinkEl.style.display = '';
+                                  if (QUIZ_MODE === 'sizes') {
+                                      self.otherQuizLinkEl.textContent = 'Java Quiz';
+                                  } else {
+                                      self.otherQuizLinkEl.textContent = 'Object Sizes Quiz';
+                                  }
+                                  // other_game_url is expected to already point to the right quiz (no hash juggling here)
+                                  self.otherQuizLinkEl.href = base;
+                              }
+                          }
 
-                        // Alpha toggle link
-                        updateAlphaLink(self.alphaToggleEl);
+                         // Share link: always visible and always points to the *currently shown* question.
+                         // We keep the page URL clean (no hash changes) by only updating the link's href.
+                         if (self.shareLinkEl) {
+                             self.shareLinkEl.style.display = '';
+                             self.shareLinkEl.title = 'Open/copy a URL that starts at this question';
 
-                        // Share link: always visible and always points to the *currently shown* question.
-                        // We keep the page URL clean (no hash changes) by only updating the link's href.
-                        if (self.shareLinkEl) {
-                            self.shareLinkEl.style.display = '';
-                            self.shareLinkEl.title = 'Open/copy a URL that starts at this question';
+                             // Show a placeholder while we (async) compute the compressed payload.
+                             self.shareLinkEl.href = '#';
 
-                            // Show a placeholder while we (async) compute the compressed payload.
-                            self.shareLinkEl.href = '#';
+                             // Compute and set href asynchronously; protect against races when questions change quickly.
+                             const myQuestion = self.currentQuestion;
+                             const myUpdateToken = (self._shareLinkUpdateToken || 0) + 1;
+                             self._shareLinkUpdateToken = myUpdateToken;
 
-                            // Compute and set href asynchronously; protect against races when questions change quickly.
-                            const myQuestion = self.currentQuestion;
-                            const myUpdateToken = (self._shareLinkUpdateToken || 0) + 1;
-                            self._shareLinkUpdateToken = myUpdateToken;
+                             (async function() {
+                                 try {
+                                     var payload = await encodeQuestionToHashPayload(myQuestion);
+                                     // Only apply if this is still the latest update.
+                                     if (self._shareLinkUpdateToken !== myUpdateToken) return;
 
-                            (async function() {
-                                try {
-                                    var payload = await encodeQuestionToHashPayload(myQuestion);
-                                    // Only apply if this is still the latest update.
-                                    if (self._shareLinkUpdateToken !== myUpdateToken) return;
-
-                                    // Build a canonical share URL (robust with reverse proxies / subpaths).
-                                    // Preserve FULL URL's query params (if any) and include '#alpha' if enabled.
-                                    var url = new URL('index.html', canonicalBaseUrl());
-                                    url.search = window.location.search;
-                                    // Note: set the hash only on the share link URL, not on the page itself.
-                                    url.hash = buildHashForShareLink(payload);
-                                    self.shareLinkEl.href = url.toString();
-                                } catch (e) {
-                                    // Keep it as '#' if anything goes wrong.
-                                }
+                                     // Build a canonical share URL (robust with reverse proxies / subpaths).
+                                     // Preserve FULL URL's query params (if any) and include '#alpha' if enabled.
+                                     var url = new URL('index.html', canonicalBaseUrl());
+                                     url.search = window.location.search;
+                                     // Note: set the hash only on the share link URL, not on the page itself.
+                                     url.hash = buildHashForShareLink(payload);
+                                     self.shareLinkEl.href = url.toString();
+                                 } catch (e) {
+                                     // Keep it as '#' if anything goes wrong.
+                                 }
                             })();
-                        }
+                         }
 
-                        // Update code
-                        if (self.codeEl) {
-                            self.codeEl.textContent = self.currentQuestion.code;
-                            setTimeout(() => Prism.highlightAll(), 10);
-                        }
+                         // Update code
+                         if (self.codeEl) {
+                             self.codeEl.textContent = self.currentQuestion.code;
+                             setTimeout(() => Prism.highlightAll(), 10);
+                         }
 
-                        // Update options
-                        if (self.optionsEl) {
-                            if (!self.answered) {
-                                self.optionsEl.classList.remove('answered');
-                                // Always display options ordered by version
-                                const sortedOpts = self.options.slice().sort((a, b) => a - b);
-                                self.optionsEl.innerHTML = sortedOpts.map((opt, index) => {
-                                    return `<button onclick="quizSelect(${opt})" title="Press ${index + 1}">Java ${formatVersion(opt)}</button>`;
+                         // Update options
+                         if (self.optionsEl) {
+                             if (!self.answered) {
+                                 self.optionsEl.classList.remove('answered');
+                                // Always show 5 randomized buttons (order matters for the game)
+                                self.optionsEl.innerHTML = self.options.map((opt, index) => {
+                                    return `<button onclick="quizSelect(${opt})" title="Press ${index + 1}">${escapeHtml(questionAnswerLabel(self.currentQuestion, opt))}</button>`;
                                 }).join('');
-                            } else {
-                                self.optionsEl.classList.add('answered');
+                             } else {
+                                 self.optionsEl.classList.add('answered');
 
-                                const isCorrect = self.selectedOption === self.currentQuestion.correct;
+                                 const isCorrect = self.selectedOption === self.currentQuestion.correct;
 
-                                // When correct: keep only the selected (which is also correct)
-                                // When wrong: keep selected + correct
-                                let leftVersions;
-                                if (isCorrect) {
-                                    leftVersions = [self.selectedOption];
-                                } else {
-                                    leftVersions = [self.currentQuestion.correct, self.selectedOption];
-                                }
+                                 // When correct: keep only the selected (which is also correct)
+                                 // When wrong: keep selected + correct
+                                 let leftVersions;
+                                 if (isCorrect) {
+                                     leftVersions = [self.selectedOption];
+                                 } else {
+                                     leftVersions = [self.currentQuestion.correct, self.selectedOption];
+                                 }
 
-                                // Always order left buttons by version number
-                                leftVersions = leftVersions
-                                    .filter((v, idx) => leftVersions.indexOf(v) === idx)
-                                    .slice()
-                                    .sort((a, b) => a - b);
+                                 // Keep stable ordering on the answered screen but don't re-sort by value
+                                 leftVersions = leftVersions.filter((v, idx) => leftVersions.indexOf(v) === idx);
 
-                                const leftButtons = leftVersions.map((opt) => {
-                                    const cls = (opt === self.currentQuestion.correct) ? 'correct' : 'wrong';
-                                    return `<button class="${cls}" disabled>Java ${formatVersion(opt)}</button>`;
-                                });
+                                 const leftButtons = leftVersions.map((opt) => {
+                                     const cls = (opt === self.currentQuestion.correct) ? 'correct' : 'wrong';
+                                     return `<button class="${cls}" disabled>${escapeHtml(questionAnswerLabel(self.currentQuestion, opt))}</button>`;
+                                 });
 
-                                self.optionsEl.innerHTML = `
-                                    <div class="answers-left">${leftButtons.join('')}</div>
-                                    <button class="next-inline" onclick="quizNext()" title="Press Enter">Next Question</button>
-                                `;
-                            }
-                        }
+                                 self.optionsEl.innerHTML = `
+                                     <div class="answers-left">${leftButtons.join('')}</div>
+                                     <button class="next-inline" onclick="quizNext()" title="Press Enter">Next Question</button>
+                                 `;
+                             }
+                         }
 
-                        // Update feedback
-                        if (self.feedbackEl) {
-                            if (!self.answered) {
-                                self.feedbackEl.innerHTML = '';
-                            } else {
-                                const isCorrect = self.selectedOption === self.currentQuestion.correct;
-                                const resultText = isCorrect ? 'Correct!' : 'Wrong!';
-                                const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
+                         // Update feedback
+                         if (self.feedbackEl) {
+                             if (!self.answered) {
+                                 self.feedbackEl.innerHTML = '';
+                             } else {
+                                 const isCorrect = self.selectedOption === self.currentQuestion.correct;
+                                 const resultText = isCorrect ? 'Correct!' : 'Wrong!';
+                                 const feedbackClass = isCorrect ? 'feedback' : 'feedback wrong';
 
-                                // Features for display:
-                                // - if we don't have descriptions yet, show plain list
-                                // - if/when descriptions are loaded, the accordion + explanations will work
-                                let featuresHtml = '';
-                                const richFeatures = getRichFeaturesForQuestion(self.currentQuestion);
+                                 // Features for display:
+                                 // - if we don't have descriptions yet, show plain list
+                                 // - if/when descriptions are loaded, the accordion + explanations will work
+                                 let featuresHtml = '';
+                                 const richFeatures = getRichFeaturesForQuestion(self.currentQuestion);
 
-                                if (richFeatures && richFeatures.length) {
-                                    const visibleFeatures = isAlphaEnabled()
-                                        ? richFeatures
-                                        : richFeatures.filter(f => typeof f.version !== 'number' || f.version >= 0);
-                                    if (visibleFeatures.length) {
-                                        const sortedFeatures = visibleFeatures.slice().sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
-                                        featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
-                                            renderDetectedFeaturesHtml(sortedFeatures) +
-                                            '</div>';
-                                    }
-                                }
 
-                                self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
-                                    <strong>${resultText}</strong> It is Java ${formatVersion(self.currentQuestion.correct)}.
-                                    ${featuresHtml}
-                                </div>`;
+                                 if (QUIZ_MODE === 'java' && richFeatures && richFeatures.length) {
+                                     const visibleFeatures = isAlphaEnabled()
+                                         ? richFeatures
+                                         : richFeatures.filter(f => typeof f.version !== 'number' || f.version >= 0);
+                                     if (visibleFeatures.length) {
+                                         const sortedFeatures = visibleFeatures.slice().sort((a, b) => (b.version ?? 0) - (a.version ?? 0));
+                                         featuresHtml = '<div class="feature-list"><strong>Detected Features:</strong>' +
+                                             renderDetectedFeaturesHtml(sortedFeatures) +
+                                             '</div>';
+                                     }
+                                 }
+                                 const answerLine = (QUIZ_MODE === 'java')
+                                     ? ('It is Java ' + formatVersion(self.currentQuestion.correct) + '.')
+                                     : ('Correct size: ' + formatBytes(self.currentQuestion.correct) + '.');
 
-                                attachLazyMarkdownRendering(self.feedbackEl);
-                            }
-                        }
-                    };
+                                 const sizesDetails = (QUIZ_MODE === 'sizes') ? renderSizesDetailsHtml(self.currentQuestion) : '';
 
-                    onload(() => {
-                        // Ensure alpha link is correct on first paint.
-                        updateAlphaLink(self.alphaToggleEl);
-                        updateUI();
+                                 self.feedbackEl.innerHTML = `<div class="${feedbackClass}">
+                                     <strong>${resultText}</strong> ${escapeHtml(answerLine)}
+                                     ${featuresHtml}
+                                 </div>${sizesDetails}`;
 
-                        // After first render, start fetching feature descriptions + markdown deps in the background.
-                        // This keeps the initial load lean, but makes opening explanations fast.
-                        const prefetchAfterFirstPaint = () => {
-                            // Fire and forget; any failures are handled gracefully.
-                            ensureDescriptionsLoaded();
-                            ensureMarkdownDepsLoaded();
-                        };
+                                 attachLazyMarkdownRendering(self.feedbackEl);
+                                 if (QUIZ_MODE === 'sizes') {
+                                     // Highlight the raw code block in the details section
+                                     setTimeout(() => Prism.highlightAllUnder(self.feedbackEl), 0);
+                                 }
+                             }
+                         }
+                     };
 
-                        // Schedule *after* the browser had a chance to paint.
-                        // This avoids delaying the initial response/interaction with an arbitrary timeout.
-                        const schedulePrefetch = () => {
-                            if (window.requestIdleCallback) {
-                                window.requestIdleCallback(prefetchAfterFirstPaint, { timeout: 1500 });
-                            } else {
-                                // Next tick after paint.
-                                setTimeout(prefetchAfterFirstPaint, 0);
-                            }
-                        };
+                     onload(() => {
+                         // Ensure alpha link is correct on first paint.
+                         if (QUIZ_MODE === 'java') {
+                             updateAlphaLink(self.alphaToggleEl);
+                         }
+                         updateUI();
 
-                        if (window.requestAnimationFrame) {
-                            window.requestAnimationFrame(() => schedulePrefetch());
-                        } else {
-                            schedulePrefetch();
-                        }
+                         // After first render, start fetching feature descriptions + markdown deps in the background.
+                         // This keeps the initial load lean, but makes opening explanations fast.
+                         const prefetchAfterFirstPaint = () => {
+                             // Fire and forget; any failures are handled gracefully.
+                             if (QUIZ_MODE === 'java') {
+                                 ensureDescriptionsLoaded();
+                                 ensureMarkdownDepsLoaded();
+                             }
+                         };
+
+                         // Schedule *after* the browser had a chance to paint.
+                         // This avoids delaying the initial response/interaction with an arbitrary timeout.
+                         const schedulePrefetch = () => {
+                             if (window.requestIdleCallback) {
+                                 window.requestIdleCallback(prefetchAfterFirstPaint, { timeout: 1500 });
+                             } else {
+                                 // Next tick after paint.
+                                 setTimeout(prefetchAfterFirstPaint, 0);
+                             }
+                         };
+
+                         if (window.requestAnimationFrame) {
+                             window.requestAnimationFrame(() => schedulePrefetch());
+                         } else {
+                             schedulePrefetch();
+                         }
                      });
 
-                    window.quizSelect = (option) => {
-                        if (self.answered) return;
-                        self.answered = true;
-                        self.selectedOption = option;
-                        self.totalCount++;
-                        if (option === self.currentQuestion.correct) {
-                            self.correctCount++;
-                        } else {
-                            self.incorrectCount++;
-                        }
-                        // Keep the shared URL available while the answer is shown.
-                        updateUI();
-                    };
+                     window.quizSelect = (option) => {
+                         if (self.answered) return;
+                         self.answered = true;
+                         self.selectedOption = option;
+                         self.totalCount++;
+                         if (option === self.currentQuestion.correct) {
+                             self.correctCount++;
+                         } else {
+                             self.incorrectCount++;
+                         }
+                         // Keep the shared URL available while the answer is shown.
+                         updateUI();
+                     };
 
-                    // Go to next question
-                    window.quizNext = () => {
-                        // Leaving the current question: clean URL by clearing shared hash (if present).
-                        clearQuestionFromHash();
+                     // Go to next question
+                     window.quizNext = () => {
+                         // Leaving the current question: clean URL by clearing shared hash (if present).
+                         clearQuestionFromHash();
 
-                        if (self.currentQuestionFromHashOnly) {
-                            self.currentQuestionFromHashOnly = null;
-                            self.currentIndex = 0;
-                        } else {
-                            if (self.currentIndex < self.questionsCount - 1) {
-                                self.currentIndex++;
-                            } else {
-                                self.currentIndex = 0;
-                            }
-                        }
+                         if (self.currentQuestionFromHashOnly) {
+                             self.currentQuestionFromHashOnly = null;
+                             self.currentIndex = 0;
+                         } else {
+                             if (self.currentIndex < self.questionsCount - 1) {
+                                 self.currentIndex++;
+                             } else {
+                                 self.currentIndex = 0;
+                             }
+                         }
 
-                        self.currentQuestion = quizData[self.currentIndex];
-                        self.options = generateOptions(self.currentQuestion.correct).sort((a, b) => a - b);
-                        self.answered = false;
-                        self.selectedOption = null;
-                        if (self.optionsEl) self.optionsEl.classList.remove('answered');
-                        updateUI();
-                    };
+                         self.currentQuestion = quizData[self.currentIndex];
+                         self.options = generateOptions(self.currentQuestion);
+                         self.answered = false;
+                         self.selectedOption = null;
+                         if (self.optionsEl) self.optionsEl.classList.remove('answered');
+                         updateUI();
+                     };
 
-                    // Keyboard navigation
-                    document.addEventListener('keydown', (e) => {
-                        // Keys 1-5 to select options
-                        if (e.key >= '1' && e.key <= '5' && !self.answered) {
-                            const index = parseInt(e.key) - 1;
-                            if (index < self.options.length) {
-                                window.quizSelect(self.options[index]);
-                            }
-                        }
-                        // Enter to go to next question
-                        if (e.key === 'Enter' && self.answered) {
-                            window.quizNext();
-                        }
-                    });
+                     // Keyboard navigation
+                     document.addEventListener('keydown', (e) => {
+                         // Keys 1-5 to select options
+                         if (e.key >= '1' && e.key <= '5' && !self.answered) {
+                             const index = parseInt(e.key) - 1;
+                             if (index < self.options.length) {
+                                 window.quizSelect(self.options[index]);
+                             }
+                         }
+                         // Enter to go to next question
+                         if (e.key === 'Enter' && self.answered) {
+                             window.quizNext();
+                         }
+                     });
 
-                    return render => render`<div>
-                        <h1>Guess the Java Version</h1>
-                        <div class="code-container">
-                            <pre><code class="language-java" :ref="self.codeEl"></code></pre>
-                        </div>
-                        <div class="options" :ref="self.optionsEl"></div>
-                        <div :ref="self.feedbackEl"></div>
-                        <div class="disclaimer">
-                             Score: <span title="Correct answers / total answered since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #000;" :ref="self.totalEl">${self.totalCount}</span></span>
-                             <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
-                             <a style="padding-left: 1em" :ref="self.alphaToggleEl" href="#alpha=1">Enable Java Alpha</a>
-                             <span style="padding-left: 1em">This is just a fun quiz and may contain errors.</span><br/>
-                             <span>Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a> from the <a href="https://sapmachine.io">SapMachine</a> team. Contribute via <a href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a></span>
+                     return render => render`<div>
+                         <h1>${quizTitle()}</h1>
+                         <div class="code-container">
+                             <pre><code class="language-java" :ref="self.codeEl"></code></pre>
                          </div>
-                    </div>`;
-                }
+                         ${QUIZ_MODE === 'sizes' && self.currentQuestion && self.currentQuestion.layoutChosen
+                             ? `<div class="mode-hint"><span class="subtle">Answer uses</span> <span class="pill">Compact headers: ${self.currentQuestion.layoutChosen.UseCompactObjectHeaders ? 'ON' : 'OFF'}</span></div>`
+                             : ''}
+                          <div class="options" :ref="self.optionsEl"></div>
+                          <div :ref="self.feedbackEl"></div>
+                          <div class="disclaimer">
+                               Score: <span title="Correct answers / total answered since loading this page"><span style="color: #28a745;" :ref="self.correctEl">${self.correctCount}</span>/<span style="color: #000;" :ref="self.totalEl">${self.totalCount}</span></span>
+                               <a style="padding-left: 1em" :ref="self.shareLinkEl" href="#">Link to current question</a>
+                               <a style="padding-left: 1em" :ref="self.alphaToggleEl" href="#alpha=1">Enable Java Alpha</a>
+                               <a style="padding-left: 1em" :ref="self.otherQuizLinkEl" href=""></a>
+                                <span style="padding-left: 1em">This is just a fun quiz and may contain errors.</span><br/>
+                                <span>Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a> from the <a href="https://sapmachine.io">SapMachine</a> team. Contribute via <a href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a></span>
+                            </div>
+                     </div>`;
+                 }
 
-                lemonade.render(Quiz, document.getElementById('app'));
-            });
+                 lemonade.render(Quiz, document.getElementById('app'));
+             });
         }
     </script>
     {%goatcounter_script%}

@@ -30,6 +30,11 @@ Please modify or add to the files in the [features](../src/main/resources/me/bec
 adhering to [feature-descriptions.format](../src/main/resources/me/bechberger/check/feature-descriptions.format) format,
 in a pull request.
 
+Additional Game
+---------------
+There is also the [Object Sizes Quiz](https://mostlynerdless.de/sizes-game) which is a similar game to learn about the sizes of Java objects.
+To contribute to that game, please check the [object-sizes-quiz](../object-sizes-quiz) directory.
+
 Build
 -----
 

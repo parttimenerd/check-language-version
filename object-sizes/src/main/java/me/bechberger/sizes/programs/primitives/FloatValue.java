@@ -2,5 +2,7 @@ package me.bechberger.sizes.programs.primitives;
 
 /* A single float field inside an object. */
 class FloatValue {
-    float value = 1.0f;
+    Holder value = new Holder(1.0f);
+
+    record Holder(float value) {}
 }

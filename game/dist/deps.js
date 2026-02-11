@@ -1,4 +1,4 @@
-// Dependencies: LemonadeJS + PrismJS + markdown-it
+// Dependencies: LemonadeJS + PrismJS
 // Auto-generated - do not edit
 
 // === LemonadeJS ===

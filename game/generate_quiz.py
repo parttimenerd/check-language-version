@@ -1,4 +1,3 @@
-import os
 import re
 import json
 import random
@@ -8,16 +7,20 @@ import argparse
 import tempfile
 import subprocess
 import shutil
+import os
 
 # Configuration
 SOURCE_DIR = 'src/test/resources'
 FEATURE_CHECKER_PATH = 'src/main/java/me/bechberger/check/FeatureChecker.java'
 OUTPUT_DIR = 'game/dist'
 OUTPUT_HTML = os.path.join(OUTPUT_DIR, 'index.html')
+OUTPUT_SIZES_HTML = os.path.join(OUTPUT_DIR, 'sizes.html')
 OUTPUT_DEPS_JS = os.path.join(OUTPUT_DIR, 'deps.js')
 # Late-loaded deps (only needed on answer/explanation screen)
 OUTPUT_DEPS_MD_JS = os.path.join(OUTPUT_DIR, 'deps_md.js')
 OUTPUT_CODE_JSON = os.path.join(OUTPUT_DIR, 'code.json')
+# Object sizes quiz payload (copied from object-sizes/object-sizes.json)
+OUTPUT_OBJECT_SIZES_JSON = os.path.join(OUTPUT_DIR, 'object-sizes.json')
 # Late-loaded feature metadata (labels/versions/descriptions)
 OUTPUT_DESCRIPTIONS_JSON = os.path.join(OUTPUT_DIR, 'descriptions.json')
 OUTPUT_PRISM_CSS = os.path.join(OUTPUT_DIR, 'prism.css')
@@ -592,9 +595,32 @@ def render_template(template, **kwargs):
 
 
 
-def generate_html(questions, goatcounter_url=None, base_url=''):
+def generate_html(questions, goatcounter_url, base_url, generate_java=True, generate_sizes=True,
+                  og_image_url: str = '', other_game_url: str = '',
+                  output_html: str = OUTPUT_HTML,
+                  default_game_meta: str = 'java'):
     # Ensure output directory exists
     os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # Make object-sizes dataset available to the game (if present)
+    if generate_sizes:
+        src_object_sizes = os.path.join(os.path.dirname(__file__), '..', 'object-sizes', 'object-sizes.json')
+        if os.path.exists(src_object_sizes):
+            try:
+                shutil.copy2(src_object_sizes, OUTPUT_OBJECT_SIZES_JSON)
+                print(f"Copied {src_object_sizes} -> {OUTPUT_OBJECT_SIZES_JSON}")
+            except Exception as e:
+                print(f"Warning: failed to copy object-sizes.json: {e}")
+        else:
+            print(f"Info: {src_object_sizes} not found; object-sizes quiz will be unavailable.")
+    else:
+        # If we're not generating the sizes game, don't keep stale payloads around.
+        if os.path.exists(OUTPUT_OBJECT_SIZES_JSON):
+            try:
+                os.remove(OUTPUT_OBJECT_SIZES_JSON)
+                print(f"Removed stale {OUTPUT_OBJECT_SIZES_JSON}")
+            except Exception as e:
+                print(f"Warning: failed to remove stale {OUTPUT_OBJECT_SIZES_JSON}: {e}")
 
     # Normalize base_url: ensure empty string or ends with a single '/'
     if base_url:
@@ -602,8 +628,14 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
             base_url = base_url + '/'
     else:
         base_url = ''
-    # If caller provided a base_url without scheme (common mistake), don't try to fix it here,
-    # but the generated share links will likely be wrong.
+
+    # Share-card image URL: default to base_url + img/screenshot.png
+    og_image_url = (og_image_url or '').strip()
+    if not og_image_url:
+        og_image_url = base_url.rstrip('/') + '/img/screenshot.png' if base_url else 'img/screenshot.png'
+
+    # Cross-link to the other game (optional)
+    other_game_url = (other_game_url or '').strip()
 
     # === Dependencies: download once and cache in OUTPUT_DIR ===
     # We split deps into:
@@ -694,17 +726,27 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
     # Write quiz payload split into:
     # - code.json          : only the entries (needed at startup)
     # - descriptions.json  : feature metadata (needed only when showing explanations)
-    if not isinstance(questions, dict) or 'entries' not in questions:
-        raise ValueError("Expected questions to be a dict with keys {'features','entries'}")
+    if generate_java:
+        if not isinstance(questions, dict) or 'entries' not in questions:
+            raise ValueError("Expected questions to be a dict with keys {'features','entries'}")
 
-    with open(OUTPUT_CODE_JSON, 'w', encoding='utf-8') as f:
-        json.dump({'entries': questions.get('entries', [])}, f, indent=2)
-    entries_count = len(questions.get('entries', []))
-    print(f"Generated {OUTPUT_CODE_JSON} with {entries_count} questions.")
+        with open(OUTPUT_CODE_JSON, 'w', encoding='utf-8') as f:
+            json.dump({'entries': questions.get('entries', [])}, f, indent=2)
+        entries_count = len(questions.get('entries', []))
+        print(f"Generated {OUTPUT_CODE_JSON} with {entries_count} questions.")
 
-    with open(OUTPUT_DESCRIPTIONS_JSON, 'w', encoding='utf-8') as f:
-        json.dump({'features': questions.get('features', {})}, f, indent=2)
-    print(f"Generated {OUTPUT_DESCRIPTIONS_JSON} with {len(questions.get('features', {}))} features.")
+        with open(OUTPUT_DESCRIPTIONS_JSON, 'w', encoding='utf-8') as f:
+            json.dump({'features': questions.get('features', {})}, f, indent=2)
+        print(f"Generated {OUTPUT_DESCRIPTIONS_JSON} with {len(questions.get('features', {}))} features.")
+    else:
+        # If we're not generating the java game, remove stale files.
+        for p in (OUTPUT_CODE_JSON, OUTPUT_DESCRIPTIONS_JSON):
+            if os.path.exists(p):
+                try:
+                    os.remove(p)
+                    print(f"Removed stale {p}")
+                except Exception as e:
+                    print(f"Warning: failed to remove stale {p}: {e}")
 
     # Read and render template
     with open('game/template.html', 'r', encoding='utf-8') as f:
@@ -717,17 +759,43 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
     else:
         goatcounter_script = ''
 
+    # Choose the default (static) meta tags in the generated HTML (for crawlers without JS)
+    default_game_meta = (default_game_meta or '').strip().lower()
+    if default_game_meta not in ('java', 'sizes'):
+        default_game_meta = 'java'
+
+    if default_game_meta == 'sizes':
+        default_og_title = 'Guess the Object Size'
+        default_og_desc = 'Guess how many bytes a Java object takes on the heap.'
+        default_tw_title = default_og_title
+        default_tw_desc = default_og_desc
+    else:
+        default_og_title = 'Guess the Java Version'
+        default_og_desc = "Guess the Java version of a code snippet in this fun game (Java 1.0 to Java 25)."
+        default_tw_title = default_og_title
+        default_tw_desc = default_og_desc
+
     html = render_template(
         html_template,
         prism_css=prism_css,
         goatcounter_script=goatcounter_script,
-        base_url=base_url
+        base_url=base_url,
+        og_image_url=og_image_url,
+        other_game_url=other_game_url,
+        meta_og_title_java=default_og_title,
+        meta_og_desc_java=default_og_desc,
+        meta_tw_title_java=default_tw_title,
+        meta_tw_desc_java=default_tw_desc,
+        meta_og_title_sizes='Guess the Object Size',
+        meta_og_desc_sizes='Guess how many bytes a Java object takes — with detailed footprint and layout breakdowns.',
+        build_has_java=str(bool(generate_java)).lower(),
+        build_has_sizes=str(bool(generate_sizes)).lower()
     )
 
 
-    with open(OUTPUT_HTML, 'w', encoding='utf-8') as f:
+    with open(output_html, 'w', encoding='utf-8') as f:
         f.write(html)
-    print(f"Generated {OUTPUT_HTML}")
+    print(f"Generated {output_html}")
 
     # Copy screenshot image (if present) into dist/img/screenshot.png
     src_img = os.path.join(os.path.dirname(__file__), 'img', 'screenshot.png')
@@ -744,6 +812,9 @@ def generate_html(questions, goatcounter_url=None, base_url=''):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Java Version Quiz')
+    parser.add_argument('--game', type=str, default='both', choices=['java', 'sizes', 'both'],
+                        help="Which game to generate into game/dist: 'java' (code.json+descriptions.json), "
+                             "'sizes' (object-sizes.json only), or 'both' (default).")
     parser.add_argument('--alpha-weight', type=int, default=1, metavar='N',
                         help='Weight multiplier for alpha version questions (default: 1 = shipped once). '
                              'Use 0 to exclude them from code.json, or >1 to increase their frequency.')
@@ -753,9 +824,17 @@ if __name__ == "__main__":
                         help='Required. Base URL to prefix to relative asset paths and for share links (e.g., https://example.com/quiz/).')
     parser.add_argument('--goatcounter', type=str, metavar='URL',
                         help='GoatCounter URL for analytics (e.g., https://example.goatcounter.com/count).')
+    parser.add_argument('--og-image-url', type=str, metavar='URL', default='',
+                        help='Optional. Absolute URL for the share-card image (OpenGraph/Twitter). '
+                             'If not set, defaults to "<base-url>img/screenshot.png".')
+    parser.add_argument('--other-game-url', type=str, metavar='URL', default='',
+                        help='Optional. URL to the other quiz (shown as a cross-link in the footer when available).')
     args = parser.parse_args()
     if not args.base_url.strip():
         raise SystemExit('--base-url must not be empty')
+
+    generate_java = args.game in ('java', 'both')
+    generate_sizes = args.game in ('sizes', 'both')
 
     # If --test is specified, run tests and exit
     if args.test:
@@ -765,46 +844,77 @@ if __name__ == "__main__":
     if not os.path.exists(SOURCE_DIR):
         print(f"Error: {SOURCE_DIR} does not exist.")
     else:
-        qs = scan_files()
+        qs = None
+        if generate_java:
+            qs = scan_files()
 
-        # Load feature markdown once for use in alpha-only feature metadata.
-        # (scan_files() loads it internally; we also need it here when merging alpha entries.)
-        feature_map = parse_feature_enum(FEATURE_CHECKER_PATH)
-        feature_markdown = load_feature_markdown_files(set(feature_map.keys()) if feature_map else None)
+        if generate_java:
+            # Load feature markdown once for use in alpha-only feature metadata.
+            # (scan_files() loads it internally; we also need it here when merging alpha entries.)
+            feature_map = parse_feature_enum(FEATURE_CHECKER_PATH)
+            feature_markdown = load_feature_markdown_files(set(feature_map.keys()) if feature_map else None)
 
-        # Load hand-crafted alpha questions too (keep compatibility)
-        alpha_weight = getattr(args, 'alpha_weight', 1)
-        if alpha_weight > 0:
-            alpha_qs = load_alpha_questions()
-            alpha1_qs = load_alpha1_questions()
+            # Load hand-crafted alpha questions too (keep compatibility)
+            alpha_weight = getattr(args, 'alpha_weight', 1)
+            if alpha_weight > 0:
+                alpha_qs = load_alpha_questions()
+                alpha1_qs = load_alpha1_questions()
 
-            # Old alpha jsons have per-question feature objects; map to feature-name lists.
-            def _normalize_alpha(q):
-                feats = q.get('features', [])
-                if isinstance(feats, list) and feats and isinstance(feats[0], dict):
-                    q = dict(q)
-                    q['features'] = [f.get('name') for f in feats if f.get('name')]
-                return q
+                # Old alpha jsons have per-question feature objects; map to feature-name lists.
+                def _normalize_alpha(q):
+                    feats = q.get('features', [])
+                    if isinstance(feats, list) and feats and isinstance(feats[0], dict):
+                        q = dict(q)
+                        q['features'] = [f.get('name') for f in feats if f.get('name')]
+                    return q
 
-            alpha_entries = [_normalize_alpha(q) for q in (alpha_qs + alpha1_qs)]
+                alpha_entries = [_normalize_alpha(q) for q in (alpha_qs + alpha1_qs)]
 
-            # Ensure feature registry has any alpha features that are referenced.
-            for q in alpha_entries:
-                for name in q.get('features', []) or []:
-                    if name and name not in qs['features']:
-                        # Alpha-only / historical feature: keep minimal metadata.
-                        qs['features'][name] = {
-                            'label': name,
-                            'description': feature_markdown.get(name, ''),
-                            'version': q.get('correct', -3),
-                        }
+                # Ensure feature registry has any alpha features that are referenced.
+                for q in alpha_entries:
+                    for name in q.get('features', []) or []:
+                        if name and name not in qs['features']:
+                            # Alpha-only / historical feature: keep minimal metadata.
+                            qs['features'][name] = {
+                                'label': name,
+                                'description': feature_markdown.get(name, ''),
+                                'version': q.get('correct', -3),
+                            }
 
-            # Add alpha entries according to weight.
-            # If weight==1: include once, if >1 duplicates.
-            qs['entries'].extend(alpha_entries * alpha_weight)
+                # Add alpha entries according to weight.
+                # If weight==1: include once, if >1 duplicates.
+                qs['entries'].extend(alpha_entries * alpha_weight)
 
-        # Shuffle after merging
-        random.shuffle(qs['entries'])
+            # Shuffle after merging
+            random.shuffle(qs['entries'])
 
         os.makedirs(OUTPUT_DIR, exist_ok=True)
-        generate_html(qs, goatcounter_url=args.goatcounter, base_url=args.base_url)
+        payload = qs or {'entries': [], 'features': {}}
+
+        # Generate entrypoints:
+        # - both games: index.html (java) + sizes.html (sizes)
+        # - single game: index.html for that game
+        if generate_java and generate_sizes:
+            generate_html(payload, goatcounter_url=args.goatcounter, base_url=args.base_url,
+                          generate_java=generate_java,
+                          generate_sizes=generate_sizes,
+                          og_image_url=args.og_image_url,
+                          other_game_url=args.other_game_url,
+                          output_html=OUTPUT_HTML,
+                          default_game_meta='java')
+            generate_html(payload, goatcounter_url=args.goatcounter, base_url=args.base_url,
+                          generate_java=generate_java,
+                          generate_sizes=generate_sizes,
+                          og_image_url=args.og_image_url,
+                          other_game_url=args.other_game_url,
+                          output_html=OUTPUT_SIZES_HTML,
+                          default_game_meta='sizes')
+        else:
+            default_meta = 'sizes' if generate_sizes and not generate_java else 'java'
+            generate_html(payload, goatcounter_url=args.goatcounter, base_url=args.base_url,
+                          generate_java=generate_java,
+                          generate_sizes=generate_sizes,
+                          og_image_url=args.og_image_url,
+                          other_game_url=args.other_game_url,
+                          output_html=OUTPUT_HTML,
+                          default_game_meta=default_meta)

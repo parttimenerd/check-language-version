@@ -8,6 +8,7 @@ import me.bechberger.minicli.MiniCli;
 import me.bechberger.minicli.Spec;
 import me.bechberger.minicli.annotations.Command;
 import me.bechberger.minicli.annotations.Option;
+import org.openjdk.jol.info.ClassLayout;
 import org.openjdk.jol.info.GraphLayout;
 
 import java.io.IOException;
@@ -20,6 +21,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -114,11 +118,12 @@ public class Main implements Runnable {
         var parsedLayout = ProgramResults.parseGraphLayoutPrintable(printable);
         var parsedFootprint = ProgramResults.parseFootprint(footprint);
         Integer rating = parsedLayout == null ? null : parsedLayout.size();
-
+        var classLayouts = collectClassLayouts(value);
         var layoutResult = new ProgramResults.LayoutResult(
                 totalSize,
                 parsedLayout,
                 parsedFootprint,
+                classLayouts,
                 compactHeaders
         );
 
@@ -130,6 +135,157 @@ public class Main implements Runnable {
                 Instant.now().toString(),
                 List.of(layoutResult)
         );
+    }
+
+    /**
+     * Collect ClassLayout#printable for {@code root} and for all reachable non-primitive field values.
+     *
+     * <p>Traversal is best-effort:
+     * <ul>
+     *   <li>Cycle-safe via identity tracking</li>
+     *   <li>Skips primitives and primitive arrays</li>
+     *   <li>Traverses arrays of references</li>
+     *   <li>Traverses instance fields (including private), stopping at Object</li>
+     * </ul>
+     */
+    private static List<ProgramResults.ParsedClassLayout> collectClassLayouts(Object root) {
+        if (root == null) return List.of();
+
+        // Keep a stable insertion order for nicer diffs.
+        Map<String, ProgramResults.ParsedClassLayout> byType = new LinkedHashMap<>();
+        IdentityHashMap<Object, Boolean> seen = new IdentityHashMap<>();
+
+        ArrayList<Object> work = new ArrayList<>();
+        work.add(root);
+
+        // Use the example program base class name as the prefix to strip.
+        // JOL can emit types using either '$' or '.' to separate nested classes.
+        // Examples:
+        // - me...MultiRecord$Person -> Person
+        // - me...SelfCycle$Node or me...SelfCycle.Node -> Node
+        // - me...ThreeNodeCycle.Node -> Node
+        String outerToStrip = normalizeProgramBaseClassName(root.getClass().getName());
+
+        while (!work.isEmpty()) {
+            Object obj = work.remove(work.size() - 1);
+            if (obj == null) continue;
+            if (seen.put(obj, Boolean.TRUE) != null) continue;
+
+            Class<?> c = obj.getClass();
+
+            String fullType = c.getName();
+            String normalizedType = normalizeCollectedLayoutType(fullType, outerToStrip);
+
+            if (!byType.containsKey(normalizedType)) {
+                try {
+                    String printable = ClassLayout.parseInstance(obj).toPrintable();
+                    var parsed = ProgramResults.parseClassLayoutPrintable(printable);
+
+                    // Ensure the type is always present and normalized.
+                    parsed = new ProgramResults.ParsedClassLayout(
+                            normalizedType,
+                            parsed.rows(),
+                            parsed.instanceSize(),
+                            parsed.spaceLosses()
+                    );
+
+                    byType.put(normalizedType, parsed);
+                } catch (Throwable t) {
+                    // Fallback: still record that we saw this type.
+                    byType.put(normalizedType, new ProgramResults.ParsedClassLayout(normalizedType, List.of(), null, null));
+                }
+            }
+
+            // Traverse references.
+            if (c.isArray()) {
+                Class<?> comp = c.getComponentType();
+                if (!comp.isPrimitive() && obj instanceof Object[] arr) {
+                    for (Object el : arr) {
+                        if (el != null) work.add(el);
+                    }
+                }
+                continue;
+            }
+
+            // Skip Class objects (huge graph) and enums (often singletons shared widely).
+            if (obj instanceof Class<?> || c.isEnum()) {
+                continue;
+            }
+
+            // Records: also traverse via record component accessors.
+            // This is important because reflective field access can fail under stronger encapsulation.
+            if (c.isRecord()) {
+                try {
+                    for (var rc : c.getRecordComponents()) {
+                        Class<?> t = rc.getType();
+                        if (t.isPrimitive()) continue;
+                        var accessor = rc.getAccessor();
+                        if (accessor == null) continue;
+                        accessor.setAccessible(true);
+                        Object v = accessor.invoke(obj);
+                        if (v != null) work.add(v);
+                    }
+                } catch (Throwable ignored) {
+                    // best-effort
+                }
+            }
+
+            // Walk class hierarchy and enqueue non-primitive field values.
+            for (Class<?> k = c; k != null && k != Object.class; k = k.getSuperclass()) {
+                Field[] fields;
+                try {
+                    fields = k.getDeclaredFields();
+                } catch (Throwable t) {
+                    continue;
+                }
+                for (Field f : fields) {
+                    int mod = f.getModifiers();
+                    if (Modifier.isStatic(mod)) continue;
+                    if (f.getType().isPrimitive()) continue;
+                    try {
+                        f.setAccessible(true);
+                        Object v = f.get(obj);
+                        if (v != null) work.add(v);
+                    } catch (Throwable t) {
+                        // ignore inaccessible/broken fields
+                    }
+                }
+            }
+        }
+
+        return byType.values().stream().filter(v -> v != null).toList();
+    }
+
+    /**
+     * Determine the base class name of the example program from a runtime class name.
+     *
+     * <p>We want to strip the outer program name from nested types in class layout output.
+     * For instance:
+     * <ul>
+     *   <li>me...MultiRecord$Person -> me...MultiRecord</li>
+     *   <li>me...ThreeNodeCycle.Node -> me...ThreeNodeCycle</li>
+     * </ul>
+     */
+    private static String normalizeProgramBaseClassName(String className) {
+        if (className == null) return "";
+        String base = className;
+        int dollar = base.indexOf('$');
+        if (dollar >= 0) base = base.substring(0, dollar);
+
+        // If the root class is itself a nested class printed with '.', strip trailing segments
+        // to the first segment after the package.
+        // Heuristic: for "pkg.Outer.Inner" we turn it into "pkg.Outer".
+        int lastDot = base.lastIndexOf('.');
+        if (lastDot >= 0) {
+            // keep package + first simple name
+            String pkg = base.substring(0, lastDot);
+            String simple = base.substring(lastDot + 1);
+            int innerDot = simple.indexOf('.');
+            if (innerDot >= 0) {
+                base = pkg + "." + simple.substring(0, innerDot);
+            }
+        }
+        return base;
     }
 
     private static Object instantiate(Class<?> clazz) throws Exception {
@@ -261,17 +417,13 @@ public class Main implements Runnable {
     }
 
     private static String normalizeWhitespacePreserveNewlines(String code) {
-        // Keep line structure for readability in JSON, but normalize within lines.
+        // Keep original whitespace as much as possible.
         // - Normalize CRLF -> LF
-        // - Strip trailing spaces
-        // - Collapse runs of spaces/tabs inside each line
+        // - Trim leading/trailing blank lines
+        // IMPORTANT: Do NOT collapse multiple spaces/tabs inside lines.
         if (code == null || code.isEmpty()) return "";
         String lf = code.replace("\r\n", "\n").replace("\r", "\n");
         return lf.lines()
-                .map(line -> line
-                        .replaceAll("[\\t ]+", " ")
-                        .replaceAll("\\s+$", "")
-                )
                 .collect(java.util.stream.Collectors.joining("\n"))
                 .trim();
     }
@@ -333,5 +485,33 @@ public class Main implements Runnable {
                 .filter(l -> !l.contains(" footprint:"))
                 .collect(Collectors.joining("\n"))
                 .trim();
+    }
+
+    private static String normalizeCollectedLayoutType(String fullType, String outerToStrip) {
+        if (fullType == null) return "";
+
+        String t = fullType;
+
+        // Strip the example program base class prefix, if present.
+        if (outerToStrip != null && !outerToStrip.isBlank()) {
+            String dollarPrefix = outerToStrip + "$";
+            String dotPrefix = outerToStrip + ".";
+            if (t.startsWith(dollarPrefix)) {
+                t = t.substring(dollarPrefix.length());
+            } else if (t.startsWith(dotPrefix)) {
+                t = t.substring(dotPrefix.length());
+            }
+        }
+
+        // Always reduce to the innermost name if nested separators remain.
+        int lastDollar = t.lastIndexOf('$');
+        if (lastDollar >= 0 && lastDollar + 1 < t.length()) {
+            t = t.substring(lastDollar + 1);
+        }
+        int lastDot = t.lastIndexOf('.');
+        if (lastDot >= 0 && lastDot + 1 < t.length()) {
+            t = t.substring(lastDot + 1);
+        }
+        return t;
     }
 }
