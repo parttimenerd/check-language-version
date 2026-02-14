@@ -1,5 +1,7 @@
 package me.bechberger.check;
 
+import static java.util.Collections.emptyMap;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 import java.io.*;
@@ -199,22 +201,25 @@ public class TestRunner {
      * Run tests in a directory
      */
     public static Map<String, TestResult> runTestsInDirectory(File dir) throws IOException {
-        Map<String, TestResult> results = new LinkedHashMap<>();
-
         File[] files = dir.listFiles((d, name) -> name.endsWith(".java"));
         if (files == null) {
-            return results;
+            return emptyMap();
         }
 
-        Arrays.sort(files);
-
-        for (File file : files) {
-            TestSpec spec = parseTestSpec(file);
-            TestResult result = runTest(spec);
-            results.put(file.getName(), result);
-        }
-
-        return results;
+        return Arrays.stream(files).sorted()
+                .collect(toMap(
+                        File::getName,
+                        file -> {
+                            try {
+                                TestSpec spec = parseTestSpec(file);
+                                return runTest(spec);
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
+                        },
+                        (existing, replacement) -> existing,
+                        LinkedHashMap::new
+                ));
     }
 
     /**
