@@ -308,11 +308,10 @@ public class FeatureChecker {
             if (packageLevelMatch) {
                 // Package-level: matches if import starts with package
                 return importName.startsWith(packageName + ".") || importName.equals(packageName);
-            } else {
-                // Type-level: matches if import is exactly package.TypeName
-                return typeNames != null && Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName)
-                        .anyMatch(fullName -> importName.equals(fullName) || importName.startsWith(fullName + ".") || importName.startsWith(fullName + "$"));
             }
+			// Type-level: matches if import is exactly package.TypeName
+			return typeNames != null && Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName)
+			        .anyMatch(fullName -> importName.equals(fullName) || importName.startsWith(fullName + ".") || importName.startsWith(fullName + "$"));
         }
 
         /**
@@ -358,11 +357,10 @@ public class FeatureChecker {
 
             if (packageLevelMatch) {
                 return baseFqn.startsWith(packageName + ".") || baseFqn.equals(packageName);
-            } else {
-                return typeNames != null &&
-                        Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName).
-                                anyMatch(fullName -> baseFqn.equals(fullName) || baseFqn.startsWith(fullName + ".") || baseFqn.startsWith(fullName + "$"));
             }
+			return typeNames != null &&
+			        Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName).
+			                anyMatch(fullName -> baseFqn.equals(fullName) || baseFqn.startsWith(fullName + ".") || baseFqn.startsWith(fullName + "$"));
         }
     }
 
@@ -513,12 +511,6 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("javax.crypto.kdf", JavaFeature.KEY_DERIVATION_API),
         TypeFeatureRule.types("javax.crypto", JavaFeature.KEY_DERIVATION_API, "KDF")
     );
-    /**
-     * Index of rules by package for efficient lookup.
-     */
-    private static final Map<String, List<TypeFeatureRule>> RULES_BY_PACKAGE =
-            Collections.unmodifiableMap(TYPE_FEATURE_RULES.stream()
-                    .collect(Collectors.groupingBy(rule -> rule.packageName)));
 
     /**
      * Result of feature checking containing all detected features.
@@ -982,7 +974,10 @@ public class FeatureChecker {
     }
 
     static class ParseFailureException extends Exception {
-        public ParseFailureException(String message) {
+
+        private static final long serialVersionUID = 1L;
+
+		public ParseFailureException(String message) {
             super(message);
         }
 
@@ -1092,7 +1087,6 @@ public class FeatureChecker {
     private static boolean headerDeclaresTypeAnnotations(String sourceCode) {
         // Only scan the first ~15 lines for performance and to keep this "header" based.
         String[] lines = sourceCode.split("\n", -1);
-        int max = Math.min(lines.length, 15);
         return Arrays.stream(lines).limit(15).anyMatch(line -> line.contains("Required Features") && line.contains("TYPE_ANNOTATIONS"));
     }
 
@@ -1131,9 +1125,7 @@ public class FeatureChecker {
 
         // Track IO usage: in Java 25 it's default-imported (part of the same JEP as compact source files).
         // Shadowed declarations must not count.
-        private boolean hasExplicitIoImport = false;
-        private boolean refersToUnqualifiedIO = false;
-        private boolean hasAnyIoDeclaration = false;
+        private boolean hasExplicitIoImport;
 
         /**
          * Tracks whether a type named "IO" is declared in the current lexical scope chain.
@@ -1186,7 +1178,6 @@ public class FeatureChecker {
          */
         private void recordUnqualifiedIoTypeUsageIfNotShadowed() {
             if (!isIoTypeShadowedInScopeChain()) {
-                refersToUnqualifiedIO = true;
                 addFeature(JavaFeature.IO_CLASS);
                 if (!hasExplicitIoImport) {
                     addFeature(JavaFeature.IMPLICITLY_IMPORTED_IO_CLASS);
@@ -1462,15 +1453,6 @@ public class FeatureChecker {
             return null;
         }
 
-        private String extractFullyQualifiedNameFromName(com.github.javaparser.ast.expr.Name name) {
-            if (name == null) return null;
-            if (name.getQualifier().isPresent()) {
-                String q = extractFullyQualifiedNameFromName(name.getQualifier().get());
-                return q == null ? null : q + "." + name.getIdentifier();
-            }
-            return name.getIdentifier();
-        }
-
         /**
          * Check if a name looks like a fully qualified class name (starts with lowercase package).
          */
@@ -1652,7 +1634,6 @@ public class FeatureChecker {
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
 
@@ -1756,7 +1737,6 @@ public class FeatureChecker {
         @Override
         public void visit(EnumDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
             pushScope();
@@ -2231,7 +2211,6 @@ public class FeatureChecker {
         @Override
         public void visit(RecordDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
             pushScope();
