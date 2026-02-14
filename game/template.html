@@ -952,6 +952,9 @@
 
                 // Legacy representation: 0 sometimes used for 1.0 GA in this dataset
                 if (v === 0) return '1.0';
+                if (v > 0 && v <= 4) {
+                    return '1.' + v;
+                }
                 return String(v);
             }
 
