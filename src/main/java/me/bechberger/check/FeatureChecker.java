@@ -1,32 +1,88 @@
 package me.bechberger.check;
 
-import com.github.javaparser.*;
-import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
-import com.github.javaparser.ast.Modifier;
-import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.expr.*;
-import com.github.javaparser.ast.modules.ModuleDeclaration;
-import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
-import com.github.javaparser.ast.nodeTypes.NodeWithTypeParameters;
-import com.github.javaparser.ast.stmt.*;
-import com.github.javaparser.ast.type.UnionType;
-import com.github.javaparser.ast.type.VarType;
-import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-import com.github.javaparser.JavaToken;
-import com.github.javaparser.TokenRange;
-import com.github.javaparser.quality.Nullable;
+import static com.github.javaparser.FixValidators.fixJavaValidator;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toSet;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Files;
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.javaparser.FixValidators.fixJavaValidator;
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.JavaToken;
+import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.Problem;
+import com.github.javaparser.Range;
+import com.github.javaparser.TokenRange;
+import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
+import com.github.javaparser.ast.Modifier;
+import com.github.javaparser.ast.Node;
+import com.github.javaparser.ast.body.AnnotationDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.RecordDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.InstanceOfExpr;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.RecordPatternExpr;
+import com.github.javaparser.ast.expr.SimpleName;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.github.javaparser.ast.expr.SwitchExpr;
+import com.github.javaparser.ast.expr.TextBlockLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
+import com.github.javaparser.ast.modules.ModuleDeclaration;
+import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
+import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
+import com.github.javaparser.ast.nodeTypes.NodeWithTypeParameters;
+import com.github.javaparser.ast.stmt.AssertStmt;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
+import com.github.javaparser.ast.stmt.ForEachStmt;
+import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
+import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.stmt.SwitchStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
+import com.github.javaparser.ast.stmt.YieldStmt;
+import com.github.javaparser.ast.type.UnionType;
+import com.github.javaparser.ast.type.VarType;
+import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 
 /**
  * Checks which Java language features are used in a given Java source file.
@@ -309,17 +365,10 @@ public class FeatureChecker {
             if (packageLevelMatch) {
                 // Package-level: matches if import starts with package
                 return importName.startsWith(packageName + ".") || importName.equals(packageName);
-            } else {
-                // Type-level: matches if import is exactly package.TypeName
-                if (typeNames == null) return false;
-                for (String typeName : typeNames) {
-                    String fullName = packageName + "." + typeName;
-                    if (importName.equals(fullName) || importName.startsWith(fullName + ".") || importName.startsWith(fullName + "$")) {
-                        return true;
-                    }
-                }
-                return false;
             }
+			// Type-level: matches if import is exactly package.TypeName
+			return typeNames != null && Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName)
+			        .anyMatch(fullName -> importName.equals(fullName) || importName.startsWith(fullName + ".") || importName.startsWith(fullName + "$"));
         }
 
         /**
@@ -350,13 +399,7 @@ public class FeatureChecker {
             }
 
             // Check if type name matches
-            if (typeNames == null) return false;
-            for (String typeName : typeNames) {
-                if (simpleTypeName.equals(typeName)) {
-                    return true;
-                }
-            }
-            return false;
+            return typeNames != null && Arrays.asList(typeNames).contains(simpleTypeName);
         }
 
         /**
@@ -371,16 +414,10 @@ public class FeatureChecker {
 
             if (packageLevelMatch) {
                 return baseFqn.startsWith(packageName + ".") || baseFqn.equals(packageName);
-            } else {
-                if (typeNames == null) return false;
-                for (String typeName : typeNames) {
-                    String fullName = packageName + "." + typeName;
-                    if (baseFqn.equals(fullName) || baseFqn.startsWith(fullName + ".") || baseFqn.startsWith(fullName + "$")) {
-                        return true;
-                    }
-                }
-                return false;
             }
+			return typeNames != null &&
+			        Arrays.stream(typeNames).map(typeName -> packageName + "." + typeName).
+			                anyMatch(fullName -> baseFqn.equals(fullName) || baseFqn.startsWith(fullName + ".") || baseFqn.startsWith(fullName + "$"));
         }
     }
 
@@ -531,19 +568,6 @@ public class FeatureChecker {
         TypeFeatureRule.pkg("javax.crypto.kdf", JavaFeature.KEY_DERIVATION_API),
         TypeFeatureRule.types("javax.crypto", JavaFeature.KEY_DERIVATION_API, "KDF")
     );
-    /**
-     * Index of rules by package for efficient lookup.
-     */
-    private static final Map<String, List<TypeFeatureRule>> RULES_BY_PACKAGE;
-
-    static {
-
-        Map<String, List<TypeFeatureRule>> index = new HashMap<>();
-        for (TypeFeatureRule rule : TYPE_FEATURE_RULES) {
-            index.computeIfAbsent(rule.packageName, k -> new ArrayList<>()).add(rule);
-        }
-        RULES_BY_PACKAGE = Collections.unmodifiableMap(index);
-    }
 
     /**
      * Result of feature checking containing all detected features.
@@ -559,9 +583,7 @@ public class FeatureChecker {
     ) {
 
         public FeatureCheckResult {
-            EnumSet<JavaFeature> copy = EnumSet.noneOf(JavaFeature.class);
-            copy.addAll(features);
-            features = Collections.unmodifiableSet(copy);
+            features = Collections.unmodifiableSet(EnumSet.copyOf(features));
 
             // Validate that requiredJavaVersion matches the highest Java version among detected features
             // This check always runs (not just when assertions are enabled)
@@ -573,7 +595,7 @@ public class FeatureChecker {
                 throw new IllegalStateException(
                         String.format("Required Java version (%d) does not match highest feature version (%d) for file %s. Features: %s",
                                 requiredJavaVersion, maxFeatureVersion, file != null ? file.getName() : "unknown",
-                                features.stream().map(JavaFeature::name).collect(java.util.stream.Collectors.joining(", "))));
+                                features.stream().map(JavaFeature::name).collect(joining(", "))));
             }
         }
 
@@ -581,38 +603,28 @@ public class FeatureChecker {
          * Get features grouped by Java version.
          */
         public Map<Integer, Set<JavaFeature>> getFeaturesByVersion() {
-            Map<Integer, Set<JavaFeature>> result = new TreeMap<>();
-            for (JavaFeature feature : features) {
-                result.computeIfAbsent(feature.getJavaVersion(), k -> EnumSet.noneOf(JavaFeature.class))
-                        .add(feature);
-            }
-            return result;
+            return features.stream()
+                    .collect(groupingBy(
+                            JavaFeature::getJavaVersion,
+                            TreeMap::new,
+							collectingAndThen(toSet(), EnumSet::copyOf                            )
+                    ));
         }
 
         /**
          * Get only syntax features (excluding library/API-based features).
          */
         public Set<JavaFeature> getSyntaxFeatures() {
-            EnumSet<JavaFeature> result = EnumSet.noneOf(JavaFeature.class);
-            for (JavaFeature feature : features) {
-                if (!feature.isLibraryFeature()) {
-                    result.add(feature);
-                }
-            }
-            return Collections.unmodifiableSet(result);
+            return features.stream().filter(feature -> !feature.isLibraryFeature())
+                    .collect(toCollection(Collections::emptySet));
         }
 
         /**
          * Get only library/API-based features.
          */
         public Set<JavaFeature> getLibraryFeatures() {
-            EnumSet<JavaFeature> result = EnumSet.noneOf(JavaFeature.class);
-            for (JavaFeature feature : features) {
-                if (feature.isLibraryFeature()) {
-                    result.add(feature);
-                }
-            }
-            return Collections.unmodifiableSet(result);
+            return features.stream().filter(JavaFeature::isLibraryFeature)
+                    .collect(toCollection(Collections::emptySet));
         }
 
         /**
@@ -1016,14 +1028,17 @@ public class FeatureChecker {
     }
 
     static class ParseFailureException extends Exception {
-        public ParseFailureException(String message) {
+
+        private static final long serialVersionUID = 1L;
+
+		public ParseFailureException(String message) {
             super(message);
         }
 
         public ParseFailureException(String message, List<Problem> problems) {
             super(message + "\nProblems: " + problems.stream()
                     .map(Problem::toString)
-                    .collect(java.util.stream.Collectors.joining("\n")));
+                    .collect(joining("\n")));
         }
     }
 
@@ -1038,7 +1053,7 @@ public class FeatureChecker {
         String sourceCode;
         try {
             sourceCode = Files.readString(file.toPath());
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             throw new FileNotFoundException("Could not read file: " + file.getAbsolutePath());
         }
 
@@ -1048,7 +1063,7 @@ public class FeatureChecker {
         ParseResult<CompilationUnit> parseResult;
         try {
             // Parse the preprocessed source code
-            parseResult = parser.parse(new java.io.StringReader(preprocessResult.processedSource()));
+            parseResult = parser.parse(new StringReader(preprocessResult.processedSource()));
         } catch (StackOverflowError e) {
             throw new ParseFailureException("Parsing failed due to stack overflow for file: " + file.getAbsolutePath());
         }
@@ -1059,7 +1074,7 @@ public class FeatureChecker {
             if (localEnumFix.hasLocalEnum()) {
                 // Retry parsing with fixed source
                 try {
-                    parseResult = parser.parse(new java.io.StringReader(localEnumFix.processedSource()));
+                    parseResult = parser.parse(new StringReader(localEnumFix.processedSource()));
                 } catch (StackOverflowError e) {
                     return null;
                 }
@@ -1126,14 +1141,7 @@ public class FeatureChecker {
     private static boolean headerDeclaresTypeAnnotations(String sourceCode) {
         // Only scan the first ~15 lines for performance and to keep this "header" based.
         String[] lines = sourceCode.split("\n", -1);
-        int max = Math.min(lines.length, 15);
-        for (int i = 0; i < max; i++) {
-            String line = lines[i];
-            if (line.contains("Required Features") && line.contains("TYPE_ANNOTATIONS")) {
-                return true;
-            }
-        }
-        return false;
+        return Arrays.stream(lines).limit(15).anyMatch(line -> line.contains("Required Features") && line.contains("TYPE_ANNOTATIONS"));
     }
 
     private static boolean usesTypeUseTargetedAnnotation(CompilationUnit cu) {
@@ -1144,39 +1152,19 @@ public class FeatureChecker {
         }
 
         // 2) `(@Anno var x) -> ...` uses a type annotation (annotating the inferred type).
-        for (LambdaExpr lambda : cu.findAll(LambdaExpr.class)) {
-            for (Parameter p : lambda.getParameters()) {
-                if (p.getType() instanceof com.github.javaparser.ast.type.VarType && p.getAnnotations().isNonEmpty()) {
-                    return true;
-                }
-            }
+        if (cu.findAll(LambdaExpr.class).stream().flatMap(lambda -> lambda.getParameters().stream()).anyMatch(p -> p.getType() instanceof VarType && p.getAnnotations().isNonEmpty())) {
+            return true;
         }
 
         // 3) Local declarations: if an annotation type is declared with @Target(TYPE_USE/TYPE_PARAMETER)
         // and used, then type annotations are used.
-        Set<String> typeUseAnnotationNames = new HashSet<>();
-        for (AnnotationDeclaration decl : cu.findAll(AnnotationDeclaration.class)) {
-            String annoName = decl.getNameAsString();
-            boolean isTypeUse = decl.getAnnotations().stream().anyMatch(a -> {
-                if (!a.getNameAsString().equals("Target")) {
-                    return false;
-                }
-                String text = a.toString();
-                return text.contains("ElementType.TYPE_USE") || text.contains("ElementType.TYPE_PARAMETER");
-            });
-            if (isTypeUse) {
-                typeUseAnnotationNames.add(annoName);
-            }
-        }
-        if (!typeUseAnnotationNames.isEmpty()) {
-            for (AnnotationExpr use : cu.findAll(AnnotationExpr.class)) {
-                if (typeUseAnnotationNames.contains(use.getNameAsString())) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        Set<String> typeUseAnnotationNames = cu.findAll(AnnotationDeclaration.class).stream()
+                .filter(decl -> decl.getAnnotations().stream()
+                .anyMatch(a -> a.toString().contains("ElementType.TYPE_USE") || a.toString().contains("ElementType.TYPE_PARAMETER")))
+                .map(NodeWithSimpleName::getNameAsString)
+                .collect(toSet());
+        return !typeUseAnnotationNames.isEmpty() &&
+                cu.findAll(AnnotationExpr.class).stream().anyMatch(use -> typeUseAnnotationNames.contains(use.getNameAsString()));
     }
 
     /**
@@ -1185,15 +1173,13 @@ public class FeatureChecker {
      */
     private static class FeatureVisitor extends VoidVisitorAdapter<Void> {
         private final Consumer<JavaFeature> featureConsumer;
-        private final Set<String> wildcardImports = new java.util.HashSet<>();
-        private final Set<String> explicitImports = new java.util.HashSet<>();
-        private final Set<String> fullyQualifiedTypesUsed = new java.util.HashSet<>();
+        private final Set<String> wildcardImports = new HashSet<>();
+        private final Set<String> explicitImports = new HashSet<>();
+        private final Set<String> fullyQualifiedTypesUsed = new HashSet<>();
 
         // Track IO usage: in Java 25 it's default-imported (part of the same JEP as compact source files).
         // Shadowed declarations must not count.
-        private boolean hasExplicitIoImport = false;
-        private boolean refersToUnqualifiedIO = false;
-        private boolean hasAnyIoDeclaration = false;
+        private boolean hasExplicitIoImport;
 
         /**
          * Tracks whether a type named "IO" is declared in the current lexical scope chain.
@@ -1246,7 +1232,6 @@ public class FeatureChecker {
          */
         private void recordUnqualifiedIoTypeUsageIfNotShadowed() {
             if (!isIoTypeShadowedInScopeChain()) {
-                refersToUnqualifiedIO = true;
                 addFeature(JavaFeature.IO_CLASS);
                 if (!hasExplicitIoImport) {
                     addFeature(JavaFeature.IMPLICITLY_IMPORTED_IO_CLASS);
@@ -1522,15 +1507,6 @@ public class FeatureChecker {
             return null;
         }
 
-        private String extractFullyQualifiedNameFromName(com.github.javaparser.ast.expr.Name name) {
-            if (name == null) return null;
-            if (name.getQualifier().isPresent()) {
-                String q = extractFullyQualifiedNameFromName(name.getQualifier().get());
-                return q == null ? null : q + "." + name.getIdentifier();
-            }
-            return name.getIdentifier();
-        }
-
         /**
          * Check if a name looks like a fully qualified class name (starts with lowercase package).
          */
@@ -1712,7 +1688,6 @@ public class FeatureChecker {
         @Override
         public void visit(ClassOrInterfaceDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
 
@@ -1816,7 +1791,6 @@ public class FeatureChecker {
         @Override
         public void visit(EnumDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
             pushScope();
@@ -1953,60 +1927,70 @@ public class FeatureChecker {
             Node cur = annotation;
             while (true) {
                 Node parent = cur.getParentNode().orElse(null);
-                if (parent == null) {
-                    return;
-                }
-
-                // Directly attached to a Type => type-use annotation
-                if (parent instanceof com.github.javaparser.ast.type.Type) {
-                    addFeature(JavaFeature.TYPE_ANNOTATIONS);
-                    return;
-                }
-
-                // Variable declarator: `@A String x;` or `String @A [] x;`
-                if (parent instanceof com.github.javaparser.ast.body.VariableDeclarator vd) {
-                    if (vd.getType().getAnnotations().contains(annotation)) {
-                        addFeature(JavaFeature.TYPE_ANNOTATIONS);
+                switch (parent) {
+                    case null -> {
+                        return;
                     }
-                    return;
-                }
 
-                // Parameter type
-                if (parent instanceof com.github.javaparser.ast.body.Parameter p) {
-                    if (p.getType().getAnnotations().contains(annotation)) {
+
+                    // Directly attached to a Type => type-use annotation
+                    case com.github.javaparser.ast.type.Type type -> {
                         addFeature(JavaFeature.TYPE_ANNOTATIONS);
+                        return;
                     }
-                    return;
-                }
 
-                // Method return type
-                if (parent instanceof com.github.javaparser.ast.body.MethodDeclaration m) {
-                    if (m.getType().getAnnotations().contains(annotation)) {
-                        addFeature(JavaFeature.TYPE_ANNOTATIONS);
-                    }
-                    return;
-                }
 
-                // Field declaration: scan enclosed variable declarators for the annotation on the type.
-                if (parent instanceof com.github.javaparser.ast.body.FieldDeclaration fd) {
-                    for (VariableDeclarator vd2 : fd.getVariables()) {
-                        if (vd2.getType().getAnnotations().contains(annotation)) {
+                    // Variable declarator: `@A String x;` or `String @A [] x;`
+                    case VariableDeclarator vd -> {
+                        if (vd.getType().getAnnotations().contains(annotation)) {
                             addFeature(JavaFeature.TYPE_ANNOTATIONS);
-                            break;
                         }
+                        return;
                     }
-                    return;
-                }
 
-                // Local variable declaration expression: scan enclosed variable declarators.
-                if (parent instanceof com.github.javaparser.ast.expr.VariableDeclarationExpr vde) {
-                    for (VariableDeclarator vd2 : vde.getVariables()) {
-                        if (vd2.getType().getAnnotations().contains(annotation)) {
+
+                    // Parameter type
+                    case Parameter p -> {
+                        if (p.getType().getAnnotations().contains(annotation)) {
                             addFeature(JavaFeature.TYPE_ANNOTATIONS);
-                            break;
                         }
+                        return;
                     }
-                    return;
+
+
+                    // Method return type
+                    case MethodDeclaration m -> {
+                        if (m.getType().getAnnotations().contains(annotation)) {
+                            addFeature(JavaFeature.TYPE_ANNOTATIONS);
+                        }
+                        return;
+                    }
+
+
+                    // Field declaration: scan enclosed variable declarators for the annotation on the type.
+                    case FieldDeclaration fd -> {
+                        for (VariableDeclarator vd2 : fd.getVariables()) {
+                            if (vd2.getType().getAnnotations().contains(annotation)) {
+                                addFeature(JavaFeature.TYPE_ANNOTATIONS);
+                                break;
+                            }
+                        }
+                        return;
+                    }
+
+
+                    // Local variable declaration expression: scan enclosed variable declarators.
+                    case VariableDeclarationExpr vde -> {
+                        for (VariableDeclarator vd2 : vde.getVariables()) {
+                            if (vd2.getType().getAnnotations().contains(annotation)) {
+                                addFeature(JavaFeature.TYPE_ANNOTATIONS);
+                                break;
+                            }
+                        }
+                        return;
+                    }
+                    default -> {
+                    }
                 }
 
                 // Otherwise: keep climbing.
@@ -2281,7 +2265,6 @@ public class FeatureChecker {
         @Override
         public void visit(RecordDeclaration n, Void arg) {
             if (n.getNameAsString().equals("IO")) {
-                hasAnyIoDeclaration = true;
                 declareTypeIfIo("IO");
             }
             pushScope();
