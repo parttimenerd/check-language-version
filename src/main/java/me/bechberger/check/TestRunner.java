@@ -1,9 +1,10 @@
 package me.bechberger.check;
 
+import static java.util.stream.Collectors.toSet;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Formalized test runner that reads test specifications from comments in test files.
@@ -109,7 +110,7 @@ public class TestRunner {
         return Arrays.stream(features.split(","))
             .map(String::trim)
             .filter(s -> !s.isEmpty())
-            .collect(Collectors.toSet());
+            .collect(toSet());
     }
 
     private static Integer extractVersionFromFilename(String filename) {
@@ -169,7 +170,7 @@ public class TestRunner {
             // Get detected feature names
             Set<String> detectedFeatures = result.checkResult.features().stream()
                 .map(FeatureChecker.JavaFeature::name)
-                .collect(Collectors.toSet());
+                .collect(toSet());
 
             // Check required features
             for (String required : spec.requiredFeatures) {

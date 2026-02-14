@@ -1,31 +1,88 @@
 package me.bechberger.check;
 
-import com.github.javaparser.*;
+import static com.github.javaparser.FixValidators.fixJavaValidator;
+import static java.util.stream.Collectors.collectingAndThen;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toSet;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.StringReader;
+import java.nio.file.Files;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.EnumSet;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import com.github.javaparser.JavaParser;
+import com.github.javaparser.JavaToken;
+import com.github.javaparser.ParseResult;
+import com.github.javaparser.ParserConfiguration;
+import com.github.javaparser.Problem;
+import com.github.javaparser.Range;
+import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.Modifier;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.body.*;
-import com.github.javaparser.ast.expr.*;
+import com.github.javaparser.ast.body.AnnotationDeclaration;
+import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.EnumDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
+import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
+import com.github.javaparser.ast.body.RecordDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.expr.FieldAccessExpr;
+import com.github.javaparser.ast.expr.InstanceOfExpr;
+import com.github.javaparser.ast.expr.IntegerLiteralExpr;
+import com.github.javaparser.ast.expr.LambdaExpr;
+import com.github.javaparser.ast.expr.LongLiteralExpr;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.MethodReferenceExpr;
+import com.github.javaparser.ast.expr.NameExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.RecordPatternExpr;
+import com.github.javaparser.ast.expr.SimpleName;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.github.javaparser.ast.expr.SwitchExpr;
+import com.github.javaparser.ast.expr.TextBlockLiteralExpr;
+import com.github.javaparser.ast.expr.VariableDeclarationExpr;
 import com.github.javaparser.ast.modules.ModuleDeclaration;
 import com.github.javaparser.ast.nodeTypes.NodeWithSimpleName;
 import com.github.javaparser.ast.nodeTypes.NodeWithTypeArguments;
 import com.github.javaparser.ast.nodeTypes.NodeWithTypeParameters;
-import com.github.javaparser.ast.stmt.*;
+import com.github.javaparser.ast.stmt.AssertStmt;
+import com.github.javaparser.ast.stmt.BlockStmt;
+import com.github.javaparser.ast.stmt.ExplicitConstructorInvocationStmt;
+import com.github.javaparser.ast.stmt.ForEachStmt;
+import com.github.javaparser.ast.stmt.LocalClassDeclarationStmt;
+import com.github.javaparser.ast.stmt.SwitchEntry;
+import com.github.javaparser.ast.stmt.SwitchStmt;
+import com.github.javaparser.ast.stmt.TryStmt;
+import com.github.javaparser.ast.stmt.YieldStmt;
 import com.github.javaparser.ast.type.UnionType;
 import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.util.*;
-import java.util.function.Consumer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import static com.github.javaparser.FixValidators.fixJavaValidator;
 
 /**
  * Checks which Java language features are used in a given Java source file.
@@ -538,7 +595,7 @@ public class FeatureChecker {
                 throw new IllegalStateException(
                         String.format("Required Java version (%d) does not match highest feature version (%d) for file %s. Features: %s",
                                 requiredJavaVersion, maxFeatureVersion, file != null ? file.getName() : "unknown",
-                                features.stream().map(JavaFeature::name).collect(java.util.stream.Collectors.joining(", "))));
+                                features.stream().map(JavaFeature::name).collect(joining(", "))));
             }
         }
 
@@ -547,13 +604,10 @@ public class FeatureChecker {
          */
         public Map<Integer, Set<JavaFeature>> getFeaturesByVersion() {
             return features.stream()
-                    .collect(Collectors.groupingBy(
+                    .collect(groupingBy(
                             JavaFeature::getJavaVersion,
                             TreeMap::new,
-                            Collectors.collectingAndThen(
-                                    Collectors.toSet(),
-                                    EnumSet::copyOf
-                            )
+							collectingAndThen(toSet(), EnumSet::copyOf                            )
                     ));
         }
 
@@ -562,7 +616,7 @@ public class FeatureChecker {
          */
         public Set<JavaFeature> getSyntaxFeatures() {
             return features.stream().filter(feature -> !feature.isLibraryFeature())
-                    .collect(Collectors.toCollection(Collections::emptySet));
+                    .collect(toCollection(Collections::emptySet));
         }
 
         /**
@@ -570,7 +624,7 @@ public class FeatureChecker {
          */
         public Set<JavaFeature> getLibraryFeatures() {
             return features.stream().filter(JavaFeature::isLibraryFeature)
-                    .collect(Collectors.toCollection(Collections::emptySet));
+                    .collect(toCollection(Collections::emptySet));
         }
 
         /**
@@ -984,7 +1038,7 @@ public class FeatureChecker {
         public ParseFailureException(String message, List<Problem> problems) {
             super(message + "\nProblems: " + problems.stream()
                     .map(Problem::toString)
-                    .collect(java.util.stream.Collectors.joining("\n")));
+                    .collect(joining("\n")));
         }
     }
 
@@ -999,7 +1053,7 @@ public class FeatureChecker {
         String sourceCode;
         try {
             sourceCode = Files.readString(file.toPath());
-        } catch (java.io.IOException e) {
+        } catch (IOException e) {
             throw new FileNotFoundException("Could not read file: " + file.getAbsolutePath());
         }
 
@@ -1009,7 +1063,7 @@ public class FeatureChecker {
         ParseResult<CompilationUnit> parseResult;
         try {
             // Parse the preprocessed source code
-            parseResult = parser.parse(new java.io.StringReader(preprocessResult.processedSource()));
+            parseResult = parser.parse(new StringReader(preprocessResult.processedSource()));
         } catch (StackOverflowError e) {
             throw new ParseFailureException("Parsing failed due to stack overflow for file: " + file.getAbsolutePath());
         }
@@ -1020,7 +1074,7 @@ public class FeatureChecker {
             if (localEnumFix.hasLocalEnum()) {
                 // Retry parsing with fixed source
                 try {
-                    parseResult = parser.parse(new java.io.StringReader(localEnumFix.processedSource()));
+                    parseResult = parser.parse(new StringReader(localEnumFix.processedSource()));
                 } catch (StackOverflowError e) {
                     return null;
                 }
@@ -1108,7 +1162,7 @@ public class FeatureChecker {
                 .filter(decl -> decl.getAnnotations().stream()
                 .anyMatch(a -> a.toString().contains("ElementType.TYPE_USE") || a.toString().contains("ElementType.TYPE_PARAMETER")))
                 .map(NodeWithSimpleName::getNameAsString)
-                .collect(Collectors.toSet());
+                .collect(toSet());
         return !typeUseAnnotationNames.isEmpty() &&
                 cu.findAll(AnnotationExpr.class).stream().anyMatch(use -> typeUseAnnotationNames.contains(use.getNameAsString()));
     }
@@ -1119,9 +1173,9 @@ public class FeatureChecker {
      */
     private static class FeatureVisitor extends VoidVisitorAdapter<Void> {
         private final Consumer<JavaFeature> featureConsumer;
-        private final Set<String> wildcardImports = new java.util.HashSet<>();
-        private final Set<String> explicitImports = new java.util.HashSet<>();
-        private final Set<String> fullyQualifiedTypesUsed = new java.util.HashSet<>();
+        private final Set<String> wildcardImports = new HashSet<>();
+        private final Set<String> explicitImports = new HashSet<>();
+        private final Set<String> fullyQualifiedTypesUsed = new HashSet<>();
 
         // Track IO usage: in Java 25 it's default-imported (part of the same JEP as compact source files).
         // Shadowed declarations must not count.
