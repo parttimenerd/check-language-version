@@ -4,7 +4,6 @@ import com.github.javaparser.ast.type.VarType;
 import com.github.javaparser.ast.validator.SingleNodeTypeValidator;
 import com.github.javaparser.ast.validator.Validator;
 import com.github.javaparser.ast.validator.language_level_validations.Java11Validator;
-import com.github.javaparser.ast.validator.language_level_validations.Java25Validator;
 import com.github.javaparser.ast.validator.language_level_validations.chunks.VarValidator;
 
 import java.util.List;

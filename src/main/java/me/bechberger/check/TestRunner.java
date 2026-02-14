@@ -3,7 +3,6 @@ package me.bechberger.check;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.regex.*;
 import java.util.stream.Collectors;
 
 /**
