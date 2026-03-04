@@ -60,6 +60,12 @@ To test also test that the test Java files compile, run:
 mvn test -Dtest=FeatureDetectionTest -Dtest.compilation=true
 ```
 
+To run the network-dependent link-check test (skipped by default):
+
+```shell
+mvn test -Dtest=FeatureMarkdownLinksTest -DrunLinkChecks=true
+```
+
 Visualization
 -------------
 

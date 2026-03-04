@@ -22,9 +22,9 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * Validates that all HTTP(S) links embedded in feature markdown are reachable.
  *
- * <p>This test is network-dependent. Disable it with:
+ * <p>This test is network-dependent and <b>skipped by default</b>. Enable it with:
  * <ul>
- *   <li>-DskipLinkChecks=true</li>
+ *   <li>-DrunLinkChecks=true</li>
  * </ul>
  *
  * <p>To avoid repeatedly hitting third-party websites, this test uses a tiny on-disk cache.
@@ -85,7 +85,8 @@ class FeatureMarkdownLinksTest {
 
     @Test
     void allLinksInFeatureMarkdownAreReachable() throws IOException {
-        Assumptions.assumeFalse(Boolean.getBoolean("skipLinkChecks"), "skipLinkChecks=true");
+        Assumptions.assumeTrue(Boolean.getBoolean("runLinkChecks"),
+                "Link-check test is skipped by default. Run with -DrunLinkChecks=true to enable.");
 
         Set<String> whitelist = loadWhitelist();
 
