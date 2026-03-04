@@ -182,6 +182,49 @@ In presenter.html, change the default question duration:
 - Different sessions can reuse names
 - If you need global uniqueness, modify `generateUniqueName()`
 
+## Stress Testing
+
+A built-in stress tester simulates many concurrent players joining a session, connecting via WebSocket, and answering questions.
+
+### Usage
+
+```bash
+cd game/conference
+node stress-test.js --url http://localhost:3003 --session my-session --users 200
+```
+
+### Options
+
+| Flag | Short | Default | Description |
+|------|-------|---------|-------------|
+| `--url` | `-u` | `http://localhost:3003` | Server URL |
+| `--session` | `-s` | *(required)* | Session ID to join |
+| `--users` | `-n` | `200` | Number of simulated users |
+| `--ramp-up` | `-r` | `50` ms | Delay between each user joining |
+| `--answer-delay` | `-d` | `1500` ms | Simulated thinking time (±50% jitter) |
+| `--answer-rate` | | `0.85` | Fraction of users that answer (0–1) |
+| `--verbose` | `-v` | off | Log per-user messages |
+
+### How It Works
+
+1. **Phase 1 (Ramp-up)** — Users join sequentially via `POST /player/join`, then each opens a WebSocket and sends a `join` message. A configurable delay between joins prevents thundering herd.
+2. **Phase 2 (Steady state)** — All users stay connected. When the presenter starts a question (`question_started`), ~85% of users (configurable) pick a random answer option after a jittered delay and submit it.
+3. **Live stats** — A single-line summary updates every 500 ms showing join counts, WS connections, questions received, answers sent, correct/wrong counts, errors, and disconnections.
+4. **Ctrl+C** — Gracefully closes all WebSocket connections and prints a final summary.
+
+### Examples
+
+```bash
+# Quick test with 50 users, fast ramp-up
+node stress-test.js -s my-session -n 50 -r 20
+
+# Slow, realistic load: 300 users, 100ms ramp-up, 3s thinking time
+node stress-test.js -u https://quiz.example.com -s conf2026 -n 300 -r 100 -d 3000
+
+# Debug mode: 5 users with verbose logging
+node stress-test.js -s test -n 5 -v
+```
+
 ## Future Enhancements
 
 - [ ] Persistent database (SQLite file)
