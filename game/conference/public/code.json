@@ -1,0 +1,3783 @@
+{
+  "entries": [
+    {
+      "code": "class Example {\n    ProcessHandle ph = ProcessHandle.current();\n}",
+      "correct": 9,
+      "features": [
+        "PROCESS_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    <T> T id(T t) { return t; }\n}",
+      "correct": 5,
+      "features": [
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    record Person(String name, int age) {\n        public Person {\n            if (age < 0) throw new IllegalArgumentException();\n        }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    double matrix[][];\n\n    double getMatrix()[][] {\n        return matrix;\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    short[] convert(int[] input) {\n        short[] result = new short[input.length];\n        for (int i = 0; i < input.length; i++) {\n            result[i] = (short) input[i];\n        }\n        return result;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int test(int x, int y) {\n        return switch (x) {\n            case 1 -> switch (y) {\n                case 1 -> 11;\n                case 2 -> { yield 12; }\n                default -> 10;\n            };\n            default -> { yield x + y; }\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "YIELD",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() throws Exception {\n        Thread.startVirtualThread(() -> System.out.println(\"virtual\"));\n    }\n}",
+      "correct": 21,
+      "features": [
+        "LAMBDAS",
+        "VIRTUAL_THREADS"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Planet {\n        EARTH(5.976e+24, 6.37814e6),\n        MARS(6.421e+23, 3.3972e6);\n\n        private final double mass;\n        private final double radius;\n\n        Planet(double mass, double radius) {\n            this.mass = mass;\n            this.radius = radius;\n        }\n\n        double surfaceGravity() {\n            return mass / (radius * radius);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "import java.io.TextInputStream;\n\npublic class Quiz {\n    void parseText() {\n        TextInputStream text = new TextInputStream(System.in);\n        String line = text.readLine();\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TEXT_INPUT_STREAM"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int inc(int x) {\n        return x + 1;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    static { assert true; }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "import java.nio.channels.SocketChannel;\nimport java.net.UnixDomainSocketAddress;\n\nclass Example {\n    void test() throws Exception {\n        SocketChannel.open(java.net.StandardProtocolFamily.UNIX);\n    }\n}",
+      "correct": 16,
+      "features": [
+        "NIO",
+        "UNIX_DOMAIN_SOCKETS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int test(String s) {\n        switch (s) {\n            case \"a\": return 1;\n            case \"b\": return 2;\n            default: return 0;\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "STRINGS_IN_SWITCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    int get() {\n        return 1;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    void check(int x) {\n        assert x > 0 : \"must be positive\";\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface I permits A {}\n    final class A implements I {}\n}",
+      "correct": 17,
+      "features": [
+        "SEALED_CLASSES",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void print(String... args) {\n        for (String s : args) System.out.println(s);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\n\nclass Example {\n    void test() { Stream.of(1,2,3).filter(x -> x > 1).count(); }\n}",
+      "correct": 8,
+      "features": [
+        "AUTOBOXING",
+        "LAMBDAS",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n\n        SequencedCollection<String> seq = List.of(\"a\", \"b\", \"c\");\n        String first = seq.getFirst();\n        String last = seq.getLast();\n    }\n}",
+      "correct": 21,
+      "features": [
+        "COLLECTION_FACTORY_METHODS",
+        "GENERICS",
+        "SEQUENCED_COLLECTIONS"
+      ]
+    },
+    {
+      "code": "interface Example { default void m() {} }\nclass Example implements Example {}",
+      "correct": 8,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Square {}\n    record Circle(double radius) implements Shape {}\n    record Square(double side) implements Shape {}\n\n    String describe(Shape s) {\n        return switch (s) {\n            case Circle(double r) -> \"\"\"\n                Circle with radius: %f\n                Area: %f\n                \"\"\".formatted(r, Math.PI * r * r);\n            case Square(double side) -> \"\"\"\n                Square with side: %f\n                Area: %f\n                \"\"\".formatted(side, side * side);\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "INNER_CLASSES",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SEALED_CLASSES",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING",
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    void test() {\n\n        Function<String, Integer> f1 = Integer::parseInt;\n\n        Supplier<String> f2 = \"hello\"::toUpperCase;\n\n        Supplier<String> f3 = String::new;\n\n        BiPredicate<String, String> f4 = String::equals;\n    }\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "import com.sun.net.httpserver.HttpServer;\n\nclass Example {\n    HttpServer server;\n}",
+      "correct": 6,
+      "features": [
+        "HTTP_SERVER"
+      ]
+    },
+    {
+      "code": "import net.InetAddress;\nimport net.Socket;\n\npublic class Quiz {\n    void bindToAny() {\n        InetAddress anyAddr = new InetAddress(null);\n        Socket s = new Socket();\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_INET_ADDRESS",
+        "ALPHA2_SOCKET"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void demo(int[] xs) {\n        for (int x : xs) {\n            System.out.println(x);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() { for (var i = 0; i < 1; i++) {} }\n}",
+      "correct": 10,
+      "features": [
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.io.*;\nimport java.util.*;\n\nclass Example {\n    void test() {\n        try (FileReader fr = new FileReader(\"test.txt\")) {\n            List<String> list = new ArrayList<>();\n        } catch (IOException | RuntimeException e) {\n            e.printStackTrace();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "IO_API",
+        "MULTI_CATCH",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\n\nclass Example {\n    public <T> List<T> createList() {\n        return new ArrayList<T>();\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    public void test() {\n        List<Integer> list = new ArrayList<Integer>();\n        list.add(42);  // autoboxing\n        int value = list.get(0);  // unboxing\n    }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    Consumer<String> c = System.out::println;\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "import java.io.*;\nimport java.util.*;\nimport java.util.stream.Stream;\n\nclass Example {\n    void test() throws IOException {\n\n        List<String> list = new ArrayList<>();\n        var x = \"test\";\n        try (var reader = new BufferedReader(new FileReader(\"test.txt\"))) {\n\n            Stream<String> lines = reader.lines()\n                .filter(line -> !line.isEmpty());\n            lines.forEach(System.out::println);\n        }\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "IO_API",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API",
+        "TRY_WITH_RESOURCES",
+        "VAR"
+      ]
+    },
+    {
+      "code": "class Example {\n    Runnable r = () -> {};\n}",
+      "correct": 8,
+      "features": [
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "enum Status { PENDING, RUNNING, DONE }\n\nclass Example {\n    Status state = Status.PENDING;\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x, int y) {\n        return switch (x) {\n            case 1 -> switch (y) {\n                case 1 -> { yield 11; }\n                default -> { yield 10; }\n            };\n            default -> { yield 0; }\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "YIELD",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    String html = \"\"\"\n        <html>\n            <body>\n                <h1>%s</h1>\n            </body>\n        </html>\n        \"\"\".formatted(\"Title\");\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(int x) {\n        assert x > 0;\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "import java.sql.Connection;\nimport java.sql.DriverManager;\n\nclass Example {\n    Connection c;\n}",
+      "correct": 1,
+      "features": [
+        "JDBC"
+      ]
+    },
+    {
+      "code": "class Example {\n    Integer boxed = 42;\n    int unboxed = boxed;\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING"
+      ]
+    },
+    {
+      "code": "import java.io.StringInputStream;\nimport java.io.TextInputStream;\n\npublic class Quiz {\n    void processLines() {\n        String data = \"line1\\nline2\\nline3\";\n        StringInputStream strIn = new StringInputStream(data);\n        TextInputStream textIn = new TextInputStream(strIn);\n        String line = textIn.readLine();\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_STRING_INPUT_STREAM",
+        "ALPHA3_TEXT_INPUT_STREAM"
+      ]
+    },
+    {
+      "code": "import java.lang.invoke.MethodHandles;\nimport java.lang.invoke.MethodHandles.Lookup.ClassOption;\n\nclass Example {\n    void test() throws Exception {\n        MethodHandles.lookup().defineHiddenClass(new byte[0], true, ClassOption.NESTMATE);\n    }\n}",
+      "correct": 15,
+      "features": [
+        "HIDDEN_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    Runnable r = new Runnable() {\n        public void run() {\n            System.out.println(\"running\");\n        }\n    };\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        List<Integer> list = new ArrayList<Integer>();\n        list.add(42); // autoboxing\n        int x = list.get(0); // unboxing\n    }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\nimport java.util.*;\n\nclass Example {\n    public void method() {\n        List<String> list = Arrays.asList(\"a\", \"b\", \"c\");\n\n        list.forEach(System.out::println);\n\n        list.stream().map(String::toUpperCase).forEach(System.out::println);\n\n        Supplier<ArrayList<String>> supplier = ArrayList::new;\n\n        Comparator<String> comparator = String::compareToIgnoreCase;\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "record Point(int x, int y) {}\n\nclass Example {\n    void test(Object o) {\n        if (o instanceof Point(int x, int y)) {\n            System.out.println(x + y);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void log(String format, Object... args) {}\n    void test() { log(\"{} + {} = {}\", 1, 2, 3); }\n}",
+      "correct": 5,
+      "features": [
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void loadData() {\n        try {\n            openFile();\n            readData();\n        } catch (Exception e) {\n            logError(e);\n        }\n    }\n\n    void openFile() {}\n    void readData() {}\n    void logError(Exception e) {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_CATCH"
+      ]
+    },
+    {
+      "code": "import com.sun.jdi.VirtualMachine;\nimport com.sun.jdi.Bootstrap;\n\nclass Example {\n    public boolean doesVirtualMachineHaveNoName() {\n        return Bootstrap.virtualMachineManager().defaultConnector().toString().isEmpty();\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JPDA"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    Comparator<String> c = new Comparator<>() {\n        public int compare(String a, String b) { return 0; }\n    };\n}",
+      "correct": 9,
+      "features": [
+        "DIAMOND_OPERATOR",
+        "DIAMOND_WITH_ANONYMOUS",
+        "GENERICS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "void main() {\n    System.out.println(\"Hello\");\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    boolean isPositive(int x) {\n        if (x > 0) {\n            return true;\n        }\n        return false;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    interface MyInterface {\n        void abstractMethod();\n\n        default void defaultMethod() {\n            System.out.println(\"Default implementation\");\n        }\n\n        default String anotherDefault(String input) {\n            return \"Processed: \" + input;\n        }\n    }\n\n    class Implementation implements MyInterface {\n        @Override\n        public void abstractMethod() {\n            System.out.println(\"Abstract implementation\");\n        }\n    }\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(Object o) {\n        switch(o) {\n            case String s when s.isEmpty() -> {}\n            default -> {}\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.util.HexFormat;\n\nclass Example {\n    public void testHexFormat() {\n\n        HexFormat hex = HexFormat.of();\n\n        byte[] bytes = {0x01, 0x02, 0x0A, 0x0F};\n        String hexString = hex.formatHex(bytes);\n        System.out.println(\"Hex: \" + hexString);  // \"01020a0f\"\n\n        byte[] parsed = hex.parseHex(\"0102030405\");\n        System.out.println(\"Parsed length: \" + parsed.length);  // 5\n\n        HexFormat hexWithDelimiter = HexFormat.ofDelimiter(\":\");\n        String formatted = hexWithDelimiter.formatHex(bytes);\n        System.out.println(\"With delimiter: \" + formatted);  // \"01:02:0a:0f\"\n\n        HexFormat upperHex = HexFormat.of().withUpperCase();\n        System.out.println(\"Uppercase: \" + upperHex.formatHex(bytes));  // \"01020A0F\"\n\n        String singleHex = hex.toHexDigits(255);\n        System.out.println(\"255 in hex: \" + singleHex);  // \"ff\"\n    }\n}",
+      "correct": 17,
+      "features": [
+        "HEX_FORMAT"
+      ]
+    },
+    {
+      "code": "class Example {\n    String s = \"\"\"\n        x\"\"\";\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "import javax.crypto.*;\n\nclass Example {\n    void test() throws Exception {\n        KDF kdf = KDF.getInstance(\"HKDF-SHA256\");\n    }\n}",
+      "correct": 25,
+      "features": [
+        "KEY_DERIVATION_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    class Inner {\n        void method() {}\n    }\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        ProcessHandle ph = ProcessHandle.current();\n        long pid = ph.pid();\n    }\n}",
+      "correct": 9,
+      "features": [
+        "PROCESS_API"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void process() {\n        try {\n            riskyOperation();\n        } catch (Exception e) {\n            handleError(e);\n        }\n    }\n\n    void riskyOperation() {}\n    void handleError(Exception e) {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_CATCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface Complete {\n        void abstractMethod();\n\n        default void defaultMethod() {\n            privateHelper();\n        }\n\n        static void staticMethod() {\n            privateStaticHelper();\n        }\n\n        private void privateHelper() {\n            System.out.println(\"private instance\");\n        }\n\n        private static void privateStaticHelper() {\n            System.out.println(\"private static\");\n        }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "PRIVATE_INTERFACE_METHODS",
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "import com.sun.net.httpserver.SimpleFileServer;\n\nclass Example {\n    void test() throws Exception {\n        var server = SimpleFileServer.createFileServer(\n            new java.net.InetSocketAddress(8080),\n            java.nio.file.Path.of(\".\"),\n            SimpleFileServer.OutputLevel.INFO);\n    }\n}",
+      "correct": 18,
+      "features": [
+        "SIMPLE_WEB_SERVER",
+        "NIO",
+        "NIO2",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.io.InputStream;\n\nclass Example {\n    InputStream is;\n}",
+      "correct": 0,
+      "features": [
+        "IO_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I {\n        default void method() { System.out.println(\"default\"); }\n    }\n}",
+      "correct": 8,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    class Inner<T> {\n        Function<T, String> f = t -> t.toString();\n    }\n}",
+      "correct": 8,
+      "features": [
+        "INNER_CLASSES",
+        "GENERICS",
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void connect() {\n        try {\n            openConnection();\n            sendData();\n            receiveData();\n        } catch (Exception e) {\n            handleNetworkError(e);\n        } finally {\n            closeConnection();\n        }\n    }\n\n    void openConnection() {}\n    void sendData() {}\n    void receiveData() {}\n    void handleNetworkError(Exception e) {}\n    void closeConnection() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\n\nclass Example {\n    void test() {\n        Gatherer g = null;\n    }\n}",
+      "correct": 24,
+      "features": [
+        "STREAM_API",
+        "STREAM_GATHERERS"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.ElementType;\nimport java.lang.annotation.Target;\n\n@Target(ElementType.TYPE)\n@interface AnnotationType {}\n\n@AnnotationType\nclass Example {\n    java.util.List<String> s;\n}",
+      "correct": 8,
+      "features": [
+        "TYPE_ANNOTATIONS",
+        "ANNOTATIONS",
+        "GENERICS",
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I {\n        default void pub() { helper(); }\n        private void helper() { System.out.println(\"private\"); }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "PRIVATE_INTERFACE_METHODS",
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n\n    void test(Object obj) {\n        if (obj instanceof Point(int x, int y) && x > 0) {\n            System.out.println(x + y);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS"
+      ]
+    },
+    {
+      "code": "import java.util.HexFormat;\n\nclass Example {\n    String hex = HexFormat.of().formatHex(new byte[]{1,2,3});\n}",
+      "correct": 17,
+      "features": [
+        "HEX_FORMAT"
+      ]
+    },
+    {
+      "code": "class Example {\n    int hex = 0xFF;\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    void test(final int param) {\n        final int local = 10;\n\n        class LocalClass {\n            void print() {\n                System.out.println(param + local);\n            }\n        }\n\n        new LocalClass().print();\n    }\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.awt.Image;\nimport java.io.File;\n\nclass Example {\n    File f;\n    Image img;\n}",
+      "correct": 0,
+      "features": [
+        "AWT",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\n\n@Retention(RetentionPolicy.RUNTIME)\n@interface MyAnnotation {\n    String value() default \"\";\n}\n\nclass Example {\n    @Override\n    public String toString() {\n        return \"test\";\n    }\n\n    @Deprecated\n    public void oldMethod() {}\n\n    @MyAnnotation(\"test\")\n    public void annotatedMethod() {}\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    String[][][] cube;\n\n    String[][][] getCube() {\n        return cube;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\n\n@Repeatable(Schedules.class)\n@interface Schedule {\n    String day();\n}\n\n@interface Schedules {\n    Schedule[] value();\n}\n\n@Schedule(day = \"Monday\")\n@Schedule(day = \"Friday\")\nclass Example {\n\n    @Schedule(day = \"Tuesday\")\n    @Schedule(day = \"Thursday\")\n    public void processData() {\n        System.out.println(\"Processing data\");\n    }\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "REPEATING_ANNOTATIONS",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "import java.lang.reflect.*;\n\nclass Example {\n    Method m = String.class.getMethods()[0];\n}",
+      "correct": 1,
+      "features": [
+        "REFLECTION",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test(Object o) {\n        if (o instanceof String s) {\n            System.out.println(s.length());\n        }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF"
+      ]
+    },
+    {
+      "code": "import java.util.SequencedCollection;\nimport java.util.SequencedSet;\nimport java.util.SequencedMap;\nimport java.util.*;\n\nclass Example {\n    public void method() {\n\n        LinkedList<String> list = new LinkedList<>();\n        list.addFirst(\"first\");\n        list.addLast(\"last\");\n        String first = list.getFirst();\n        String last = list.getLast();\n        list.removeFirst();\n        list.removeLast();\n\n        SequencedCollection<String> reversed = list.reversed();\n    }\n}",
+      "correct": 21,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "SEQUENCED_COLLECTIONS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    void test() throws IOException {\n        try (var reader = new BufferedReader(new FileReader(\"test.txt\"))) {\n            reader.lines().forEach((var line) -> System.out.println(line));\n        }\n    }\n}",
+      "correct": 11,
+      "features": [
+        "IO_API",
+        "LAMBDAS",
+        "TRY_WITH_RESOURCES",
+        "VAR",
+        "VAR_IN_LAMBDA"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n\n    private Integer fieldInt = 42;\n    private Double fieldDouble = 3.14;\n\n    public void testAutoboxing() {\n        Integer a = 1;\n        Double b = 2.5;\n        Long c = 100L;\n        Boolean d = true;\n\n        List<Integer> numbers = new ArrayList<Integer>();\n        numbers.add(1);\n        numbers.add(2);\n\n        int sum = a + 10;\n    }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import static java.lang.Math.PI;\n\nclass Example {\n    double d = PI;\n}",
+      "correct": 5,
+      "features": [
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "import java.lang.classfile.ClassFile;\n\nclass Example {\n    ClassFile cf;\n}",
+      "correct": 24,
+      "features": [
+        "CLASS_FILE_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() throws Exception {\n        try (var r = new java.io.StringReader(\"\")) {}\n    }\n}",
+      "correct": 10,
+      "features": [
+        "VAR",
+        "TRY_WITH_RESOURCES",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.util.List;\n\nclass Example {\n    @Deprecated\n    enum Status {\n        ACTIVE, INACTIVE\n    }\n    List<Status> statuses;\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS",
+        "COLLECTIONS_FRAMEWORK",
+        "ENUMS",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Day { MON, TUE, WED, THU, FRI, SAT, SUN }\n\n    int getDayType(Day day) {\n        return switch (day) {\n            case MON, TUE, WED, THU, FRI:\n                yield 1; // weekday\n            case SAT, SUN:\n                yield 2; // weekend\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "YIELD",
+        "ENUMS",
+        "SWITCH_MULTIPLE_LABELS"
+      ]
+    },
+    {
+      "code": "class Example {\n\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "import static java.lang.System.out;\nimport static java.util.Arrays.asList;\n\nclass Example {\n    void test() { out.println(asList(1, 2, 3)); }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        enum E { A, B }\n        E e = E.A;\n    }\n}",
+      "correct": 16,
+      "features": [
+        "LOCAL_ENUMS",
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void processResource() {\n        try {\n            acquireLock();\n            doWork();\n        } catch (Exception e) {\n            handleException(e);\n        } finally {\n            releaseLock();\n        }\n    }\n\n    void acquireLock() {}\n    void doWork() {}\n    void handleException(Exception e) {}\n    void releaseLock() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "interface Example {\n    private void h() {}\n    default void m() { h(); }\n}\nclass Example implements Example {}",
+      "correct": 9,
+      "features": [
+        "PRIVATE_INTERFACE_METHODS",
+        "DEFAULT_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\nimport java.util.*;\n\nclass Example {\n    void test(String type) throws IOException {\n        List<String> list = new ArrayList<>();\n        int binary = 0b1010_1010;\n\n        try (FileReader fr = new FileReader(\"test.txt\")) {\n            switch (type) {\n                case \"binary\": System.out.println(binary); break;\n                case \"list\": System.out.println(list); break;\n            }\n        } catch (IOException | RuntimeException e) {\n            e.printStackTrace();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "IO_API",
+        "MULTI_CATCH",
+        "STRINGS_IN_SWITCH",
+        "TRY_WITH_RESOURCES",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import javax.crypto.KEM;\n\nclass Example {\n    KEM kem;\n}",
+      "correct": 21,
+      "features": [
+        "KEY_ENCAPSULATION"
+      ]
+    },
+    {
+      "code": "import java.nio.file.*;\n\nclass Example {\n    public void test() throws Exception {\n        WatchService watcher = FileSystems.getDefault().newWatchService();\n        Path dir = Paths.get(\"/tmp\");\n        dir.register(watcher, StandardWatchEventKinds.ENTRY_CREATE);\n    }\n}",
+      "correct": 7,
+      "features": [
+        "NIO2",
+        "WATCH_SERVICE"
+      ]
+    },
+    {
+      "code": "class Example {\n    static int X;\n    static {\n        X = 1;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "import java.text.*;\n\nclass Example {\n    void test() {\n        CompactNumberFormat f = null;\n    }\n}",
+      "correct": 12,
+      "features": [
+        "COMPACT_NUMBER_FORMAT"
+      ]
+    },
+    {
+      "code": "import javax.xml.stream.*;\n\nclass Example {\n    void test() throws Exception {\n        XMLInputFactory f = XMLInputFactory.newInstance();\n    }\n}",
+      "correct": 6,
+      "features": [
+        "STAX"
+      ]
+    },
+    {
+      "code": "class Example {\n    Runnable r = () -> System.out.println(\"hello\");\n}",
+      "correct": 8,
+      "features": [
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() throws Exception {\n        try (java.io.Reader r = new java.io.StringReader(\"\")) {}\n    }\n}",
+      "correct": 7,
+      "features": [
+        "IO_API",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        try { throw new Exception(); }\n        catch (Exception _) { }\n    }\n}",
+      "correct": 22,
+      "features": [
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int test(String s) {\n        return switch (s) {\n            case \"a\" -> 1;\n            case \"b\" -> 2;\n            default -> 0;\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n\n        SequencedCollection<String> seq = new ArrayList<>();\n        String first = seq.getFirst();\n        String last = seq.getLast();\n        seq.addFirst(\"a\");\n        seq.addLast(\"z\");\n    }\n}",
+      "correct": 21,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "SEQUENCED_COLLECTIONS"
+      ]
+    },
+    {
+      "code": "import java.lang.foreign.Arena;\n\nclass Example {\n    Arena arena = Arena.ofConfined();\n}",
+      "correct": 22,
+      "features": [
+        "FOREIGN_FUNCTION_API"
+      ]
+    },
+    {
+      "code": "import java.io.ObjectInputFilter;\n\nclass Example {\n    ObjectInputFilter filter;\n}",
+      "correct": 9,
+      "features": [
+        "DESERIALIZATION_FILTERS",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import javax.crypto.kem.*;\n\nclass Example {\n    void test() {\n\n    }\n}",
+      "correct": 24,
+      "features": [
+        "QUANTUM_RESISTANT_KEM"
+      ]
+    },
+    {
+      "code": "import java.util.logging.Logger;\n\nclass Example {\n    Logger log = Logger.getLogger(\"test\");\n}",
+      "correct": 4,
+      "features": [
+        "LOGGING"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Polygon {}\n    final class Circle implements Shape {}\n    non-sealed class Polygon implements Shape {}\n    class Triangle extends Polygon {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "import static java.lang.Math.*;\nimport static java.util.Collections.*;\n\nimport java.util.*;\n\nclass Example {\n\n    public void testStaticMathImports() {\n        double result = sqrt(16) + pow(2, 3);\n        double angle = sin(PI / 2);\n    }\n\n    public void testStaticCollectionsImports() {\n        List<String> list = new ArrayList<String>();\n        list.add(\"b\");\n        list.add(\"a\");\n        sort(list);\n        reverse(list);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n\n    public String test(Object o) {\n        return switch (o) {\n            case Point(int x, int y) when x > 0 -> \"positive x\";\n            case Point(int x, int y) -> \"point at \" + x + \",\" + y;\n            case String s -> s;\n            case null, default -> \"other\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_NULL_DEFAULT",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    double[][] matrix;\n\n    double[][] getMatrix() {\n        return matrix;\n    }\n\n    void setMatrix(double[][] m) {\n        this.matrix = m;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "record Example(int x, int y) {}\nclass Example {\n    void test(Object o) {\n        switch (o) {\n            case Example(int x, int y) -> System.out.println(x + y);\n            case String s -> System.out.println(s);\n            default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.util.random.RandomGenerator;\n\nclass Example {\n    RandomGenerator rng = RandomGenerator.getDefault();\n}",
+      "correct": 17,
+      "features": [
+        "RANDOM_GENERATOR"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int max(int a, int b) {\n        if (a > b) {\n            return a;\n        } else {\n            return b;\n        }\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    void test() {\n        interface Local { void run(); }\n        Local l = () -> {};\n    }\n}",
+      "correct": 16,
+      "features": [
+        "INNER_CLASSES",
+        "LAMBDAS",
+        "LOCAL_INTERFACES"
+      ]
+    },
+    {
+      "code": "class Example {\n    int sumTo(int n) {\n        int i = 0;\n        int s = 0;\n        while (i < n) {\n            s = s + i;\n            i = i + 1;\n        }\n        return s;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "public class Quiz {\n    void safeOperation() {\n        try {\n            init();\n            execute();\n            complete();\n        } catch (Exception e) {\n            abort(e);\n        } finally {\n            shutdown();\n        }\n    }\n\n    void init() {}\n    void execute() {}\n    void complete() {}\n    void abort(Exception e) {}\n    void shutdown() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.Clip;\nimport javax.naming.Context;\n\nclass Example {\n    Clip clip;\n    Context ctx;\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND",
+        "JNDI"
+      ]
+    },
+    {
+      "code": "class Example {\n    Object test(Object obj) {\n        return switch (obj) {\n            case String s when s.length() > 5 -> s.toUpperCase();\n            case String s -> s;\n            case Integer i -> {\n                yield i * 2;\n            }\n            case null, default -> \"unknown\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING",
+        "SWITCH_NULL_DEFAULT",
+        "YIELD"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.List list = new java.util.ArrayList();\n    java.util.Map map = new java.util.HashMap();\n    java.util.Set set = new java.util.HashSet();\n}",
+      "correct": 2,
+      "features": [
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    void test() {\n        Runnable r1 = () -> {};\n        Runnable r2 = () -> System.out.println(\"hi\");\n        Consumer<String> c1 = (String s) -> System.out.println(s);\n        Consumer<String> c2 = s -> System.out.println(s);\n        BiFunction<Integer, Integer, Integer> f = (a, b) -> a + b;\n        Supplier<String> s = () -> \"test\";\n    }\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I {\n        static void method() { System.out.println(\"static\"); }\n    }\n}",
+      "correct": 8,
+      "features": [
+        "INNER_CLASSES",
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Animal permits Dog, Cat {}\n    final class Dog implements Animal {}\n    non-sealed class Cat implements Animal {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(String s) {\n        int binary = 0b1010_1010;\n        int hex = 0xFF_FF_FF_FF;\n        try {\n            switch (s) {\n                case \"binary\": System.out.println(binary); break;\n                case \"hex\": System.out.println(hex); break;\n            }\n        } catch (NullPointerException | IllegalArgumentException e) {\n            e.printStackTrace();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS",
+        "STRINGS_IN_SWITCH",
+        "MULTI_CATCH"
+      ]
+    },
+    {
+      "code": "import java.time.LocalDate;\nimport java.time.LocalTime;\nimport java.time.LocalDateTime;\nimport java.time.format.DateTimeFormatter;\n\nclass Example {\n    public void testDateTime() {\n        LocalDate today = LocalDate.now();\n        LocalTime now = LocalTime.now();\n        LocalDateTime dateTime = LocalDateTime.now();\n\n        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(\"yyyy-MM-dd HH:mm:ss\");\n        String formatted = dateTime.format(formatter);\n        System.out.println(\"Formatted: \" + formatted);\n    }\n}",
+      "correct": 8,
+      "features": [
+        "DATE_TIME_API"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    List<String> list = new ArrayList<>() {\n        { add(\"initial\"); }\n    };\n}",
+      "correct": 9,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "DIAMOND_WITH_ANONYMOUS",
+        "GENERICS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import javax.naming.Context;\nimport javax.naming.InitialContext;\nimport javax.naming.NamingException;\n\nclass Example {\n    public Object lookup(String name) throws NamingException {\n        Context ctx = new InitialContext();\n        return ctx.lookup(name);\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JNDI"
+      ]
+    },
+    {
+      "code": "public strictfp class Example {\n    public strictfp double calculate(double a, double b) {\n        return a * b + a / b;\n    }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    public void test() {\n        List<String> list = new ArrayList<>();\n        for (String s : list) {\n            System.out.println(s);\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "FOR_EACH",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Person(String name, int age) {\n        public Person {\n            if (age < 0) throw new IllegalArgumentException();\n            name = name.trim();\n        }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    Point p = new Point(1, 2);\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "import net.Socket;\nimport net.ProtocolException;\n\npublic class Quiz {\n    void openSocket() throws ProtocolException {\n        Socket s = new Socket();\n        s.connect();\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_SOCKET"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String process(String input) {\n        return switch (input) {\n            case \"A\" -> \"Option A\";\n            case \"B\" -> \"Option B\";\n            case null, default -> \"Unknown or null\";\n        };\n    }\n\n    public int getValue(Integer num) {\n        return switch (num) {\n            case 1 -> 100;\n            case 2 -> 200;\n            case null, default -> 0;\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_NULL_DEFAULT"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void logInfo() {\n        String log = \"Error at \";\n        log += new java.util.Date();\n        log += \" in \";\n        log += Thread.currentThread();\n        System.out.println(log);\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_STRING_PLUS_OBJECT"
+      ]
+    },
+    {
+      "code": "import java.util.prefs.Preferences;\n\nclass Example {\n    Preferences prefs = Preferences.userRoot();\n}",
+      "correct": 4,
+      "features": [
+        "PREFERENCES"
+      ]
+    },
+    {
+      "code": "class Example {\n    long big = 1___000___000___000L;\n    int hex = 0xFF___FF___FF;\n    int binary = 0b1111____0000____1111____0000;\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    enum Priority { LOW, MEDIUM, HIGH }\n\n    @SuppressWarnings(\"unchecked\")\n    public <T> void process(T... items) {\n        List<T> list = new ArrayList<T>();\n        for (T item : items) {\n            list.add(item);\n        }\n\n        Priority p = Priority.HIGH;\n        Integer boxed = 42; // autoboxing\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS",
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "ENUMS",
+        "FOR_EACH",
+        "GENERICS",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int clamp01(int x) {\n        switch (x) {\n            case 0: return 0;\n            case 1: return 1;\n            default: return 0;\n        }\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    public void method() {\n\n        interface Printer {\n            void print(String message);\n        }\n\n        record Item(String name, int quantity) {}\n\n        Printer consolePrinter = message -> System.out.println(message);\n        consolePrinter.print(\"Hello from local interface!\");\n\n        Item item = new Item(\"Widget\", 5);\n        System.out.println(item);\n    }\n}",
+      "correct": 16,
+      "features": [
+        "INNER_CLASSES",
+        "LAMBDAS",
+        "LOCAL_INTERFACES",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void method() throws Exception {\n\n        Thread virtualThread = Thread.ofVirtual()\n            .name(\"my-virtual-thread\")\n            .start(() -> {\n                System.out.println(\"Running in virtual thread: \" + Thread.currentThread());\n            });\n\n        virtualThread.join();\n\n        Thread.startVirtualThread(() -> {\n            System.out.println(\"Another virtual thread\");\n        });\n\n        var factory = Thread.ofVirtual().factory();\n        Thread t = factory.newThread(() -> System.out.println(\"From factory\"));\n        t.start();\n        t.join();\n\n        System.out.println(\"Is virtual: \" + Thread.currentThread().isVirtual());\n    }\n}",
+      "correct": 21,
+      "features": [
+        "LAMBDAS",
+        "VAR",
+        "VIRTUAL_THREADS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    boolean isNaN(double value) {\n        double nan = 0.0 / 0.0;\n        return value != value;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ZERO_DIV_ZERO"
+      ]
+    },
+    {
+      "code": "import javax.xml.bind.JAXBContext;\n\nclass Example {\n    JAXBContext ctx;\n}",
+      "correct": 6,
+      "features": [
+        "JAXB",
+        "XML_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    int binary = 0b1010_1010;\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void processFlags() {\n        long flags = 0xFF00FF00FF00FF00L;\n        flags >>= 8;\n        flags <<= 16;\n        flags >>>= 4;\n        System.out.println(flags);\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_LONG_SHIFT_ASSIGN"
+      ]
+    },
+    {
+      "code": "import java.nio.file.*;\nimport java.nio.charset.*;\nimport java.io.*;\nimport java.util.*;\nimport java.util.stream.*;\n\nclass Example {\n    public void method() throws IOException {\n\n        Path path = Paths.get(\"test.txt\");\n\n        List<String> lines = Files.readAllLines(path, StandardCharsets.UTF_8);\n        Files.write(path, lines);\n\n        try (Stream<Path> stream = Files.walk(Paths.get(\".\"))) {\n            stream.filter(Files::isRegularFile)\n                  .forEach(System.out::println);\n        }\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "IO_API",
+        "METHOD_REFERENCES",
+        "NIO2",
+        "TRY_WITH_RESOURCES",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() throws Exception {\n        try (var r = new java.io.StringReader(\"\")) {}\n    }\n}",
+      "correct": 10,
+      "features": [
+        "IO_API",
+        "TRY_WITH_RESOURCES",
+        "VAR"
+      ]
+    },
+    {
+      "code": "class Example {\n    int[] x = {0b1, 0b10};\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS"
+      ]
+    },
+    {
+      "code": "import module java.base;\n\nclass Example {\n    void test() {\n        List<String> list = List.of(\"a\");\n    }\n}",
+      "correct": 25,
+      "features": [
+        "COLLECTION_FACTORY_METHODS",
+        "GENERICS",
+        "MODULE_IMPORTS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) { return switch(x) { default -> 0; }; }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "import java.sql.Connection;\n\nclass Example {\n    Connection c;\n}",
+      "correct": 1,
+      "features": [
+        "JDBC"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String getQuarter(int month) {\n\n        return switch (month) {\n            case 1, 2, 3 -> \"Q1\";\n            case 4, 5, 6 -> \"Q2\";\n            case 7, 8, 9 -> \"Q3\";\n            case 10, 11, 12 -> \"Q4\";\n            default -> \"Invalid\";\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_MULTIPLE_LABELS"
+      ]
+    },
+    {
+      "code": "interface I {\n    private void h() {}\n    default void m() { h(); }\n}\n\nclass Example implements I {}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "PRIVATE_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.List<Integer> nums = new java.util.ArrayList<Integer>();\n    void add() { nums.add(42); }\n    int get() { return nums.get(0); }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "GENERICS",
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "import java.util.*;\nimport java.util.stream.Stream;\n\nclass Example {\n    public Optional<String> process(List<String> list) {\n        Stream<String> stream = list.stream();\n        return stream\n            .filter(s -> s.length() > 3)\n            .map(String::toUpperCase)\n            .reduce((a, b) -> a + \",\" + b);\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "OPTIONAL",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int calculate(String operation, int a, int b) {\n        return switch (operation) {\n            case \"add\" -> a + b;\n            case \"subtract\" -> a - b;\n            case \"multiply\" -> {\n                System.out.println(\"Multiplying \" + a + \" and \" + b);\n                yield a * b;\n            }\n            default -> {\n                IO.println(\"Unknown operation\");\n                yield 0;\n            }\n        };\n    }\n}",
+      "correct": 25,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "YIELD",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "void main() {\n\n    IO.println(\n                    \"hi\" \n            );\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int x = 0xFF_FF;\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    record Point3D(int x, int y, int z) {}\n\n    void test(Object obj) {\n        switch (obj) {\n            case Point(int x, int _) -> System.out.println(\"x=\" + x);\n            case Point3D(int x, int _, int _) -> System.out.println(\"x=\" + x);\n            case String _ -> System.out.println(\"string\");\n            default -> {}\n        }\n    }\n}",
+      "correct": 22,
+      "features": [
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Pair<T, U>(T first, U second) {}\n\n    Pair<String, Integer> pair = new Pair<>(\"test\", 42);\n}",
+      "correct": 16,
+      "features": [
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    void test() {\n        ObjectInputFilter f = ObjectInputFilter.Config.getSerialFilter();\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DESERIALIZATION_FILTERS",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\n\nclass Example {\n    public <T> T genericMethod(T param) {\n        return param;\n    }\n\n    public void useGenerics() {\n        List<String> list = new ArrayList<String>();\n        list.add(\"test\");\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.io.InputStream;\nimport java.io.OutputStream;\nimport java.io.IOException;\n\nclass Example {\n    public void copyStream(InputStream in, OutputStream out) throws IOException {\n        byte[] buffer = new byte[1024];\n        int bytesRead;\n        while ((bytesRead = in.read(buffer)) != -1) {\n            out.write(buffer, 0, bytesRead);\n        }\n    }\n}",
+      "correct": 0,
+      "features": [
+        "IO_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(Object o) {\n        switch (o) {\n            case String s -> System.out.println(s);\n            case Integer i -> System.out.println(i);\n            default -> System.out.println(\"?\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example implements Serializable {\n    private int x;\n}",
+      "correct": 1,
+      "features": [
+        "IO_API",
+        "SERIALIZATION"
+      ]
+    },
+    {
+      "code": "class Example {\n    long big = 1_000_000_000L;\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void method() {\n        int binary = 0b1010;        // 10 in decimal\n        int binary2 = 0B11110000;   // 240 in decimal\n        long binaryLong = 0b1111_0000_1111_0000L;\n\n        System.out.println(\"Binary 0b1010 = \" + binary);\n    }\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int sum(int n) {\n        int s = 0;\n        for (int i = 0; i < n; i = i + 1) {\n            s = s + i;\n        }\n        return s;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    void test(String s) {\n        switch (s) {\n            case null -> System.out.println(\"null\");\n            case \"a\" -> System.out.println(\"a\");\n            default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "STRINGS_IN_SWITCH",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_NULL_DEFAULT"
+      ]
+    },
+    {
+      "code": "import java.lang.StackWalker;\n\nclass Example {\n    StackWalker walker = StackWalker.getInstance();\n}",
+      "correct": 9,
+      "features": [
+        "STACK_WALKING"
+      ]
+    },
+    {
+      "code": "import javax.swing.JFrame;\n\nclass Example {\n    JFrame f = new JFrame();\n}",
+      "correct": 2,
+      "features": [
+        "SWING"
+      ]
+    },
+    {
+      "code": "import java.sql.Driver;\n\nclass Example {\n    Class c = Driver.class;\n}",
+      "correct": 1,
+      "features": [
+        "JDBC",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "/// This is a **markdown** doc comment\nclass Example {\n    /// Returns the _value_\n    int get() { return 1; }\n}",
+      "correct": 23,
+      "features": [
+        "MARKDOWN_DOC_COMMENTS"
+      ]
+    },
+    {
+      "code": "public strictfp class Example {\n    strictfp void strictMethod() {\n        double result = 1.0 / 3.0;\n    }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String getHtml() {\n        return \"\"\"\n            <html>\n                <body>Hello</body>\n            </html>\n            \"\"\";\n    }\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "class Example {\n    Integer boxed = 42;\n    int unboxed = boxed;\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    String buildMessage() {\n        String msg = \"Count: \";\n        Integer count = new Integer(42);\n        msg += count;\n        msg += new Object();\n        return msg;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_STRING_PLUS_OBJECT"
+      ]
+    },
+    {
+      "code": "class Example {\n    String get(Object o) {\n        assert o != null : \"must not be null\";\n        return o.toString();\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "import javax.crypto.KDF;\n\nclass Example {\n    KDF kdf;\n}",
+      "correct": 25,
+      "features": [
+        "KEY_DERIVATION_API"
+      ]
+    },
+    {
+      "code": "import java.io.StringBufferPrintStream;\n\npublic class Quiz {\n    String capture() {\n        StringBufferPrintStream out = new StringBufferPrintStream();\n        out.println(\"Hello\");\n        out.println(42);\n        return out.toString();\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_STRING_BUFFER_PRINT_STREAM"
+      ]
+    },
+    {
+      "code": "import java.rmi.Remote;\n\nclass Example {\n    class Handler implements Remote {}\n}",
+      "correct": 1,
+      "features": [
+        "RMI",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import javax.xml.parsers.DocumentBuilder;\n\nclass Example {\n    DocumentBuilder db;\n}",
+      "correct": 4,
+      "features": [
+        "XML_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Square {}\n    record Circle(double radius) implements Shape {}\n    record Square(double side) implements Shape {}\n\n    void test(Shape s) {\n        if (s instanceof Circle(var r)) {\n            System.out.println(r);\n        }\n        switch (s) {\n            case Circle(var r) -> System.out.println(r);\n            case Square(var side) -> System.out.println(side);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "INNER_CLASSES",
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SEALED_CLASSES",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    <T> List<T> asList(T... elements) {\n        return Arrays.asList(elements);\n    }\n    void test() {\n        List<Integer> nums = asList(1, 2, 3);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "import java.lang.foreign.*;\n\nclass Example {\n    void test() {\n        Arena arena = Arena.ofConfined();\n        MemorySegment seg = arena.allocate(100);\n    }\n}",
+      "correct": 22,
+      "features": [
+        "FOREIGN_FUNCTION_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    int f() {\n        int a = 0;\n        a = a + 1;\n        return a;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    void test() { for (int i : new int[0]) {} }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        try { throw new Exception(); }\n        catch (Exception _) { }\n    }\n}",
+      "correct": 22,
+      "features": [
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "import java.lang.classfile.*;\n\nclass Example {\n    void test() {\n        ClassFile cf = ClassFile.of();\n    }\n}",
+      "correct": 24,
+      "features": [
+        "CLASS_FILE_API"
+      ]
+    },
+    {
+      "code": "import java.net.spi.*;\n\nclass Example {\n    void test() {\n        InetAddressResolverProvider p = null;\n    }\n}",
+      "correct": 18,
+      "features": [
+        "INET_ADDRESS_RESOLVER"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Expr permits Const, Add {}\n    record Const(int value) implements Expr {}\n    record Add(Expr left, Expr right) implements Expr {}\n\n    public int eval(Expr e) {\n        return switch (e) {\n            case Const(int v) -> v;\n            case Add(Expr l, Expr r) -> eval(l) + eval(r);\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "INNER_CLASSES",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SEALED_CLASSES",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public String readFile(String path) throws IOException {\n        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {\n            return reader.readLine();\n        }\n    }\n\n    public void copyFile(String from, String to) throws IOException {\n        try (InputStream in = new FileInputStream(from);\n             OutputStream out = new FileOutputStream(to)) {\n            byte[] buffer = new byte[1024];\n            int len;\n            while ((len = in.read(buffer)) > 0) {\n                out.write(buffer, 0, len);\n            }\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "IO_API",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "import java.net.spi.InetAddressResolver;\n\nclass Example {\n    InetAddressResolver resolver;\n}",
+      "correct": 18,
+      "features": [
+        "INET_ADDRESS_RESOLVER"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int x;\n\n    int getX() {\n        return x;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    Runnable r = () -> {};\n}",
+      "correct": 8,
+      "features": [
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "import javax.swing.SwingWorker;\n\nclass Example extends SwingWorker<Void, Void> {\n    protected Void doInBackground() { return null; }\n}",
+      "correct": 6,
+      "features": [
+        "GENERICS",
+        "SWING",
+        "SWING_WORKER"
+      ]
+    },
+    {
+      "code": "class IO {\n    static void println(String s) {}\n}\n\nvoid main() {\n    IO.println(\"shadowed\");\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    List<String> get() { return new ArrayList<>(); }\n}",
+      "correct": 7,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    String cube[][][];\n\n    String getCube()[][][] {\n        return cube;\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "import net.ProtocolException;\n\npublic class Quiz {\n    void handleProtocol() throws ProtocolException {\n        throw new ProtocolException(\"Invalid protocol\");\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_PROTOCOL_EXCEPTION"
+      ]
+    },
+    {
+      "code": "import java.io.StringInputStream;\n\npublic class Quiz {\n    void readFromString() {\n        String data = \"Hello World\";\n        StringInputStream in = new StringInputStream(data);\n        int ch = in.read();\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_STRING_INPUT_STREAM"
+      ]
+    },
+    {
+      "code": "import javax.imageio.ImageIO;\nimport java.io.File;\n\nclass Example {\n    void read() throws Exception {\n        ImageIO.read(new File(\"image.png\"));\n    }\n}",
+      "correct": 4,
+      "features": [
+        "IMAGE_IO",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        interface I { int X = 1; }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "INNER_CLASSES",
+        "LOCAL_INTERFACES"
+      ]
+    },
+    {
+      "code": "class Example {\n    Object test(Object obj) {\n        return switch (obj) {\n            case String s when s.length() > 5 -> s.toUpperCase();\n            case String s -> s;\n            case Integer i -> {\n                yield i * 2;\n            }\n            case null, default -> \"unknown\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING",
+        "SWITCH_NULL_DEFAULT",
+        "YIELD"
+      ]
+    },
+    {
+      "code": "enum E { A }\n\nclass Example {\n    void test(E e) { switch(e) { case A: } }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "import javax.sound.midi.MidiSystem;\n\nclass Example {\n    void getMidi() throws Exception {\n        MidiSystem.getSynthesizer();\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND"
+      ]
+    },
+    {
+      "code": "class Example {\n    static { assert true; }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int getHexValues() {\n        int upperX = 0X1;\n        int upperXBig = 0XFF;\n        long lowerXLong = 0x1L;\n        long anotherLong = 0xABCDL;\n        return upperX + upperXBig;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_HEX_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\n\nclass Example {\n    @Target({ElementType.FIELD})\n    @Retention(RetentionPolicy.RUNTIME)\n    @interface Tags { Tag[] value(); }\n\n    @Repeatable(Tags.class)\n    @Target({ElementType.FIELD})\n    @Retention(RetentionPolicy.RUNTIME)\n    @interface Tag { String value(); }\n\n    @Tag(\"a\") @Tag(\"b\")\n    String s = \"test\";\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "REPEATING_ANNOTATIONS",
+        "TYPE_ANNOTATIONS",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    Comparator c = new Comparator() {\n        public int compare(Object a, Object b) { return 0; }\n    };\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        enum E { A, B }\n        E e = E.A;\n    }\n}",
+      "correct": 16,
+      "features": [
+        "ENUMS",
+        "LOCAL_ENUMS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\nimport java.util.stream.*;\n\nclass Example {\n    void test() {\n        var list = List.of(\"a\", \"b\", \"c\");\n        list.stream()\n            .map((var s) -> s.toUpperCase())\n            .map(String::toLowerCase)\n            .forEach(System.out::println);\n    }\n}",
+      "correct": 11,
+      "features": [
+        "COLLECTION_FACTORY_METHODS",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API",
+        "VAR",
+        "VAR_IN_LAMBDA"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\nimport java.util.*;\n\nclass Example {\n    void test() {\n        var r = List.of(1, 2, 3).stream().collect(\n            Collectors.teeing(\n                Collectors.summingInt(i -> i),\n                Collectors.counting(),\n                (s, c) -> s + \"/\" + c));\n    }\n}",
+      "correct": 12,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTION_FACTORY_METHODS",
+        "COLLECTORS_TEEING",
+        "LAMBDAS",
+        "STREAM_API",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.util.Base64;\n\nclass Example {\n    String encoded = Base64.getEncoder().encodeToString(\"hello\".getBytes());\n}",
+      "correct": 8,
+      "features": [
+        "BASE64_API"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int sumTo(int n) {\n        int s = 0;\n        int i = 0;\n        while (i < n) {\n            s = s + i;\n            i = i + 1;\n        }\n        return s;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "import java.util.concurrent.*;\nimport java.util.concurrent.atomic.AtomicInteger;\n\nclass Example {\n    ExecutorService executor = Executors.newFixedThreadPool(4);\n    AtomicInteger counter = new AtomicInteger(0);\n    ConcurrentHashMap map = new ConcurrentHashMap();\n}",
+      "correct": 5,
+      "features": [
+        "CONCURRENT_API"
+      ]
+    },
+    {
+      "code": "import java.security.spec.*;\n\nclass Example {\n    void test() {\n        NamedParameterSpec spec = NamedParameterSpec.ED25519;\n    }\n}",
+      "correct": 15,
+      "features": [
+        "EDDSA"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        var copy = List.copyOf(List.of(\"a\", \"b\"));\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTION_COPY_OF",
+        "COLLECTION_FACTORY_METHODS",
+        "VAR"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void connect() {\n        try {\n            openConnection();\n            sendData();\n        } catch (Exception e) {\n            handleNetworkError(e);\n        }\n    }\n\n    void openConnection() {}\n    void sendData() {}\n    void handleNetworkError(Exception e) {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_CATCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(int x) {\n        switch (x) {\n            case 1, 2, 3 -> System.out.println(\"low\");\n            default -> System.out.println(\"high\");\n        }\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_MULTIPLE_LABELS"
+      ]
+    },
+    {
+      "code": "import java.nio.ByteBuffer;\n\nclass Example {\n    ByteBuffer buf = ByteBuffer.allocate(10);\n}",
+      "correct": 4,
+      "features": [
+        "NIO"
+      ]
+    },
+    {
+      "code": "import java.net.http.HttpClient;\nimport java.net.http.HttpRequest;\nimport java.net.http.HttpResponse;\nimport java.net.URI;\n\nclass Example {\n    public void method() throws Exception {\n        HttpClient client = HttpClient.newHttpClient();\n        HttpRequest request = HttpRequest.newBuilder()\n            .uri(URI.create(\"https://example.com\"))\n            .GET()\n            .build();\n        HttpResponse<String> response = client.send(request, \n            HttpResponse.BodyHandlers.ofString());\n        System.out.println(response.body());\n    }\n}",
+      "correct": 11,
+      "features": [
+        "GENERICS",
+        "HTTP_CLIENT"
+      ]
+    },
+    {
+      "code": "import java.util.ArrayList;\nimport java.util.List;\n\nclass Example {\n    List list = new ArrayList();\n}",
+      "correct": 2,
+      "features": [
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void process(List<String> items) {\n        for (String item : items) System.out.println(item);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int sumArray(int[] a) {\n        int s = 0;\n        for (int i = 0; i < a.length; i = i + 1) {\n            s = s + a[i];\n        }\n        return s;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "@SuppressWarnings(\"all\")\nclass Example {\n    @Override public String toString() { return \"\"; }\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        try { throw new Exception(); }\n        catch (RuntimeException | Error e) {}\n        catch (Exception e) {}\n    }\n}",
+      "correct": 7,
+      "features": [
+        "MULTI_CATCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) {\n        return switch (x) {\n            case 1 -> 10;\n            default -> 0;\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "module test.module {\n    exports test.module.api;\n    requires java.base;\n}",
+      "correct": 9,
+      "features": [
+        "MODULES"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Square {}\n    record Circle(double radius) implements Shape {}\n    record Square(double side) implements Shape {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "RECORDS",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    double computeNaN() {\n        double result = 0.0 / 0.0;\n        return result;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ZERO_DIV_ZERO"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        List<String> list = List.of(\"a\", \"b\", \"c\");\n        Set<Integer> set = Set.of(1, 2, 3);\n        Map<String, Integer> map = Map.of(\"one\", 1, \"two\", 2);\n        Map<String, String> bigMap = Map.ofEntries(\n            Map.entry(\"k1\", \"v1\"),\n            Map.entry(\"k2\", \"v2\")\n        );\n    }\n}",
+      "correct": 9,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.util.concurrent.*;\n\nclass Example {\n    void test() throws Exception {\n\n        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {\n            executor.submit(() -> System.out.println(\"Virtual thread task\"));\n        }\n\n        Thread.ofVirtual().start(() -> System.out.println(\"Virtual thread\"));\n    }\n}",
+      "correct": 21,
+      "features": [
+        "CONCURRENT_API",
+        "LAMBDAS",
+        "TRY_WITH_RESOURCES",
+        "VAR",
+        "VIRTUAL_THREADS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    public void test(Object o) {\n        if (o instanceof Point(int x, int y)) {\n            System.out.println(x + y);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS"
+      ]
+    },
+    {
+      "code": "public strictfp class Example {\n    double calc() { return 1.0 / 3.0 * 3.0; }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "import java.io.*;\nimport java.sql.*;\n\nclass Example {\n    public void test() throws IOException, SQLException {\n        try {\n            throw new IOException();\n        } catch (IOException | RuntimeException e) {\n            e.printStackTrace();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "IO_API",
+        "JDBC",
+        "MULTI_CATCH"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void test() throws IOException {\n        var r = new FileInputStream(\"f.txt\");\n        try (r) {\n            var processor = (Runnable) () -> System.out.println(\"processing\");\n            processor.run();\n        }\n    }\n}",
+      "correct": 10,
+      "features": [
+        "IO_API",
+        "LAMBDAS",
+        "TRY_WITH_EFFECTIVELY_FINAL",
+        "TRY_WITH_RESOURCES",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.util.function.Predicate;\n\nclass Example {\n    Predicate<String> f = (var a) -> a.isEmpty();\n}",
+      "correct": 11,
+      "features": [
+        "GENERICS",
+        "LAMBDAS",
+        "VAR_IN_LAMBDA"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\n\nclass Example {\n    @Repeatable(Schedules.class)\n    @interface Schedule { String day(); }\n    @interface Schedules { Schedule[] value(); }\n\n    @Schedule(day=\"Mon\") @Schedule(day=\"Tue\")\n    void meeting() {}\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "REPEATING_ANNOTATIONS",
+        "TYPE_ANNOTATIONS",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        var x = 42;\n        var s = \"hello\";\n    }\n}",
+      "correct": 10,
+      "features": [
+        "VAR"
+      ]
+    },
+    {
+      "code": "record Example(int x) {}\nclass Example {\n    void test(Example r) {}\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "class Example {\n    @SafeVarargs\n    public final <T> void process(T... items) {\n        for (T item : items) {\n            System.out.println(item);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS",
+        "FOR_EACH",
+        "GENERICS",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "class FullyQualifiedNames_NoImports {\n\n    public void testFullyQualifiedTypes() {\n\n        java.util.stream.Stream<String> stream = java.util.stream.Stream.of(\"a\", \"b\");\n\n        java.time.LocalDate date = java.time.LocalDate.now();\n        java.time.LocalDateTime dateTime = java.time.LocalDateTime.now();\n\n        java.util.Optional<String> opt = java.util.Optional.of(\"hello\");\n\n        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();\n    }\n\n    public void testFullyQualifiedMethodCalls() {\n\n        java.util.List<String> list = java.util.List.of(\"a\", \"b\", \"c\");\n        java.util.Set<Integer> set = java.util.Set.of(1, 2, 3);\n        java.util.Map<String, Integer> map = java.util.Map.of(\"a\", 1, \"b\", 2);\n\n        java.util.List<String> copy = java.util.List.copyOf(list);\n    }\n\n    public void testFullyQualifiedFieldAccess() {\n\n        java.lang.System.out.println(\"Hello\");\n    }\n}",
+      "correct": 11,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "DATE_TIME_API",
+        "GENERICS",
+        "HTTP_CLIENT",
+        "OPTIONAL",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int fib(int n) {\n        if (n <= 1) return n;\n        int a = 0;\n        int b = 1;\n        int i = 2;\n        while (i <= n) {\n            int t = a + b;\n            a = b;\n            b = t;\n            i = i + 1;\n        }\n        return b;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    public String test(String type) {\n        return switch (type) {\n            case \"json\" -> \"\"\"\n                {\"key\": \"value\"}\n                \"\"\";\n            case \"html\" -> \"\"\"\n                <html><body>Test</body></html>\n                \"\"\";\n            default -> \"plain text\";\n        };\n    }\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int x;\n    Example(int x) {\n        if (x < 0) x = 0;\n        this.x = x;\n    }\n}\n\nclass Sub extends Example {\n    Sub(int x) {\n        int v = Math.abs(x);\n        super(v);\n    }\n}",
+      "correct": 25,
+      "features": [
+        "FLEXIBLE_CONSTRUCTOR_BODIES"
+      ]
+    },
+    {
+      "code": "import jdk.jfr.Event;\n\nclass Example extends Event {\n}",
+      "correct": 11,
+      "features": [
+        "FLIGHT_RECORDER"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\n@Repeatable(As.class) @interface A { int value(); }\n@interface As { A[] value(); }\n\n@A(1) @A(2)\nclass Example {}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "REPEATING_ANNOTATIONS",
+        "TYPE_ANNOTATIONS",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(int x) {\n        assert x > 0 : \"x must be positive\";\n        assert x < 100;\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    byte data[];\n    char text[];\n\n    byte getData()[] {\n        return data;\n    }\n\n    char getText()[] {\n        return text;\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        Thread.startVirtualThread(() -> {});\n    }\n}",
+      "correct": 21,
+      "features": [
+        "LAMBDAS",
+        "VIRTUAL_THREADS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test(int x) {\n        assert x > 0;\n        assert x < 100 : \"x must be less than 100\";\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void demo() {\n        Runnable r = System.out::println;\n        r.run();\n    }\n}",
+      "correct": 8,
+      "features": [
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "void main(String[] args) {\n    System.out.println(\"Hello, World!\");\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface MyInterface {\n        default void defaultMethod() {\n            run(() -> System.out.println(\"default\"));\n        }\n        static void staticMethod() {\n            System.out.println(\"static\");\n        }\n        void run(Runnable r);\n    }\n}",
+      "correct": 8,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "LAMBDAS",
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\nimport java.util.stream.Gatherers;\n\nclass Example {\n    void test() {\n        Stream.of(1, 2, 3)\n            .collect(Collectors.teeing(\n                Collectors.counting(),\n                Collectors.summingInt(i -> i),\n                (count, sum) -> sum / count\n            ));\n        Stream.of(1, 2, 3).gather(Gatherers.fold(() -> 0, (a, b) -> a + b));\n    }\n}",
+      "correct": 24,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTORS_TEEING",
+        "LAMBDAS",
+        "STREAM_API",
+        "STREAM_GATHERERS"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\n\nclass Example {\n    public void test() {\n        Stream.of(1, 2, 3)\n            .filter(x -> x > 1)\n            .map(String::valueOf)\n            .forEach(System.out::println);\n    }\n}",
+      "correct": 8,
+      "features": [
+        "AUTOBOXING",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void method(Object x) {\n        boolean b = x instanceof String s && s.isEmpty();\n    }\n}",
+      "correct": 16,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF"
+      ]
+    },
+    {
+      "code": "import java.beans.PropertyChangeListener;\n\nclass Example {\n    PropertyChangeListener l;\n}",
+      "correct": 1,
+      "features": [
+        "JAVABEANS"
+      ]
+    },
+    {
+      "code": "import java.util.random.*;\n\nclass Example {\n    void test() {\n        RandomGenerator rg = RandomGenerator.of(\"L64X128MixRandom\");\n    }\n}",
+      "correct": 17,
+      "features": [
+        "RANDOM_GENERATOR"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.function.BiConsumer<String,String> c = (_, _) -> {};\n}",
+      "correct": 22,
+      "features": [
+        "UNNAMED_VARIABLES",
+        "GENERICS",
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    public void test() {\n\n        List<String> list = new ArrayList<>();\n        var immutable = List.of(\"a\", \"b\", \"c\");\n        var x = \"test\";\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "VAR"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n\n    void test(Object obj) {\n        if (obj instanceof Point(int x, int y) && x > 0) {\n            System.out.println(x + y);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS"
+      ]
+    },
+    {
+      "code": "class Example {\n    Example(int... x) {}\n}",
+      "correct": 5,
+      "features": [
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "import com.sun.jdi.VirtualMachine;\n\nclass Example {\n    VirtualMachine vm;\n}",
+      "correct": 3,
+      "features": [
+        "JPDA"
+      ]
+    },
+    {
+      "code": "import java.util.concurrent.*;\n\nclass Example {\n    void test() {\n        Flow.Publisher<String> pub = null;\n        Flow.Subscriber<String> sub = null;\n    }\n}",
+      "correct": 9,
+      "features": [
+        "CONCURRENT_API",
+        "GENERICS",
+        "REACTIVE_STREAMS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void method() {\n        int million = 1_000_000;\n        long creditCard = 1234_5678_9012_3456L;\n        int hex = 0xFF_EC_DE_5E;\n\n        System.out.println(\"Million: \" + million);\n    }\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I { static int get() { return 1; } }\n    int x = I.get();\n}",
+      "correct": 8,
+      "features": [
+        "STATIC_INTERFACE_METHODS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "Runnable r = new Runnable() {\n    @Override public void run() {\n        IO.println(\"anon\");\n    }\n};\n\nvoid main() {\n    r.run();\n}",
+      "correct": 25,
+      "features": [
+        "ANNOTATIONS",
+        "COMPACT_SOURCE_FILES",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "INNER_CLASSES",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "public strictfp class Example {\n    double calc() { return 1.0 / 3.0; }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "class Example {\n    int f(int x) {\n        switch (x) {\n            case 0:\n                return 10;\n            case 1:\n                return 11;\n            default:\n                return 12;\n        }\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        var x = 10;\n        var s = \"hello\";\n        var list = new ArrayList<String>();\n        for (var item : list) {}\n        for (var i = 0; i < 10; i++) {}\n        try (var r = new java.io.StringReader(\"\")) {}\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS",
+        "IO_API",
+        "TRY_WITH_RESOURCES",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n\n        SequencedCollection<String> seq = List.of(\"a\", \"b\", \"c\");\n        String first = seq.getFirst();\n        String last = seq.getLast();\n    }\n}",
+      "correct": 21,
+      "features": [
+        "COLLECTION_FACTORY_METHODS",
+        "GENERICS",
+        "SEQUENCED_COLLECTIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    Runnable r = new Runnable() { public void run() {} };\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.AudioSystem;\nimport java.io.File;\n\nclass Example {\n    void play() throws Exception {\n        AudioSystem.getAudioInputStream(new File(\"test.wav\"));\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\nimport java.time.*;\nimport java.util.*;\n\nclass Example {\n    public void testWildcardImports() {\n\n        Stream<String> stream = Stream.of(\"a\", \"b\", \"c\");\n\n        LocalDate date = LocalDate.now();\n        LocalDateTime dateTime = LocalDateTime.now();\n        ZonedDateTime zoned = ZonedDateTime.now();\n\n        Optional<String> opt = Optional.of(\"hello\");\n\n        List<String> list = new ArrayList<>();\n        Map<String, Integer> map = new HashMap<>();\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DATE_TIME_API",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "OPTIONAL",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    private int x = 10;\n    class Inner {\n        void print() {\n            System.out.println(x);\n        }\n    }\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\nimport java.util.Map;\nimport java.util.HashMap;\n\nclass Example {\n    public void method() {\n\n        List<String> list = new ArrayList<>();\n        Map<String, Integer> map = new HashMap<>();\n\n        list.add(\"test\");\n        map.put(\"key\", 42);\n    }\n}",
+      "correct": 7,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(@Deprecated String s) {}\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.Repeatable;\n\n@Repeatable(As.class)\n@interface Example {\n    int value();\n}\n@interface As { Example[] value(); }\n@Example(1)\n@Example(2)\nclass Example {}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "REPEATING_ANNOTATIONS",
+        "TYPE_ANNOTATIONS",
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    int hex = 0xFF_FF_FF_FF;\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface Constants {\n        int SMALL = 1;\n        int MEDIUM = 2;\n        int LARGE = 3;\n    }\n    int size = Constants.MEDIUM;\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    short convert(int input[])[] {\n        short result[] = new short[input.length];\n        for (int i = 0; i < input.length; i++) {\n            result[i] = (short) input[i];\n        }\n        return result;\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "import java.util.Scanner;\n\nclass Example {\n    Scanner s = new Scanner(System.in);\n}",
+      "correct": 5,
+      "features": [
+        "SCANNER"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\n\nclass Example {\n    java.util.List<String> list = new java.util.ArrayList<>();\n}",
+      "correct": 7,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    @Deprecated\n    public void oldMethod() {}\n\n    @SuppressWarnings(\"unused\")\n    private int x;\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    static class Nested<T> {\n        T value;\n        Nested(T value) {\n            this.value = value;\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "GENERICS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    int binary = 0b1010_1010;\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void test() throws IOException {\n        try (FileInputStream fis = new FileInputStream(\"f.txt\")) {\n            fis.read();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "IO_API",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void process(List<? extends Number> nums) {\n        for (Number n : nums) System.out.println(n);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    void test(Object o) {\n        if (o instanceof Point(int x, int y)) {\n            System.out.println(x + y);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "RECORD_PATTERNS",
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "strictfp interface I { double calc(); }\n\nclass Example implements I {\n    public double calc() { return 1.0; }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "import javax.naming.InitialContext;\n\nclass Example {\n    Object get(String n) throws Exception {\n        return new InitialContext().lookup(n);\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JNDI"
+      ]
+    },
+    {
+      "code": "class Example {\n    long creditCard = 1234_5678_9012_3456L;\n    int binary = 0b1111_0000_1010_0101;\n    int hex = 0xFF_EC_DE_5E;\n    float f = 3.14_15_92_65F;\n    long l = 1_000_000_000_000L;\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    List<String> l = List.of(\"a\", \"b\");\n    Set<Integer> s = Set.of(1, 2, 3);\n    Map<String, Integer> m = Map.of(\"a\", 1);\n}",
+      "correct": 9,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import javax.swing.JButton;\n\npublic strictfp class Example {\n    JButton btn = new JButton(\"OK\");\n}",
+      "correct": 2,
+      "features": [
+        "SWING",
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "import net.InetAddress;\n\npublic class Quiz {\n    void connect() {\n        InetAddress addr = new InetAddress(\"localhost\");\n        System.out.println(addr);\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_INET_ADDRESS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        int[] arr = {1, 2, 3};\n        for (int n : arr) System.out.println(n);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH"
+      ]
+    },
+    {
+      "code": "import static java.lang.Math.PI;\nimport static java.lang.Math.sqrt;\n\nclass Example {\n    public double circleArea(double radius) {\n        return PI * radius * radius;\n    }\n\n    public double diagonal(double a, double b) {\n        return sqrt(a * a + b * b);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) {\n        return switch (x) {\n            case 1 -> 10;\n            default -> { yield x * 2; }\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "YIELD"
+      ]
+    },
+    {
+      "code": "import java.nio.ByteBuffer;\n\nclass Example {\n    ByteBuffer buf = ByteBuffer.allocate(1024);\n}",
+      "correct": 4,
+      "features": [
+        "NIO"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int countDown(int n) {\n        int c = 0;\n        while (n > 0) {\n            n = n - 1;\n            c = c + 1;\n        }\n        return c;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "/// # Title\n/// This is **markdown** documentation.\n/// - Item 1\n/// - Item 2\nclass Example {\n    /// Returns the **sum** of `a` and `b`.\n    public int add(int a, int b) { return a + b; }\n}",
+      "correct": 23,
+      "features": [
+        "MARKDOWN_DOC_COMMENTS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    void test() throws IOException {\n        InputStream is = new FileInputStream(\"test\");\n    }\n}",
+      "correct": 0,
+      "features": [
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.nio.ByteBuffer;\nimport java.util.logging.Logger;\n\nclass Example {\n    Logger log = Logger.getLogger(\"x\");\n    void test() { assert ByteBuffer.allocate(8) != null; }\n}",
+      "correct": 4,
+      "features": [
+        "NIO",
+        "LOGGING",
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n\n    sealed abstract class Shape permits Circle, Rectangle {}\n\n    final class Circle extends Shape {\n        double radius;\n    }\n\n    final class Rectangle extends Shape {\n        double width, height;\n    }\n\n    public String describeShape(Shape shape) {\n        return switch (shape) {\n            case Circle c -> \"Circle\";\n            case Rectangle r -> \"Rectangle\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.applet.Applet;\n\nclass Example extends Applet {\n}",
+      "correct": 0,
+      "features": [
+        "APPLET"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Status { ACTIVE, INACTIVE, PENDING }\n\n    @SuppressWarnings(\"unused\")\n    public String getLabel(Status s) {\n        switch (s) {\n            case ACTIVE: return \"Active\";\n            case INACTIVE: return \"Inactive\";\n            case PENDING: return \"Pending\";\n            default: return \"Unknown\";\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS",
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void test() throws IOException {\n        FileReader r = new FileReader(\"f.txt\");\n        try (r) { r.read(); }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "IO_API",
+        "TRY_WITH_EFFECTIVELY_FINAL",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "import java.util.HashMap;\n\nclass Example {\n    class Entry { HashMap map = new HashMap(); }\n}",
+      "correct": 2,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.concurrent.Flow;\n\nclass Example implements Flow.Subscriber<String> {\n    public void onSubscribe(Flow.Subscription s) {}\n    public void onNext(String item) {}\n    public void onError(Throwable t) {}\n    public void onComplete() {}\n}",
+      "correct": 9,
+      "features": [
+        "CONCURRENT_API",
+        "GENERICS",
+        "REACTIVE_STREAMS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\nimport java.lang.annotation.*;\n\nclass Example {\n    @Target(ElementType.TYPE_USE)\n    @interface NonNull {}\n\n    List<@NonNull String> s;\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "TYPE_ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "enum Example { PENDING, RUNNING, DONE }\nclass Example {\n    Example state = Example.PENDING;\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void guardedOperation() {\n        try {\n            enterCriticalSection();\n        } finally {\n            exitCriticalSection();\n        }\n    }\n\n    void enterCriticalSection() {}\n    void exitCriticalSection() {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_FINALLY"
+      ]
+    },
+    {
+      "code": "public strictfp class Example {\n    double calc() { return 1.0 / 3.0; }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        List<String> items = List.of(\"a\", \"b\", \"c\");\n        List<String> custom = new ArrayList<>() {\n            { addAll(items); }\n        };\n    }\n}",
+      "correct": 9,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "DIAMOND_OPERATOR",
+        "DIAMOND_WITH_ANONYMOUS",
+        "GENERICS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.Arrays;\nimport java.util.List;\nimport java.util.stream.Stream;\n\nclass Example {\n    void test() {\n        List<String> list = Arrays.asList(\"a\", \"b\", \"c\");\n\n        Stream<String> stream = list.stream();\n\n        stream.filter(s -> s.length() > 0)\n            .map(String::toUpperCase)  // method reference\n            .forEach(System.out::println);  // method reference\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String test(Object o) {\n        return switch (o) {\n            case Integer i when i > 0 -> \"positive\";\n            case Integer i when i < 0 -> \"negative\";\n            case Integer i -> \"zero\";\n            case String s when s.isEmpty() -> \"empty\";\n            case String s -> s;\n            default -> \"other\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "class Example {\n    int x;\n    Example(int x) {\n        this.x = x;\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    java.util.function.Function<String,String> f = (var s) -> s;\n}",
+      "correct": 11,
+      "features": [
+        "VAR_IN_LAMBDA",
+        "LAMBDAS",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Square {}\n    record Circle(double radius) implements Shape {}\n    record Square(double side) implements Shape {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "RECORDS",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.Line;\nimport javax.sound.sampled.Mixer;\n\nclass Example {\n    Line line;\n    Mixer mixer;\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void demo() {\n        IO.println(\"hello\");\n    }\n}",
+      "correct": 25,
+      "features": [
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void test() {\n        java.util.List<String> list = new java.util.ArrayList<>();\n        try (FileInputStream fis = new FileInputStream(\"f.txt\")) {\n            fis.read();\n        } catch (IOException | RuntimeException e) {\n            e.printStackTrace();\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "IO_API",
+        "MULTI_CATCH",
+        "TRY_WITH_RESOURCES",
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    record Point(int x, int y) {}\n\n    public void method() {\n        int count = 0;\n        for (String _ : List.of(\"a\", \"b\", \"c\")) {\n            count++;\n        }\n        Map<String, Integer> map = new HashMap<>();\n        map.computeIfAbsent(\"key\", _ -> 42);\n\n        if (new Point(1, 2) instanceof Point(int x, int _)) {\n            System.out.println(\"x = \" + x);\n        }\n    }\n}",
+      "correct": 22,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "DIAMOND_OPERATOR",
+        "FOR_EACH",
+        "GENERICS",
+        "LAMBDAS",
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "class Example {\n    static class Nested<T> {\n        T value;\n        Nested(T value) {\n            this.value = value;\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "GENERICS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    Map<String, List<Set<Map<Integer, String>>>> complex;\n    List<? extends Number> wildcardExtends;\n    List<? super Integer> wildcardSuper;\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import com.sun.net.httpserver.SimpleFileServer;\nimport java.net.InetSocketAddress;\nimport java.nio.file.Path;\n\nclass Example {\n    void test() {\n\n        var server = SimpleFileServer.createFileServer(\n            new InetSocketAddress(8000),\n            Path.of(\".\"),\n            SimpleFileServer.OutputLevel.INFO\n        );\n    }\n}",
+      "correct": 18,
+      "features": [
+        "SIMPLE_WEB_SERVER"
+      ]
+    },
+    {
+      "code": "enum Color {\n    RED(255, 0, 0), GREEN(0, 255, 0), BLUE(0, 0, 255);\n    final int r, g, b;\n    Color(int r, int g, int b) { this.r = r; this.g = g; this.b = b; }\n}\n\nclass Example {}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface MyInterface {\n        default void publicMethod() {\n            privateHelper();\n        }\n\n        private void privateHelper() {\n            System.out.println(\"Private helper method\");\n        }\n\n        private static void privateStaticHelper() {\n            System.out.println(\"Private static helper\");\n        }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "PRIVATE_INTERFACE_METHODS",
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void ensureCleanup() {\n        try {\n            allocateMemory();\n        } finally {\n            freeMemory();\n        }\n    }\n\n    void allocateMemory() {}\n    void freeMemory() {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_FINALLY"
+      ]
+    },
+    {
+      "code": "class Example {\n    class Builder {\n        Builder a() { return this; }\n        Builder b() { return this; }\n        Object build() { return null; }\n    }\n    Object o = new Builder().a().b().build();\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void example() {\n        int[] unused = {1, 2, 3};\n        String[] alsoUnused = {\"a\", \"b\"};\n        System.out.println(\"Array variables declared but not used\");\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_UNUSED_ARRAY_INIT"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int numbers[];\n    String names[];\n\n    int getNumber()[] {\n        return numbers;\n    }\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "import java.lang.annotation.*;\nimport java.util.List;\n\nclass Example {\n    @Target(ElementType.TYPE_USE)\n    @interface NonNull {}\n\n    @NonNull String s = \"test\";\n    List<@NonNull String> list;\n}",
+      "correct": 8,
+      "features": [
+        "ANNOTATIONS",
+        "GENERICS",
+        "TYPE_ANNOTATIONS",
+        "COLLECTIONS_FRAMEWORK"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    Function<String,Integer> f = Integer::parseInt;\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "class Example {\n    int octal = 0777;\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "void main() {\n    int x = 2;\n    switch (x) {\n        case 1 -> IO.println(\"one\");\n        case 2 -> IO.println(\"two\");\n        default -> IO.println(\"other\");\n    }\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n\n    void test(Object obj) {\n        if (obj instanceof Point p) {\n            System.out.println(p);\n        }\n\n        switch (obj) {\n            case Point(int x, int y) -> System.out.println(x + y);\n            case String s -> System.out.println(s);\n            default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() { for (int _ : new int[]{1}) {} }\n}",
+      "correct": 22,
+      "features": [
+        "FOR_EACH",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void loadFile() {\n        try {\n            openFile();\n            readData();\n        } catch (Exception e) {\n            logError(e);\n        } finally {\n            closeFile();\n        }\n    }\n\n    void openFile() {}\n    void readData() {}\n    void logError(Exception e) {}\n    void closeFile() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Day {\n        MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY\n    }\n\n    public Day getDay() {\n        return Day.MONDAY;\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "enum Example { A }\nclass Example {\n    void test(Example e) { switch(e) { case A: } }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    Map<String, List<Set<Map<Integer, String>>>> complex;\n    List<? extends Number> wildcardExtends;\n    List<? super Integer> wildcardSuper;\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void safeClose() {\n        try {\n            flushBuffer();\n        } finally {\n            closeStream();\n        }\n    }\n\n    void flushBuffer() {}\n    void closeStream() {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_FINALLY"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.Clip;\n\nclass Example {\n    Clip clip;\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND"
+      ]
+    },
+    {
+      "code": "class Example {\n    String s = \"\"\"\n        x\"\"\";\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\nimport java.util.*;\n\nclass Example {\n    public void testLambdas() {\n        Runnable r = () -> System.out.println(\"Hello\");\n\n        Consumer<String> consumer = s -> System.out.println(s);\n\n        BiFunction<Integer, Integer, Integer> add = (a, b) -> a + b;\n\n        Comparator<String> comparator = (s1, s2) -> s1.length() - s2.length();\n\n        List<String> list = Arrays.asList(\"a\", \"bb\", \"ccc\");\n        list.forEach(s -> System.out.println(s));\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    @SafeVarargs\n    final <T> List<T> asList(T... elements) {\n        return Arrays.asList(elements);\n    }\n\n    void test() {\n        List<String> strings = asList(\"a\", \"b\", \"c\");\n        List<Integer> ints = asList(1, 2, 3);\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS",
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void cleanup() {\n        try {\n            releaseResources();\n        } finally {\n            reset();\n        }\n    }\n\n    void releaseResources() {}\n    void reset() {}\n}",
+      "correct": -2,
+      "features": [
+        "ALPHA2_TRY_FINALLY"
+      ]
+    },
+    {
+      "code": "import java.time.*;\n\nclass Example {\n    LocalDate d = LocalDate.now();\n    LocalDateTime dt = LocalDateTime.now();\n}",
+      "correct": 8,
+      "features": [
+        "DATE_TIME_API"
+      ]
+    },
+    {
+      "code": "strictfp interface Example { double calc(); }\nclass Example implements Example {\n    public double calc() { return 1.0; }\n}",
+      "correct": 2,
+      "features": [
+        "STRICTFP"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String test(Object o) {\n        return switch (o) {\n            case Integer i -> \"int: \" + i;\n            case String s -> \"str: \" + s;\n            default -> \"other\";\n        };\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    Map<String, List<Integer>> data = new HashMap<String, List<Integer>>();\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    public void method() {\n        var list = new ArrayList<String>();\n        var map = new HashMap<String, Integer>();\n        var number = 42;\n        var text = \"Hello\";\n        for (var item : list) {\n            System.out.println(item);\n        }\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.rmi.Remote;\n\npublic interface Quiz extends Remote {\n}",
+      "correct": 1,
+      "features": [
+        "RMI"
+      ]
+    },
+    {
+      "code": "import java.io.Serializable;\n\nclass Example implements Serializable {\n}",
+      "correct": 1,
+      "features": [
+        "IO_API",
+        "SERIALIZATION"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void process() {\n        try {\n            riskyOperation();\n        } catch (Exception e) {\n            handleError(e);\n        } finally {\n            cleanup();\n        }\n    }\n\n    void riskyOperation() {}\n    void handleError(Exception e) {}\n    void cleanup() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        var x = 10;\n        var s = \"hello\";\n        var list = new ArrayList<String>();\n        for (var item : list) {}\n        for (var i = 0; i < 10; i++) {}\n        try (var r = new java.io.StringReader(\"\")) {}\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS",
+        "IO_API",
+        "TRY_WITH_RESOURCES",
+        "VAR"
+      ]
+    },
+    {
+      "code": "enum Example {\n    RED(255, 0, 0), GREEN(0, 255, 0), BLUE(0, 0, 255);\n    final int r, g, b;\n    Example(int r, int g, int b) { this.r = r; this.g = g; this.b = b; }\n}\nclass Example {}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "record R(int x) {}\n\nclass Example {\n    void test(R r) {}\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "import java.awt.Button;\n\nclass Example {\n    Button btn = new Button(\"Click\");\n}",
+      "correct": 0,
+      "features": [
+        "AWT"
+      ]
+    },
+    {
+      "code": "import java.util.logging.Logger;\n\nclass Example {\n    Logger log = Logger.getLogger(\"test\");\n}",
+      "correct": 4,
+      "features": [
+        "LOGGING"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.Arrays;\n\nclass Example {\n    public void iterate() {\n        List<String> list = Arrays.asList(\"a\", \"b\", \"c\");\n        for (String item : list) {\n            System.out.println(item);\n        }\n\n        int[] numbers = {1, 2, 3, 4, 5};\n        for (int n : numbers) {\n            System.out.println(n);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Color { RED, GREEN, BLUE }\n    Color c = Color.RED;\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "import javax.tools.JavaCompiler;\n\nclass Example {\n    JavaCompiler compiler;\n}",
+      "correct": 6,
+      "features": [
+        "COMPILER_API"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    void test() {\n\n        Function<String, Integer> f1 = Integer::parseInt;\n\n        Supplier<String> f2 = \"hello\"::toUpperCase;\n\n        Supplier<String> f3 = String::new;\n\n        BiPredicate<String, String> f4 = String::equals;\n    }\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) {\n        return switch (x) {\n            case 1, 2, 3:\n                yield 10;\n            case 4, 5:\n                yield 20;\n            default:\n                yield 0;\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "YIELD",
+        "SWITCH_MULTIPLE_LABELS"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\nimport java.util.Map;\nimport java.util.HashMap;\n\nvoid main() {\n    List<String> list = new ArrayList<>();\n    Map<String, Integer> map = new HashMap<>();\n\n    list.add(\"test\");\n    map.put(\"key\", 42);\n    IO.println(\"List: \" + list + \", Map: \" + map);\n}",
+      "correct": 25,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "COMPACT_SOURCE_FILES",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface CompleteInterface {\n        void abstractMethod();\n\n        default void defaultMethod() {\n            privateHelper();\n        }\n\n        static void staticMethod() {\n            privateStaticHelper();\n        }\n\n        private void privateHelper() {}\n\n        private static void privateStaticHelper() {}\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "PRIVATE_INTERFACE_METHODS",
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface MyInterface {\n        default void publicMethod() {\n            privateHelper();\n        }\n        private void privateHelper() {\n            System.out.println(\"private\");\n        }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "PRIVATE_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "import java.text.CompactNumberFormat;\n\nclass Example {\n    CompactNumberFormat fmt;\n}",
+      "correct": 12,
+      "features": [
+        "COMPACT_NUMBER_FORMAT"
+      ]
+    },
+    {
+      "code": "import java.awt.Frame;\nimport java.awt.Label;\nimport java.awt.Panel;\n\nclass Example {\n    public Frame createWindow() {\n        Frame frame = new Frame(\"Simple AWT\");\n        frame.setSize(300, 200);\n\n        Panel panel = new Panel();\n        Label label = new Label(\"Hello AWT!\");\n\n        panel.add(label);\n        frame.add(panel);\n\n        return frame;\n    }\n}",
+      "correct": 0,
+      "features": [
+        "AWT"
+      ]
+    },
+    {
+      "code": "class Example {\n    enum Planet {\n        EARTH(5.976e+24, 6.37814e6),\n        MARS(6.421e+23, 3.3972e6);\n\n        private final double mass;\n        private final double radius;\n\n        Planet(double mass, double radius) {\n            this.mass = mass;\n            this.radius = radius;\n        }\n\n        double surfaceGravity() {\n            return mass / (radius * radius);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ENUMS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int abs(int x) {\n        if (x < 0) {\n            return 0 - x;\n        }\n        return x;\n    }\n}\n",
+      "correct": -3,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    Runnable r = new Runnable() {\n        public void run() { System.out.println(\"Hi\"); }\n    };\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n    record Line(Point start, Point end) {}\n\n    public void test(Object o) {\n        if (o instanceof Line(Point(int x1, int y1), Point(int x2, int y2))) {\n            System.out.println(x1 + y1 + x2 + y2);\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "RECORD_PATTERNS",
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\nimport java.util.stream.Gatherers;\n\nclass Example {\n    void test() { Stream.of(1,2,3).gather(Gatherers.windowFixed(2)); }\n}",
+      "correct": 24,
+      "features": [
+        "AUTOBOXING",
+        "STREAM_API",
+        "STREAM_GATHERERS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    int read(InputStream in) throws IOException {\n        return in.read();\n    }\n}",
+      "correct": 0,
+      "features": [
+        "IO_API"
+      ]
+    },
+    {
+      "code": "import java.io.Serializable;\n\nclass Example {\n    class Data implements Serializable {}\n}",
+      "correct": 1,
+      "features": [
+        "SERIALIZATION",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    void test() {\n        SequencedCollection<String> sc = new ArrayList<>();\n        sc.addFirst(\"a\");\n        sc.getLast();\n    }\n}",
+      "correct": 21,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "SEQUENCED_COLLECTIONS"
+      ]
+    },
+    {
+      "code": "import java.applet.Applet;\nimport java.applet.AudioClip;\n\nclass Example {\n    public void playSound(Applet applet) {\n        AudioClip clip = applet.getAudioClip(applet.getCodeBase(), \"sound.au\");\n        if (clip != null) {\n            clip.play();\n        }\n    }\n}",
+      "correct": 0,
+      "features": [
+        "APPLET"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Polygon {}\n    final class Circle implements Shape {}\n    non-sealed class Polygon implements Shape {}\n    class Triangle extends Polygon {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.function.BiConsumer<String,String> c = (_, _) -> {};\n}",
+      "correct": 22,
+      "features": [
+        "GENERICS",
+        "LAMBDAS",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.AudioSystem;\nimport javax.sound.sampled.Clip;\nimport javax.sound.sampled.AudioInputStream;\n\nclass Example {\n    public void playAudio(java.io.File file) throws Exception {\n        AudioInputStream audioIn = AudioSystem.getAudioInputStream(file);\n        Clip clip = AudioSystem.getClip();\n        clip.open(audioIn);\n        clip.start();\n    }\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    byte[] toBytes(String s) {\n        byte[] result = new byte[s.length()];\n        for (int i = 0; i < s.length(); i++) {\n            result[i] = (byte) s.charAt(i);\n        }\n        return result;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface I permits A {}\n    final class A implements I {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Outer(Inner inner) {}\n    record Inner(String value) {}\n\n    void test(Object obj) {\n        switch (obj) {\n            case Outer(Inner(String s)) when s.length() > 5 -> System.out.println(\"long\");\n            case Outer(Inner(String s)) -> System.out.println(\"short\");\n            default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_PATTERN_MATCHING"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void bitwiseShifts() {\n        long value = 0xFFFFFFFFL;\n        value >>= 4;\n        value <<= 2;\n        value >>>= 1;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_LONG_SHIFT_ASSIGN"
+      ]
+    },
+    {
+      "code": "import javax.sound.sampled.AudioFormat;\nimport javax.swing.JSlider;\n\nclass Example {\n    JSlider volume = new JSlider();\n    AudioFormat fmt;\n}",
+      "correct": 3,
+      "features": [
+        "JAVA_SOUND",
+        "SWING"
+      ]
+    },
+    {
+      "code": "import java.util.regex.Pattern;\n\nclass Example {\n    void match(String s) {\n        assert Pattern.matches(\"\\\\d+\", s);\n    }\n}",
+      "correct": 4,
+      "features": [
+        "REGEX",
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) {\n        return switch (x) {\n            case 1 -> 10;\n            default -> { yield 0; }\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "YIELD",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "import java.util.ArrayList;\nimport java.util.HashMap;\nimport java.util.List;\nimport java.util.Map;\n\nclass Example {\n    void test() {\n\n        List<String> list = new ArrayList<>();\n        Map<Integer, String> map = new HashMap<>();\n\n        var explicitList = new ArrayList<String>();\n    }\n}",
+      "correct": 10,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "VAR"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void method(int value) {\n        assert value > 0 : \"Value must be positive\";\n        assert value < 100;\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(Object obj) {\n        switch (obj) {\n            case String s -> System.out.println(s);\n            case Integer _ -> System.out.println(\"int\");\n            case null, default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 22,
+      "features": [
+        "SWITCH_PATTERN_MATCHING",
+        "SWITCH_NULL_DEFAULT",
+        "UNNAMED_VARIABLES",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "interface I { static int get() { return 1; } }\n\nclass Example {\n    int x = I.get();\n}",
+      "correct": 8,
+      "features": [
+        "STATIC_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "import java.util.stream.*;\nimport java.util.*;\n\nclass Example {\n    public void method() {\n        List<Integer> numbers = Arrays.asList(1, 2, 3, 4, 5);\n\n        int sum = numbers.stream()\n            .filter(n -> n % 2 == 0)\n            .mapToInt(Integer::intValue)\n            .sum();\n\n        List<String> strings = numbers.stream()\n            .map(Object::toString)\n            .collect(Collectors.toList());\n\n        long count = numbers.parallelStream()\n            .filter(n -> n > 2)\n            .count();\n    }\n}",
+      "correct": 8,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    int x;\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "import java.lang.ScopedValue;\n\nclass Example {\n\n    private static final ScopedValue<String> USER = ScopedValue.newInstance();\n\n    void test() throws Exception {\n        ScopedValue.where(USER, \"admin\").run(() -> {\n            System.out.println(\"User: \" + USER.get());\n        });\n    }\n}",
+      "correct": 25,
+      "features": [
+        "GENERICS",
+        "LAMBDAS",
+        "SCOPED_VALUES"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    record Point(int x, int y) {}\n\n    public void method() {\n        int count = 0;\n        for (String _ : List.of(\"a\", \"b\", \"c\")) {\n            count++;\n        }\n\n        Map<String, Integer> map = new HashMap<>();\n        map.computeIfAbsent(\"key\", _ -> 42);\n\n        if (new Point(1, 2) instanceof Point(int x, int _)) {\n            System.out.println(\"x = \" + x);\n        }\n        IO.println();\n    }\n}",
+      "correct": 25,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "COLLECTION_FACTORY_METHODS",
+        "DIAMOND_OPERATOR",
+        "FOR_EACH",
+        "GENERICS",
+        "LAMBDAS",
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS",
+        "RECORD_PATTERNS",
+        "UNNAMED_VARIABLES",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "class Example {\n    static final java.lang.ScopedValue<String> USER = java.lang.ScopedValue.newInstance();\n}",
+      "correct": 25,
+      "features": [
+        "GENERICS",
+        "SCOPED_VALUES"
+      ]
+    },
+    {
+      "code": "class Example {\n    String test(int x) {\n        return switch (x) {\n            case 1 -> \"\"\"\n                First\n                Line\n                \"\"\";\n            default -> \"\"\"\n                Default\n                \"\"\";\n        };\n    }\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() { for (int _ : new int[]{1}) {} }\n}",
+      "correct": 22,
+      "features": [
+        "FOR_EACH",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    void transaction() {\n        try {\n            beginTransaction();\n            executeQuery();\n            commitTransaction();\n        } catch (Exception e) {\n            rollbackTransaction();\n        } finally {\n            releaseConnection();\n        }\n    }\n\n    void beginTransaction() {}\n    void executeQuery() {}\n    void commitTransaction() {}\n    void rollbackTransaction() {}\n    void releaseConnection() {}\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_TRY_CATCH_FINALLY"
+      ]
+    },
+    {
+      "code": "import java.util.*;\nimport java.util.stream.*;\n\nclass Example {\n    void test() {\n        List<String> result = Stream.of(\"a\", \"b\", \"c\")\n            .filter(s -> s.length() > 0)\n            .map(String::toUpperCase)\n            .flatMap(s -> Stream.of(s, s))\n            .distinct()\n            .sorted()\n            .limit(10)\n            .collect(Collectors.toList());\n    }\n}",
+      "correct": 8,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "LAMBDAS",
+        "METHOD_REFERENCES",
+        "STREAM_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(@Deprecated String s) {}\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS"
+      ]
+    },
+    {
+      "code": "import java.util.Optional;\n\nclass Example {\n    Optional<String> opt = Optional.of(\"hello\");\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "OPTIONAL"
+      ]
+    },
+    {
+      "code": "import static java.lang.Math.PI;\nimport static java.lang.Math.sqrt;\n\nclass Example {\n    double val = PI * sqrt(2);\n}",
+      "correct": 5,
+      "features": [
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "import java.lang.*;\n\nclass Example {\n    static final ScopedValue<String> USER = ScopedValue.newInstance();\n\n    void test() {\n        ScopedValue.where(USER, \"admin\").run(() -> {\n            System.out.println(USER.get());\n        });\n    }\n}",
+      "correct": 25,
+      "features": [
+        "GENERICS",
+        "LAMBDAS",
+        "SCOPED_VALUES"
+      ]
+    },
+    {
+      "code": "import javax.naming.Context;\n\nclass Example {\n    Context ctx;\n}",
+      "correct": 3,
+      "features": [
+        "JNDI"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(String s) {\n        switch(s) { case \"a\": case \"b\": break; }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "STRINGS_IN_SWITCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        interface Local { void run(); }\n        Local l = () -> System.out.println(\"local\");\n    }\n}",
+      "correct": 16,
+      "features": [
+        "INNER_CLASSES",
+        "LAMBDAS",
+        "LOCAL_INTERFACES"
+      ]
+    },
+    {
+      "code": "class Example {\n    Integer i = 42;\n}",
+      "correct": 5,
+      "features": [
+        "AUTOBOXING"
+      ]
+    },
+    {
+      "code": "import java.net.http.*;\nimport java.net.URI;\n\nclass Example {\n    HttpClient client = HttpClient.newHttpClient();\n}",
+      "correct": 11,
+      "features": [
+        "HTTP_CLIENT"
+      ]
+    },
+    {
+      "code": "class Example {\n    public String getHtml() {\n        return \"\"\"\n            <html>\n                <body>Hello</body>\n            </html>\n            \"\"\";\n    }\n\n    public void printHtml() {\n        String html = getHtml();\n        IO.println(html);\n    }\n}",
+      "correct": 25,
+      "features": [
+        "TEXT_BLOCKS",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    public void test() {\n        for (String _ : List.of(\"a\", \"b\")) {}\n    }\n}",
+      "correct": 22,
+      "features": [
+        "COLLECTION_FACTORY_METHODS",
+        "FOR_EACH",
+        "UNNAMED_VARIABLES"
+      ]
+    },
+    {
+      "code": "int[] xs = {1, 2, 3};\n\nvoid main() {\n    for (int x : xs) {\n        IO.println(x);\n    }\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES",
+        "FOR_EACH",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "import static java.lang.System.out;\n\nclass Example {\n    enum Color { RED, GREEN, BLUE }\n    void test() {\n        for (Color c : Color.values()) {\n            out.println(c);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH",
+        "ENUMS",
+        "STATIC_IMPORT"
+      ]
+    },
+    {
+      "code": "class Example {\n    Example(int... x) {}\n}",
+      "correct": 5,
+      "features": [
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    public void method() {\n        BiFunction<String, String, String> concat = (var a, var b) -> a + b;\n        Consumer<String> printer = (var s) -> System.out.println(s);\n    }\n}",
+      "correct": 11,
+      "features": [
+        "GENERICS",
+        "LAMBDAS",
+        "VAR_IN_LAMBDA"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.function.Function<String,String> f = (@Deprecated var s) -> s;\n}",
+      "correct": 11,
+      "features": [
+        "ANNOTATIONS",
+        "GENERICS",
+        "LAMBDAS",
+        "TYPE_ANNOTATIONS",
+        "VAR_IN_LAMBDA"
+      ]
+    },
+    {
+      "code": "class Example {\n    int f(boolean b) {\n        if (b) {\n            return 1;\n        } else {\n            return 2;\n        }\n    }\n}",
+      "correct": 0,
+      "features": []
+    },
+    {
+      "code": "class Example {\n    class InnerClass {\n        void method() {}\n    }\n    static class StaticNestedClass {\n        void method() {}\n    }\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.util.concurrent.*;\n\nclass Example {\n    ForkJoinPool pool = ForkJoinPool.commonPool();\n}",
+      "correct": 7,
+      "features": [
+        "CONCURRENT_API",
+        "FORK_JOIN"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(String s) {\n        switch (s) {\n            case null -> System.out.println(\"null\");\n            case \"a\" -> System.out.println(\"a\");\n            default -> System.out.println(\"other\");\n        }\n    }\n}",
+      "correct": 21,
+      "features": [
+        "SWITCH_NULL_DEFAULT",
+        "STRINGS_IN_SWITCH",
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    java.util.List<String> list = new java.util.ArrayList<>();\n}",
+      "correct": 7,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "DIAMOND_OPERATOR",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void method() {\n        try {\n            throw new IOException(\"test\");\n        } catch (IOException | RuntimeException e) {\n            System.out.println(\"Caught: \" + e.getMessage());\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "IO_API",
+        "MULTI_CATCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        Class c = String.class;\n    }\n}",
+      "correct": 1,
+      "features": [
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Person(String name, int age) {\n\n        public Person {\n            if (age < 0) throw new IllegalArgumentException(\"Age cannot be negative\");\n        }\n\n        public boolean isAdult() {\n            return age >= 18;\n        }\n    }\n\n    void test() {\n        Person p = new Person(\"Alice\", 25);\n        System.out.println(p.name() + \" is \" + (p.isAdult() ? \"adult\" : \"minor\"));\n    }\n}",
+      "correct": 16,
+      "features": [
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    int[] numbers;\n    String[] names;\n\n    int[] getNumbers() {\n        return numbers;\n    }\n\n    String[] getNames() {\n        return names;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "import java.awt.Frame;\n\nclass Example {\n    Frame f = new Frame();\n}",
+      "correct": 0,
+      "features": [
+        "AWT"
+      ]
+    },
+    {
+      "code": "java.util.function.Consumer<String> c = IO::println;\n\nvoid main() {\n    c.accept(\"mr\");\n}",
+      "correct": 25,
+      "features": [
+        "COMPACT_SOURCE_FILES",
+        "GENERICS",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS",
+        "METHOD_REFERENCES"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    long parseHex() {\n        int mask = 0XFF;\n        int value = 0XABCD;\n        long bigValue = 0xCAFEBABEL;\n        long maxInt = 0xFFFFFFFFL;\n        return bigValue & maxInt;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_HEX_LITERALS"
+      ]
+    },
+    {
+      "code": "import javax.xml.ws.WebServiceRef;\n\nclass Example {\n    @WebServiceRef\n    Object service;\n}",
+      "correct": 6,
+      "features": [
+        "ANNOTATIONS",
+        "JAX_WS",
+        "XML_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        StackWalker sw = StackWalker.getInstance();\n        sw.forEach(f -> System.out.println(f));\n    }\n}",
+      "correct": 9,
+      "features": [
+        "LAMBDAS",
+        "STACK_WALKING"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        enum Color { RED, GREEN, BLUE }\n        Color c = Color.RED;\n    }\n}",
+      "correct": 16,
+      "features": [
+        "ENUMS",
+        "LOCAL_ENUMS"
+      ]
+    },
+    {
+      "code": "import java.util.function.*;\n\nclass Example {\n    void test() {\n        Runnable r1 = () -> {};\n        Runnable r2 = () -> System.out.println(\"hi\");\n        Consumer<String> c1 = (String s) -> System.out.println(s);\n        Consumer<String> c2 = s -> System.out.println(s);\n        BiFunction<Integer, Integer, Integer> f = (a, b) -> a + b;\n    }\n}",
+      "correct": 8,
+      "features": [
+        "GENERICS",
+        "LAMBDAS"
+      ]
+    },
+    {
+      "code": "import java.net.*;\n\nclass Example {\n    void test() {\n        UnixDomainSocketAddress addr = null;\n    }\n}",
+      "correct": 16,
+      "features": [
+        "UNIX_DOMAIN_SOCKETS"
+      ]
+    },
+    {
+      "code": "import org.omg.CORBA.*;\n\nclass Example {\n    void test() {\n        ORB orb = null;\n    }\n}",
+      "correct": 2,
+      "features": [
+        "CORBA"
+      ]
+    },
+    {
+      "code": "import javax.crypto.*;\n\nclass Example {\n    void test() throws Exception {\n        KEM kem = KEM.getInstance(\"DHKEM\");\n    }\n}",
+      "correct": 21,
+      "features": [
+        "KEY_ENCAPSULATION"
+      ]
+    },
+    {
+      "code": "import javax.swing.JFrame;\n\nclass Example {\n    class MyFrame extends JFrame {}\n}",
+      "correct": 2,
+      "features": [
+        "SWING",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "import java.io.Console;\n\nclass Example {\n    public void demo() {\n        Console console = System.console();\n        if (console != null) {\n            console.printf(\"hello\\n\");\n        }\n    }\n}",
+      "correct": 6,
+      "features": [
+        "CONSOLE",
+        "IO_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() { for (var i = 0; i < 1; i++) {} }\n}",
+      "correct": 10,
+      "features": [
+        "VAR"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I {\n        default void pub() { helper(); }\n        private void helper() { System.out.println(\"private\"); }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES",
+        "PRIVATE_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test() {\n        interface I { int X = 1; }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "LOCAL_INTERFACES",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(int x) {\n        assert x > 0 : \"x must be positive\";\n        assert x < 100;\n    }\n}",
+      "correct": 4,
+      "features": [
+        "ASSERT"
+      ]
+    },
+    {
+      "code": "class Example {\n    String html = \"\"\"\n        <html>\n            <body>\n                <h1>%s</h1>\n            </body>\n        </html>\n        \"\"\".formatted(\"Title\");\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int octal = 07_7_7;\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.util.List;\nimport java.util.ArrayList;\n\nclass Example {\n    public <T> T genericMethod(T param) {\n        return param;\n    }\n\n    public void useGenerics() {\n        List<String> list = new ArrayList<String>();\n        list.add(IO.readln());\n    }\n}",
+      "correct": 25,
+      "features": [
+        "COLLECTIONS_FRAMEWORK",
+        "GENERICS",
+        "IMPLICITLY_IMPORTED_IO_CLASS",
+        "IO_CLASS"
+      ]
+    },
+    {
+      "code": "import javax.script.ScriptEngine;\n\nclass Example {\n    ScriptEngine engine;\n}",
+      "correct": 6,
+      "features": [
+        "SCRIPTING_API"
+      ]
+    },
+    {
+      "code": "class Example {\n    static class Inner {}\n}",
+      "correct": 1,
+      "features": [
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void method() {\n        Class clazz = String.class;\n        System.out.println(clazz.getName());\n    }\n}",
+      "correct": 1,
+      "features": [
+        "CLASS_PROPERTY"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Point(int x, int y) {}\n\n    void test(Object obj) {\n        if (obj instanceof Point p) {\n            System.out.println(p.x() + p.y());\n        }\n    }\n}",
+      "correct": 16,
+      "features": [
+        "PATTERN_MATCHING_INSTANCEOF",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "interface I { default void m() {} }\n\nclass Example implements I {}",
+      "correct": 8,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS"
+      ]
+    },
+    {
+      "code": "public class Quiz {\n    char[] getChars(String s) {\n        char[] result = new char[s.length()];\n        s.getChars(0, s.length(), result, 0);\n        return result;\n    }\n}",
+      "correct": -1,
+      "features": [
+        "ALPHA3_ARRAY_SYNTAX"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void testStringsInSwitch(String day) {\n        switch (day) {\n            case \"Monday\":\n                System.out.println(\"Start of week\");\n                break;\n            case \"Friday\":\n                System.out.println(\"End of week\");\n                break;\n            case \"Saturday\":\n            case \"Sunday\":\n                System.out.println(\"Weekend!\");\n                break;\n            default:\n                System.out.println(\"Midweek\");\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "STRINGS_IN_SWITCH"
+      ]
+    },
+    {
+      "code": "import java.util.*;\n\nclass Example {\n    enum Status { ACTIVE, INACTIVE }\n\n    @SuppressWarnings(\"unchecked\")\n    public void process() {\n        List<Status> statuses = new ArrayList<Status>();\n        for (Status s : Status.values()) {\n            System.out.println(s);\n        }\n    }\n}",
+      "correct": 5,
+      "features": [
+        "ANNOTATIONS",
+        "COLLECTIONS_FRAMEWORK",
+        "ENUMS",
+        "FOR_EACH",
+        "GENERICS"
+      ]
+    },
+    {
+      "code": "import java.io.*;\n\nclass Example {\n    public void testEffectivelyFinalResources() throws IOException {\n\n        BufferedReader reader1 = new BufferedReader(new StringReader(\"Hello\"));\n        BufferedReader reader2 = new BufferedReader(new StringReader(\"World\"));\n\n        try (reader1; reader2) {\n            System.out.println(reader1.readLine());\n            System.out.println(reader2.readLine());\n        }\n    }\n\n    public void anotherExample() throws IOException {\n        final InputStream input = new ByteArrayInputStream(\"test\".getBytes());\n\n        try (input) {\n            int data = input.read();\n            System.out.println(\"Read: \" + data);\n        }\n    }\n}",
+      "correct": 9,
+      "features": [
+        "IO_API",
+        "TRY_WITH_EFFECTIVELY_FINAL",
+        "TRY_WITH_RESOURCES"
+      ]
+    },
+    {
+      "code": "import java.lang.invoke.*;\nimport java.lang.invoke.MethodHandles.Lookup.ClassOption;\n\nclass Example {\n    void test() throws Exception {\n        MethodHandles.Lookup l = MethodHandles.lookup();\n        byte[] bytes = new byte[0];\n\n        l.defineHiddenClass(bytes, true, ClassOption.NESTMATE);\n    }\n}",
+      "correct": 15,
+      "features": [
+        "HIDDEN_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void printAll(String... messages) {\n        for (String msg : messages) {\n            System.out.println(msg);\n        }\n    }\n\n    public int sum(int... numbers) {\n        int total = 0;\n        for (int n : numbers) {\n            total += n;\n        }\n        return total;\n    }\n}",
+      "correct": 5,
+      "features": [
+        "FOR_EACH",
+        "VARARGS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int test(String s) {\n        return switch (s) {\n            case \"a\", \"b\", \"c\" -> 1;\n            default -> 0;\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "SWITCH_MULTIPLE_LABELS"
+      ]
+    },
+    {
+      "code": "class Example {\n    int test(int x) {\n        return switch(x) { default -> 0; };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS"
+      ]
+    },
+    {
+      "code": "class Example {\n    void test(String s) {\n        int binary = 0b1010_1010;\n        int hex = 0xFF_FF_FF_FF;\n        switch (s) {\n            case \"binary\":\n                System.out.println(binary);\n                break;\n            case \"hex\":\n                System.out.println(hex);\n                break;\n        }\n    }\n}",
+      "correct": 7,
+      "features": [
+        "BINARY_LITERALS",
+        "UNDERSCORES_IN_LITERALS",
+        "STRINGS_IN_SWITCH"
+      ]
+    },
+    {
+      "code": "class Example {\n    interface I {\n        default void method() { System.out.println(\"default\"); }\n    }\n}",
+      "correct": 8,
+      "features": [
+        "DEFAULT_INTERFACE_METHODS",
+        "INNER_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    long big = 1_000_000_000L;\n}",
+      "correct": 7,
+      "features": [
+        "UNDERSCORES_IN_LITERALS"
+      ]
+    },
+    {
+      "code": "import java.nio.file.*;\n\nclass Example {\n    Path p = Paths.get(\"/tmp/test.txt\");\n}",
+      "correct": 7,
+      "features": [
+        "NIO2"
+      ]
+    },
+    {
+      "code": "class Example {\n    record Pair<T, U>(T first, U second) {}\n\n    void test() {\n        Pair<String, Integer> p = new Pair<>(\"hello\", 42);\n    }\n}",
+      "correct": 16,
+      "features": [
+        "DIAMOND_OPERATOR",
+        "GENERICS",
+        "RECORDS"
+      ]
+    },
+    {
+      "code": "class Example {\n    public void test() {\n        for (var i = 0; i < 10; i++) {\n            System.out.println(i);\n        }\n\n        var list = java.util.List.of(1, 2, 3);\n        for (var item : list) {\n            System.out.println(item);\n        }\n    }\n}",
+      "correct": 10,
+      "features": [
+        "AUTOBOXING",
+        "COLLECTIONS_FRAMEWORK",
+        "FOR_EACH",
+        "VAR"
+      ]
+    },
+    {
+      "code": "import java.util.regex.*;\n\nclass Example {\n    public void test() {\n        Pattern p = Pattern.compile(\"\\\\d+\");\n        Matcher m = p.matcher(\"123\");\n        boolean found = m.find();\n    }\n}",
+      "correct": 4,
+      "features": [
+        "REGEX"
+      ]
+    },
+    {
+      "code": "class Example {\n    String json = \"\"\"\n        { \"name\": \"test\" }\n        \"\"\";\n}",
+      "correct": 15,
+      "features": [
+        "TEXT_BLOCKS"
+      ]
+    },
+    {
+      "code": "class Example {\n    sealed interface Shape permits Circle, Square {}\n    final class Circle implements Shape {}\n    final class Square implements Shape {}\n}",
+      "correct": 17,
+      "features": [
+        "INNER_CLASSES",
+        "SEALED_CLASSES"
+      ]
+    },
+    {
+      "code": "class Example {\n    public int test(int x) {\n        return switch (x) {\n            case 1 -> 10;\n            default -> { yield x * 2; }\n        };\n    }\n}",
+      "correct": 14,
+      "features": [
+        "SWITCH_EXPRESSIONS",
+        "YIELD"
+      ]
+    }
+  ]
+}

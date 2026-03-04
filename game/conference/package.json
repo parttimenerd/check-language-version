@@ -1,0 +1,40 @@
+{
+  "name": "java-version-quiz-conference",
+  "version": "1.0.0",
+  "description": "Conference-ready multiplayer Java Version Quiz",
+  "main": "server.js",
+  "scripts": {
+    "start": "npm run build && node server.js",
+    "dev": "npm run build && node server.js",
+    "build": "webpack",
+    "build:watch": "webpack --watch",
+    "test:load": "node load-test.js --players 50 --questions 8 --delay 30",
+    "test:load:large": "node load-test.js --players 200 --questions 10 --delay 20",
+    "test:load:stress": "node load-test.js --players 500 --questions 3 --delay 10 --verbose",
+    "lint": "eslint src/ server.js load-test.js",
+    "lint:fix": "eslint src/ server.js load-test.js --fix",
+    "format": "prettier --write src/ server.js load-test.js",
+    "format:check": "prettier --check src/ server.js load-test.js"
+  },
+  "dependencies": {
+    "express": "^5.2.1",
+    "markdown-it": "^14.1.0",
+    "prismjs": "^1.30.0",
+    "qrcode": "^1.5.3",
+    "sqlite3": "^5.0.2",
+    "uuid": "^13.0.0",
+    "vue": "^3.5.28",
+    "ws": "^8.19.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^8.56.0",
+    "@vitejs/plugin-vue": "^6.0.4",
+    "css-loader": "^6.8.1",
+    "eslint": "^10.0.0",
+    "prettier": "^3.1.1",
+    "style-loader": "^3.3.4",
+    "vue-loader": "^17.4.0",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  }
+}

@@ -1,0 +1,474 @@
+/* Shared styles for Java Version Quiz Conference Mode */
+
+html {
+    scrollbar-gutter: stable;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+}
+
+#app {
+    max-width: 800px;
+    width: 100%;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 24px;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+@media (max-width: 520px) {
+    body {
+        padding: 12px;
+    }
+    #app {
+        padding: 16px;
+    }
+    button {
+        font-size: 14px;
+        padding: 10px;
+    }
+    .code-container {
+        font-size: 12.5px;
+    }
+    pre[class*='language-'] {
+        height: calc(10 * 1.5em + 2em);
+    }
+    .two-col {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Typography */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-top: 0;
+}
+
+h2 {
+    font-size: 1.2em;
+    color: #333;
+    margin-top: 20px;
+    margin-bottom: 12px;
+}
+
+h3 {
+    font-size: 1em;
+    color: #333;
+    margin: 12px 0;
+}
+
+/* Forms */
+.auth-section {
+    text-align: center;
+    padding: 30px;
+}
+
+.auth-section input {
+    width: 100%;
+    max-width: 300px;
+    padding: 12px;
+    font-size: 1em;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+.auth-section input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+input[type='number'] {
+    width: 80px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Alerts */
+.alert {
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border-left: 4px solid;
+}
+
+.alert-error {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #dc3545;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border-color: #28a745;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+    border-color: #17a2b8;
+}
+
+/* Code blocks */
+.code-container {
+    /* background handled by prism theme */
+    overflow: hidden;
+    border-radius: 6px;
+    margin-bottom: 24px;
+    font-size: 14px;
+}
+
+pre[class*='language-'] {
+    margin: 0 !important;
+    border-radius: 6px;
+    height: calc(12 * 1.5em + 2em); /* Fixed height: 12 lines * line-height + padding */
+    overflow-y: auto;
+}
+
+/* Buttons */
+button {
+    padding: 12px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    button:hover:not(:disabled) {
+        background-color: #0056b3;
+    }
+}
+
+@media (hover: hover) and (pointer: fine) {
+    button:active:not(:disabled) {
+        background-color: #0056b3;
+    }
+}
+
+button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+button.selected {
+    background-color: #28a745 !important;
+}
+
+.btn-success {
+    background-color: #28a745;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-success:hover:not(:disabled) {
+        background-color: #218838;
+    }
+}
+
+.btn-danger {
+    background-color: #dc3545;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-danger:hover:not(:disabled) {
+        background-color: #c82333;
+    }
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    .btn-secondary:hover:not(:disabled) {
+        background-color: #5a6268;
+    }
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 14px;
+}
+
+/* Layout */
+.controls {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.section {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+/* Cards */
+.stat-card {
+    background: white;
+    border: 1px solid #ddd;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.stat-label {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.stat-value {
+    font-weight: bold;
+    color: #007bff;
+    font-size: 1.2em;
+}
+
+/* Player Badge */
+.player-badge {
+    text-align: center;
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    border-left: 4px solid #007bff;
+}
+
+/* Feedback */
+.feedback {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 4px;
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+/* Waiting Screen */
+.waiting-screen {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.spinner {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+    margin: 20px auto;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Leaderboard */
+.leaderboard {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.leaderboard-entry {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9em;
+}
+
+.leaderboard-entry:last-child {
+    border-bottom: none;
+}
+
+.leaderboard-rank {
+    font-weight: bold;
+    color: #007bff;
+    min-width: 30px;
+}
+
+.leaderboard-score {
+    color: #28a745;
+    font-weight: bold;
+}
+
+.leaderboard-correct {
+    color: #999;
+    font-size: 0.85em;
+}
+
+/* Timer */
+.timer {
+    text-align: center;
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #007bff;
+    margin: 20px 0;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.timer.warning {
+    color: #dc3545;
+}
+
+.timer-display {
+    font-size: 1.5em;
+    font-weight: bold;
+    color: #007bff;
+    text-align: center;
+    padding: 12px;
+    background: #f0f7ff;
+    border-radius: 4px;
+    margin-bottom: 12px;
+}
+
+.timer-display.warning {
+    color: #dc3545;
+}
+
+/* Question Prompt */
+.question-prompt {
+    text-align: center;
+    color: #666;
+    margin: 20px 0;
+    font-size: 0.95em;
+}
+
+/* Options Grid */
+.options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+/* Question Navigation */
+.question-nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.question-nav button {
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 40px;
+}
+
+/* Session Info */
+.session-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* Privacy Notice */
+.privacy-notice {
+    background: #e9ecef;
+    border-left: 4px solid #007bff;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    font-size: 0.85em;
+    color: #555;
+}
+
+/* Error */
+.error {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 12px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border-left: 4px solid #dc3545;
+}
+
+/* Join Section */
+.join-section {
+    text-align: center;
+}
+
+.join-section input {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    border: 2px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    box-sizing: border-box;
+}
+
+.join-section input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Stats bar (matching template.html) */
+.stats {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding: 10px;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.9em;
+}
+
+/* Answer button states (matching template.html) */
+button.correct {
+    background-color: #28a745 !important;
+}
+
+button.wrong {
+    background-color: #dc3545 !important;
+}
+
+/* Feedback wrong state (matching template.html) */
+.feedback.wrong {
+    background: #f8d7da;
+    color: #721c24;
+    border-color: #f5c6cb;
+}

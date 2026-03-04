@@ -738,6 +738,16 @@ def generate_html(questions, goatcounter_url, base_url, generate_java=True, gene
         with open(OUTPUT_DESCRIPTIONS_JSON, 'w', encoding='utf-8') as f:
             json.dump({'features': questions.get('features', {})}, f, indent=2)
         print(f"Generated {OUTPUT_DESCRIPTIONS_JSON} with {len(questions.get('features', {}))} features.")
+
+        # Also copy descriptions.json into game/conference/public if it exists
+        conf_public_dir = os.path.join('game', 'conference', 'public')
+        if os.path.isdir(conf_public_dir):
+            try:
+                dest = os.path.join(conf_public_dir, 'descriptions.json')
+                shutil.copy2(OUTPUT_DESCRIPTIONS_JSON, dest)
+                print(f"Copied descriptions.json to {dest}")
+            except Exception as e:
+                print(f"Warning: failed to copy descriptions.json to conference public: {e}")
     else:
         # If we're not generating the java game, remove stale files.
         for p in (OUTPUT_CODE_JSON, OUTPUT_DESCRIPTIONS_JSON):
@@ -747,6 +757,22 @@ def generate_html(questions, goatcounter_url, base_url, generate_java=True, gene
                     print(f"Removed stale {p}")
                 except Exception as e:
                     print(f"Warning: failed to remove stale {p}: {e}")
+
+    # Sync JSON assets into conference/public (if that directory exists)
+    conf_public_dir = os.path.join('game', 'conference', 'public')
+    if os.path.isdir(conf_public_dir):
+        def _copy_if_exists(src_path: str, dest_name: str) -> None:
+            if os.path.exists(src_path):
+                dest_path = os.path.join(conf_public_dir, dest_name)
+                try:
+                    shutil.copy2(src_path, dest_path)
+                    print(f"Copied {src_path} -> {dest_path}")
+                except Exception as e:
+                    print(f"Warning: failed to copy {src_path} to conference public: {e}")
+
+        _copy_if_exists(OUTPUT_CODE_JSON, 'code.json')
+        _copy_if_exists(OUTPUT_DESCRIPTIONS_JSON, 'descriptions.json')
+        _copy_if_exists(OUTPUT_OBJECT_SIZES_JSON, 'object-sizes.json')
 
     # Read and render template
     with open('game/template.html', 'r', encoding='utf-8') as f:
@@ -810,6 +836,200 @@ def generate_html(questions, goatcounter_url, base_url, generate_java=True, gene
     else:
         print(f"Warning: {src_img} not found. No screenshot copied.")
 
+def generate_conference_scaffold(questions):
+    """Generate conference mode scaffold (server.js, package.json) and quiz data."""
+    CONF_DIR = 'game/conference'
+    CONF_PUBLIC_DIR = os.path.join(CONF_DIR, 'public')
+    
+    os.makedirs(CONF_PUBLIC_DIR, exist_ok=True)
+    
+    # Generate code.json and descriptions.json for conference/public/
+    conf_code_json = os.path.join(CONF_PUBLIC_DIR, 'code.json')
+    conf_desc_json = os.path.join(CONF_PUBLIC_DIR, 'descriptions.json')
+    
+    with open(conf_code_json, 'w', encoding='utf-8') as f:
+        json.dump({'entries': questions.get('entries', [])}, f, indent=2)
+    entries_count = len(questions.get('entries', []))
+    print(f"Generated {conf_code_json} with {entries_count} questions.")
+    
+    with open(conf_desc_json, 'w', encoding='utf-8') as f:
+        json.dump({'features': questions.get('features', {})}, f, indent=2)
+    print(f"Generated {conf_desc_json} with {len(questions.get('features', {}))} features.")
+    
+    # Generate package.json
+    package_json = {
+        "name": "java-version-quiz-conference",
+        "version": "1.0.0",
+        "description": "Conference-ready multiplayer Java Version Quiz",
+        "main": "server.js",
+        "scripts": {
+            "start": "node server.js",
+            "dev": "node server.js"
+        },
+        "dependencies": {
+            "express": "^4.18.2",
+            "ws": "^8.13.0",
+            "sqlite3": "^5.1.6",
+            "uuid": "^9.0.0"
+        },
+        "devDependencies": {}
+    }
+    
+    package_json_path = os.path.join(CONF_DIR, 'package.json')
+    with open(package_json_path, 'w', encoding='utf-8') as f:
+        json.dump(package_json, f, indent=2)
+    print(f"Generated {package_json_path}")
+    
+    # Generate server.js stub (full implementation will be added separately)
+    server_js_path = os.path.join(CONF_DIR, 'server.js')
+    if not os.path.exists(server_js_path):
+        server_js_content = '''// Conference-mode Java Version Quiz Server
+// Run: npm install && npm start
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+const WebSocket = require('ws');
+const http = require('http');
+const { v4: uuidv4 } = require('uuid');
+const sqlite3 = require('sqlite3');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+const ADMIN_SECRET = process.env.ADMIN_SECRET;
+
+if (!ADMIN_SECRET) {
+    console.error('Error: ADMIN_SECRET environment variable must be set');
+    process.exit(1);
+}
+
+// Public static files
+app.use(express.static('public'));
+app.use(express.json());
+
+// SQLite database
+let db;
+function initDb() {
+    db = new sqlite3.Database(':memory:', () => {
+        db.run(`CREATE TABLE IF NOT EXISTS sessions (
+            sessionId TEXT PRIMARY KEY,
+            createdAt DATETIME,
+            state TEXT,
+            currentQuestion INTEGER,
+            timerEnds DATETIME
+        )`);
+        db.run(`CREATE TABLE IF NOT EXISTS players (
+            uuid TEXT PRIMARY KEY,
+            sessionId TEXT,
+            displayName TEXT,
+            score INTEGER DEFAULT 0,
+            joinedAt DATETIME
+        )`);
+        db.run(`CREATE TABLE IF NOT EXISTS answers (
+            id INTEGER PRIMARY KEY,
+            sessionId TEXT,
+            uuid TEXT,
+            questionId INTEGER,
+            answer INTEGER,
+            correct INTEGER,
+            timestamp DATETIME
+        )`);
+        console.log('Database initialized');
+    });
+}
+
+// Name generation
+const ADJECTIVES = [
+    'Happy', 'Silly', 'Clever', 'Quick', 'Lazy', 'Brave', 'Calm', 'Eager', 'Fierce',
+    'Gentle', 'Humble', 'Jolly', 'Kind', 'Lively', 'Mighty', 'Noble', 'Proud', 'Quiet',
+    'Rapid', 'Strong', 'Tiny', 'Unique', 'Vivid', 'Wild', 'Zesty'
+];
+
+const ANIMALS = [
+    'Panda', 'Eagle', 'Wolf', 'Bear', 'Fox', 'Lion', 'Tiger', 'Penguin', 'Dolphin',
+    'Elephant', 'Giraffe', 'Koala', 'Owl', 'Otter', 'Rabbit', 'Shark', 'Turtle', 'Whale'
+];
+
+function generateUniqueName(existingNames) {
+    let name;
+    let attempts = 0;
+    do {
+        const adjCount = Math.random() < 0.7 ? 1 : (Math.random() < 0.5 ? 2 : 3);
+        const adjs = [];
+        for (let i = 0; i < adjCount; i++) {
+            adjs.push(ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)]);
+        }
+        const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
+        name = adjs.join('') + animal;
+        attempts++;
+    } while (existingNames.has(name) && attempts < 100);
+    return name;
+}
+
+// WebSocket handler
+const wss = new WebSocket.Server({ noServer: true });
+
+wss.on('connection', (ws) => {
+    console.log('New WebSocket connection');
+    
+    ws.on('message', (message) => {
+        try {
+            const data = JSON.parse(message);
+            console.log('Received:', data);
+            // TODO: Handle different message types
+        } catch (e) {
+            console.error('Error parsing message:', e);
+        }
+    });
+});
+
+// HTTP upgrade to WebSocket
+const server = http.createServer(app);
+server.on('upgrade', (request, socket, head) => {
+    wss.handleUpgrade(request, socket, head, (ws) => {
+        wss.emit('connection', ws, request);
+    });
+});
+
+// REST endpoints
+app.post('/admin/auth', (req, res) => {
+    const { secret } = req.body;
+    if (secret === ADMIN_SECRET) {
+        res.json({ authorized: true, token: 'admin-token' });
+    } else {
+        res.status(401).json({ error: 'Unauthorized' });
+    }
+});
+
+app.post('/player/join', (req, res) => {
+    const uuid = uuidv4();
+    const displayName = generateUniqueName(new Set());
+    res.json({ uuid, displayName });
+});
+
+// Root redirect
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'player.html'));
+});
+
+initDb();
+server.listen(PORT, () => {
+    console.log(`Conference Quiz Server running on http://localhost:${PORT}`);
+    console.log(`Set ADMIN_SECRET environment variable for presenter auth`);
+});
+'''
+        with open(server_js_path, 'w', encoding='utf-8') as f:
+            f.write(server_js_content)
+        print(f"Generated {server_js_path}")
+    else:
+        print(f"Skipped {server_js_path} (already exists)")
+    
+    print(f"\nConference setup complete! To run:")
+    print(f"  cd game/conference")
+    print(f"  npm install")
+    print(f"  npm start")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Generate Java Version Quiz')
     parser.add_argument('--game', type=str, default='both', choices=['java', 'sizes', 'both'],
@@ -820,6 +1040,8 @@ if __name__ == "__main__":
                              'Use 0 to exclude them from code.json, or >1 to increase their frequency.')
     parser.add_argument('--test', action='store_true',
                         help='Test compile all alpha_feature tests via javac (in temporary folders).')
+    parser.add_argument('--conference', action='store_true',
+                        help='Also generate conference mode scaffold (server.js, package.json) in game/conference/')
     parser.add_argument('--base-url', type=str, required=True, metavar='URL',
                         help='Required. Base URL to prefix to relative asset paths and for share links (e.g., https://example.com/quiz/).')
     parser.add_argument('--goatcounter', type=str, metavar='URL',
@@ -918,3 +1140,10 @@ if __name__ == "__main__":
                           other_game_url=args.other_game_url,
                           output_html=OUTPUT_HTML,
                           default_game_meta=default_meta)
+        
+        # Generate conference scaffold if requested
+        if args.conference and generate_java:
+            print("\n" + "="*60)
+            print("Generating conference mode scaffold...")
+            print("="*60)
+            generate_conference_scaffold(payload)

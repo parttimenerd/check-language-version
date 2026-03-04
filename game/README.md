@@ -45,6 +45,82 @@ python3 game/generate_quiz.py --base-url https://mostlynerdless.de/java-game/ \
   --goatcounter https://....mostlynerdless.de/
 ```
 
+Multiplayer Conference Game
+---------------------------
+
+The `conference/` directory contains a real-time multiplayer quiz built on Node.js + WebSockets.
+A presenter controls the game from a dashboard; players join on their phones or laptops and
+answer questions live with a server-enforced timer.
+
+### Quick start with `run_game.sh`
+
+A single script handles everything – generating quiz data, installing npm dependencies,
+building the webpack bundles, and starting the server.
+
+**Foreground (production)**
+
+```shell
+# run from the game/ directory or from the project root
+./game/run_game.sh --secret "your-password"
+```
+
+**Dev mode** – webpack rebuilds the frontend automatically whenever you edit `src/`; nodemon
+(if installed) restarts the server when `server.js` changes:
+
+```shell
+./game/run_game.sh --dev --secret "your-password"
+```
+
+**Background on a server (Uberspace / supervisord)** – installs two supervisor daemons that
+survive reboots and auto-reload on code changes:
+
+```shell
+./game/run_game.sh --setup-supervisor --secret "your-password" --port 3000
+```
+
+This creates two `~/etc/services.d/` entries:
+
+| Program | What it does |
+|---|---|
+| `java-quiz-webpack` | `webpack --watch` – rebuilds bundles when `src/` changes |
+| `java-quiz-server` | Node server (via nodemon) – restarts when `server.js` changes |
+
+Useful follow-up commands:
+
+```shell
+supervisorctl status
+supervisorctl tail -f java-quiz-server
+supervisorctl restart java-quiz-server
+```
+
+To remove the services:
+
+```shell
+./game/run_game.sh --teardown-supervisor
+```
+
+**All options**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--dev` | – | Foreground dev mode (webpack watch + nodemon) |
+| `--setup-supervisor` | – | Install & start supervisord services |
+| `--teardown-supervisor` | – | Stop & remove supervisord services |
+| `--port PORT` | `3000` | Server port |
+| `--secret SECRET` | `changeme` | Presenter / admin password |
+| `--base-url URL` | `http://localhost:PORT/` | Base URL for quiz JSON generation |
+| `--service-name NAME` | `java-quiz` | Supervisord program name prefix |
+| `--supervisor-dir DIR` | `~/etc/services.d` | Where to write `.ini` files |
+| `--skip-generate` | – | Skip `generate_quiz.py` (reuse existing JSON) |
+| `--skip-install` | – | Skip `npm install` |
+
+Once the server is running:
+
+- **Players** → `http://localhost:3000/` – enter the Session ID shown by the presenter
+- **Presenter** → `http://localhost:3000/presenter` – log in with your secret, create a session, start questions
+
+See [CONFERENCE_QUICKSTART.md](CONFERENCE_QUICKSTART.md) and [conference/README.md](conference/README.md) for more details.
+
 TODO
 ----
 - link JEP for every feature (if available)
