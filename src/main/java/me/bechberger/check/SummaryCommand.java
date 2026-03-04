@@ -2,6 +2,7 @@ package me.bechberger.check;
 
 import me.bechberger.check.model.FileInfo;
 import me.bechberger.check.model.JsonOutput;
+import me.bechberger.check.model.UnparsableFileInfo;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 import tools.jackson.databind.ObjectMapper;
@@ -9,7 +10,6 @@ import tools.jackson.databind.ObjectMapper;
 import java.io.File;
 import java.util.*;
 import java.util.concurrent.Callable;
-import java.util.Locale;
 
 @Command(name = "summary",
          mixinStandardHelpOptions = true,
@@ -55,7 +55,7 @@ public class SummaryCommand implements Callable<Integer> {
                 // Count unparsable files and their lines
                 unparsableCount += output.unparsable_files().size();
                 unparsableLines += output.unparsable_files().values().stream()
-                        .mapToInt(info -> info.lines())
+                        .mapToInt(UnparsableFileInfo::lines)
                         .sum();
 
             } catch (Exception e) {

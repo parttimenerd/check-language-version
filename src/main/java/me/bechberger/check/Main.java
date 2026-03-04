@@ -139,7 +139,7 @@ public class Main implements Callable<Integer> {
         return 0;
     }
 
-    private void printJsonOutput(Map<String, FileResult> parsableFiles, Map<String, FileResult> unparsableFiles) throws IOException {
+    private void printJsonOutput(Map<String, FileResult> parsableFiles, Map<String, FileResult> unparsableFiles) {
         // Create feature labels map (enum name -> FeatureInfo with label and Java version)
         Map<String, me.bechberger.check.model.FeatureInfo> featureLabels = new LinkedHashMap<>();
         for (FeatureChecker.JavaFeature feature : FeatureChecker.JavaFeature.values()) {
@@ -173,16 +173,7 @@ public class Main implements Callable<Integer> {
         System.out.println(mapper.writeValueAsString(output));
     }
 
-    private static class FileResult {
-        final int lines;
-        final Integer javaVersion;
-        final List<String> features;
-
-        FileResult(int lines, Integer javaVersion, List<String> features) {
-            this.lines = lines;
-            this.javaVersion = javaVersion;
-            this.features = features;
-        }
+    private record FileResult(int lines, Integer javaVersion, List<String> features) {
     }
 
 
