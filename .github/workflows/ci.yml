@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Persist link reachability cache between CI runs to avoid repeatedly hitting websites.
+      # The cache key is tied to the mdmap file, so it refreshes naturally when links/descriptions change.
+      - name: Cache link-check results
+        uses: actions/cache@v4
+        with:
+          path: link-check-cache.tsv
+          key: link-check-cache-${{ runner.os }}-${{ hashFiles('src/main/resources/me/bechberger/check/feature-descriptions.format') }}
+          restore-keys: |
+            link-check-cache-${{ runner.os }}-
+
+      - name: Run tests (with link checks)
+        run: ./mvnw test

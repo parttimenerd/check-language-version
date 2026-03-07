@@ -202,10 +202,8 @@ function initDb() {
 // Name generation with guaranteed uniqueness
 const ADJECTIVES = [
     'Happy',
-    'Silly',
     'Clever',
     'Quick',
-    'Lazy',
     'Brave',
     'Calm',
     'Eager',
@@ -271,6 +269,17 @@ const ANIMALS = [
     'Zebra',
 ];
 
+// Optional blacklist of adjective|animal combinations that should never be generated
+// Example line: 'tiny|elephant' (case-insensitive). You can populate the
+// `BANNED_NAME_COMBINATIONS` environment variable with comma-separated
+// `adjective|animal` entries to add to the set at runtime.
+const BANNED_COMBINATIONS = new Set();
+if (process.env.BANNED_NAME_COMBINATIONS) {
+    process.env.BANNED_NAME_COMBINATIONS.split(',').map(s => s.trim()).filter(Boolean).forEach(pair => {
+        BANNED_COMBINATIONS.add(pair.toLowerCase());
+    });
+}
+
 function generateUniqueName(sessionId) {
     const existingNames = new Set();
 
@@ -290,6 +299,19 @@ function generateUniqueName(sessionId) {
         const adjs = shuffled.slice(0, adjCount);
         const animal = ANIMALS[Math.floor(Math.random() * ANIMALS.length)];
         name = adjs.join('') + animal;
+
+        // Reject names that match banned adjective|animal pairs. Check each
+        // adjective against the chosen animal (case-insensitive).
+        const animalLower = animal.toLowerCase();
+        let banned = false;
+        for (const a of adjs) {
+            const key = `${a.toLowerCase()}|${animalLower}`;
+            if (BANNED_COMBINATIONS.has(key)) { banned = true; break; }
+        }
+        if (banned) {
+            attempts++;
+            continue; // generate another combination
+        }
         attempts++;
     } while (existingNames.has(name) && attempts < 100);
 
@@ -302,10 +324,44 @@ function generateUniqueName(sessionId) {
 }
 
 // Compute answer options deterministically based on question code
-function computeAnswerOptions(question, quizMode) {
+function computeAnswerOptions(question, quizMode, allQuizData) {
     if (quizMode === 'sizes') {
-        // For size quiz, use answers as-is
-        return question.answers || [];
+        // Generate plausible wrong answers for sizes quiz
+        const correct = question.correct;
+        if (typeof correct !== 'number') return [];
+
+        // Build pool from all quiz data correct sizes
+        let pool = [];
+        if (Array.isArray(allQuizData)) {
+            pool = allQuizData
+                .map(q => q && typeof q.correct === 'number' ? q.correct : null)
+                .filter(v => typeof v === 'number');
+            pool = [...new Set(pool)].filter(v => v !== correct);
+        }
+
+        // Deterministic shuffle using code hash
+        const codeHash = (question.code || '').split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0);
+        const seed = Math.abs(codeHash);
+        pool.sort((a, b) => {
+            const ha = ((seed ^ (a * 2654435761)) >>> 0) % 1000000;
+            const hb = ((seed ^ (b * 2654435761)) >>> 0) % 1000000;
+            return ha - hb;
+        });
+
+        const wrong = pool.slice(0, 4);
+
+        // Fill with nearby multiples of 8 if not enough
+        let step = 8;
+        let candidate = correct;
+        while (wrong.length < 4) {
+            candidate += step;
+            if (candidate !== correct && !wrong.includes(candidate)) wrong.push(candidate);
+            if (wrong.length >= 4) break;
+            const low = correct - (wrong.length * step);
+            if (low > 0 && low !== correct && !wrong.includes(low)) wrong.push(low);
+        }
+
+        return [...new Set([correct, ...wrong.slice(0, 4)])].sort((a, b) => a - b);
     }
 
     // For Java quiz, generate deterministic options using question code as seed
@@ -431,6 +487,7 @@ function handleMessage(uuid, data, ws) {
                     timerActive: hasTimer,
                     score: player.score || 0,
                     answerOptions: session.answerOptions || [],
+                    quizMode: session.quizMode || 'java',
                 })
             );
         } else {
@@ -476,12 +533,18 @@ function handleMessage(uuid, data, ws) {
                     session.playerAnswers.add(uuid);
 
                     // Update score if correct
+                    let bonus = 0;
                     if (isCorrect) {
                         player.score = (player.score || 0) + 1;
+                        // Speed bonus: +1 extra point if answered within 5 seconds of countdown start
+                        if (session.countdownStartedAt && (Date.now() - session.countdownStartedAt) <= 5000) {
+                            bonus = 1;
+                            player.score += bonus;
+                        }
                         db.run('UPDATE players SET score = ? WHERE uuid = ?', [player.score, uuid]);
                     }
 
-                    ws.send(JSON.stringify({ type: 'answer_received', correct: isCorrect, score: player.score || 0 }));
+                    ws.send(JSON.stringify({ type: 'answer_received', correct: isCorrect, score: player.score || 0, bonus }));
                     broadcastToSession(sessionId, { type: 'player_answered', uuid });
                 }
             }
@@ -560,7 +623,7 @@ app.post('/session/create', (req, res) => {
     const sessionId = Math.random().toString(36).substring(2, 8).toUpperCase();
     const quizMode = reqQuizMode === 'sizes' ? 'sizes' : 'java';
     const session = {
-        name: name || 'Untitled Session',
+        name: name || sessionId,
         state: 'waiting',
         currentQuestion: null,
         currentQuestionIndex: 0,
@@ -637,6 +700,46 @@ app.post('/player/leave', (req, res) => {
     });
 });
 
+// Delete all data for a player (GDPR-style self-service)
+app.post('/player/delete-data', (req, res) => {
+    const { uuid } = req.body;
+    if (!uuid) {
+        return res.status(400).json({ error: 'Missing uuid' });
+    }
+
+    const player = players.get(uuid);
+    const sessionId = player ? player.sessionId : null;
+
+    // Remove from in-memory structures
+    players.delete(uuid);
+    if (sessionId) {
+        const session = sessions.get(sessionId);
+        if (session) {
+            session.players.delete(uuid);
+        }
+    }
+    // Close WebSocket if open
+    const existingWs = wsConnections.get(uuid);
+    if (existingWs) {
+        try { existingWs.close(); } catch (_) { /* ignore */ }
+        wsConnections.delete(uuid);
+    }
+
+    // Delete from database: answers first, then player record
+    db.serialize(() => {
+        db.run('DELETE FROM answers WHERE uuid = ?', [uuid], (err) => {
+            if (err) console.error('Error deleting answers for', uuid, err);
+        });
+        db.run('DELETE FROM players WHERE uuid = ?', [uuid], (err) => {
+            if (err) {
+                console.error('Error deleting player', uuid, err);
+                return res.status(500).json({ error: 'Failed to delete player data' });
+            }
+            res.json({ success: true });
+        });
+    });
+});
+
 // Start question (admin)
 app.post('/admin/start_question', (req, res) => {
     const { secret, sessionId, questionId, correctAnswer, answerOptions } = req.body;
@@ -692,6 +795,7 @@ app.post('/admin/start_countdown', (req, res) => {
         return res.status(404).json({ error: 'No active question' });
     }
 
+    session.countdownStartedAt = Date.now();
     session.timerEnds = new Date(Date.now() + seconds * 1000);
 
     db.run(
@@ -900,7 +1004,7 @@ app.get('/session/:sessionId/qr-public', async (req, res) => {
     const playerUrl = `${protocol}://${host}/?session=${encodeURIComponent(sessionId)}`;
 
     try {
-        const qrCode = await QRCode.toDataURL(playerUrl, { width: 150, margin: 1 });
+        const qrCode = await QRCode.toDataURL(playerUrl, { width: 512, margin: 1 });
         res.json({ qrCode, url: playerUrl });
     } catch (err) {
         console.error('Error generating public QR code:', err);
@@ -927,7 +1031,7 @@ app.get('/session/:sessionId/qr', async (req, res) => {
     const playerUrl = `${protocol}://${host}/?session=${encodeURIComponent(sessionId)}`;
 
     try {
-        const qrCode = await QRCode.toDataURL(playerUrl);
+        const qrCode = await QRCode.toDataURL(playerUrl, { width: 512, margin: 1 });
         res.json({
             qrCode,
             url: playerUrl,

@@ -6,45 +6,20 @@
             <div
                 v-if="!isAuthenticated"
                 class="auth-section"
-                style="
-                    max-width: 400px;
-                    margin: 40px auto;
-                    padding: 30px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    text-align: center;
-                "
             >
                 <h2>🔐 Presenter Authentication</h2>
-                <p style="color: #6c757d">Enter your admin secret to access presenter controls</p>
+                <p class="auth-hint">Enter your admin secret to access presenter controls</p>
                 <input
                     v-model="authSecret"
                     type="password"
                     placeholder="Admin Secret"
                     @keyup.enter="authenticate"
-                    style="
-                        width: 100%;
-                        padding: 10px;
-                        margin-bottom: 10px;
-                        border: 1px solid #ccc;
-                        border-radius: 4px;
-                        box-sizing: border-box;
-                        font-size: 14px;
-                    "
+                    class="auth-input"
                 />
-                <p v-if="authError" style="color: #d9534f; margin: 10px 0">{{ authError }}</p>
+                <p v-if="authError" class="auth-error">{{ authError }}</p>
                 <button
                     @click="authenticate"
-                    style="
-                        width: 100%;
-                        padding: 10px;
-                        background: #007bff;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 16px;
-                    "
+                    class="auth-btn"
                 >
                     Authenticate
                 </button>
@@ -52,105 +27,47 @@
 
             <template v-else>
                 <!-- Sessions List - Always Visible -->
-                <div style="max-width: 900px; margin: 0 auto; padding: 20px">
-                    <div
-                        style="
-                            display: flex;
-                            justify-content: space-between;
-                            align-items: center;
-                            margin-bottom: 25px;
-                        "
-                    >
+                <div class="sessions-container">
+                    <div class="sessions-header">
                         <h2 style="margin: 0">📋 Active Sessions</h2>
-                        <button
-                            @click="logout"
-                            style="
-                                padding: 8px 16px;
-                                background: #dc3545;
-                                color: white;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 14px;
-                            "
-                        >
-                            Logout
-                        </button>
+                        <div class="header-actions">
+                            <a href="#" class="theme-toggle" @click.prevent="doToggleTheme">{{ currentTheme === 'dark' ? '☀️' : '🌙' }}</a>
+                            <button @click="logout" class="logout-btn">
+                                Logout
+                            </button>
+                        </div>
                     </div>
 
                     <!-- Create New Session -->
-                    <div
-                        style="
-                            display: flex;
-                            gap: 10px;
-                            margin-bottom: 20px;
-                            flex-wrap: wrap;
-                        "
-                    >
+                    <div class="create-session-row">
                         <input
                             v-model="sessionNameInput"
-                            placeholder="Enter session name"
+                            placeholder="Session name (optional)"
                             @keyup.enter="createNewSession('java')"
-                            style="
-                                padding: 8px 12px;
-                                border: 1px solid #ccc;
-                                border-radius: 4px;
-                                font-size: 14px;
-                                flex: 1;
-                                min-width: 200px;
-                            "
+                            class="session-input"
                         />
                         <button
                             @click="createNewSession('java')"
-                            style="
-                                padding: 8px 20px;
-                                background: #28a745;
-                                color: white;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 14px;
-                                font-weight: 600;
-                            "
+                            class="create-btn create-btn--java"
                         >
                             ☕ Version Quiz
                         </button>
                         <button
                             @click="createNewSession('sizes')"
-                            style="
-                                padding: 8px 20px;
-                                background: #17a2b8;
-                                color: white;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 14px;
-                                font-weight: 600;
-                            "
+                            class="create-btn create-btn--sizes"
                         >
                             📐 Sizes Quiz
                         </button>
                         <button
                             @click="loadSessionsList"
-                            style="
-                                padding: 8px 16px;
-                                background: #6c757d;
-                                color: white;
-                                border: none;
-                                border-radius: 4px;
-                                cursor: pointer;
-                                font-size: 14px;
-                            "
+                            class="refresh-btn"
                         >
                             Refresh
                         </button>
                     </div>
 
                     <!-- Sessions Loading State -->
-                    <div
-                        v-if="sessionsLoading"
-                        style="text-align: center; padding: 40px; color: #6c757d"
-                    >
+                    <div v-if="sessionsLoading" class="sessions-loading">
                         Loading sessions...
                     </div>
 
@@ -159,7 +76,7 @@
                         v-else-if="sessionsList.length === 0"
                         style="text-align: center; padding: 40px"
                     >
-                        <p style="color: #6c757d; font-size: 16px">No active sessions</p>
+                        <p class="sessions-empty">No active sessions</p>
                     </div>
 
                     <!-- Sessions Grid -->
@@ -300,7 +217,7 @@
                             </button>
                             <input
                                 v-model="sessionNameInput"
-                                placeholder="Enter session name"
+                                placeholder="Session name (optional)"
                                 @keyup.enter="createNewSession"
                                 style="
                                     padding: 8px 12px;
@@ -465,9 +382,12 @@ export default {
             qrStatsInterval: null,
             sessionsList: [],
             sessionsLoading: false,
+            currentTheme: 'light',
         };
     },
     mounted() {
+        this.currentTheme = this.$getTheme();
+        this.checkAuthFromUrl();
         this.checkAuthFromCookie();
         this.loadSessionFromStorage();
         // Load sessions list for display
@@ -476,6 +396,18 @@ export default {
         }
     },
     methods: {
+        doToggleTheme() {
+            this.currentTheme = this.$toggleTheme();
+        },
+        checkAuthFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const secret = params.get('secret');
+            if (secret) {
+                this.authSecret = secret;
+                this.isAuthenticated = true;
+                this.setAuthCookie(secret);
+            }
+        },
         loadSessionFromStorage() {
             const stored = localStorage.getItem('presenter_session');
             if (stored) {
@@ -508,7 +440,7 @@ export default {
                 .split('; ')
                 .find((row) => row.startsWith('presenter_auth='));
             if (cookie) {
-                this.authSecret = cookie.split('=')[1];
+                this.authSecret = decodeURIComponent(cookie.split('=')[1]);
                 this.isAuthenticated = true;
             }
         },
@@ -533,11 +465,7 @@ export default {
             await this.loadSessionsList();
         },
         async createNewSession(quizMode = 'java') {
-            const sessionName = this.sessionNameInput.trim();
-            if (!sessionName) {
-                alert('Please enter a session name');
-                return;
-            }
+            let sessionName = this.sessionNameInput.trim();
 
             try {
                 const res = await fetch('/session/create', {
@@ -547,7 +475,7 @@ export default {
                         'x-admin-secret': this.authSecret,
                     },
                     body: JSON.stringify({
-                        name: this.sessionNameInput,
+                        name: sessionName || undefined,
                         quizMode,
                     }),
                 });
@@ -555,6 +483,10 @@ export default {
                 if (res.ok) {
                     const data = await res.json();
                     this.sessionIdCreated = data.sessionId;
+                    // If no name was entered, use the generated session ID
+                    if (!sessionName) {
+                        sessionName = data.sessionId;
+                    }
                     this.sessionNameInput = '';
                     // Save to localStorage
                     localStorage.setItem(
@@ -715,7 +647,7 @@ export default {
                         'Content-Type': 'application/json',
                         'x-admin-secret': this.authSecret,
                     },
-                    body: JSON.stringify({ sessionId }),
+                    body: JSON.stringify({ sessionId, secret: this.authSecret }),
                 });
                 this.loadSessionsList();
             } catch (e) {
@@ -765,6 +697,113 @@ export default {
     margin-bottom: 30px;
 }
 
+/* ── Auth section ──────────────────────────────────── */
+.auth-section {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: var(--bg-section);
+    border-radius: 8px;
+    text-align: center;
+}
+.auth-hint {
+    color: var(--text-muted);
+}
+.auth-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+.auth-error {
+    color: var(--danger);
+    margin: 10px 0;
+}
+.auth-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+/* ── Sessions management ───────────────────────────── */
+.sessions-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+}
+.sessions-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 25px;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.theme-toggle {
+    font-size: 1.2em;
+    text-decoration: none;
+    cursor: pointer;
+    user-select: none;
+}
+.logout-btn {
+    padding: 8px 16px;
+    background: var(--danger);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+.create-session-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+.session-input {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 14px;
+    flex: 1;
+    min-width: 200px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+.create-btn {
+    padding: 8px 20px;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+}
+.create-btn--java { background: var(--success); }
+.create-btn--sizes { background: #17a2b8; }
+.refresh-btn {
+    padding: 8px 16px;
+    background: var(--text-muted);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
 .controls-section {
     display: flex;
     gap: 10px;
@@ -783,29 +822,29 @@ export default {
 }
 
 .session-card {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 15px;
-    background: #f9f9f9;
+    background: var(--bg-card);
     cursor: pointer;
     transition: all 0.2s ease;
 }
 
 .session-card:hover {
-    background: #f0f0f0;
-    border-color: #999;
+    background: var(--bg-section);
+    border-color: var(--text-muted);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .session-card h3 {
     margin: 0 0 10px 0;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .session-card p {
     margin: 5px 0;
     font-size: 14px;
-    color: #666;
+    color: var(--text-secondary);
 }
 
 .session-stats {
@@ -860,13 +899,13 @@ export default {
 }
 
 .sessions-empty {
-    color: #999;
+    color: var(--text-muted);
     font-style: italic;
     margin-top: 20px;
 }
 
 .sessions-loading {
-    color: #666;
+    color: var(--text-secondary);
     margin-top: 20px;
 }
 </style>

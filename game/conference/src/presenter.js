@@ -6,6 +6,11 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
 import 'prismjs/themes/prism-tomorrow.css';
 import './shared.css';
+import { initTheme, toggleTheme, getTheme } from './theme.js';
+
+// Initialize theme before mount
+initTheme();
+
 // Initialize Prism for syntax highlighting
 window.Prism = Prism;
 
@@ -13,4 +18,7 @@ window.Prism = Prism;
 const isViewPath = window.location.pathname.includes('/presenter/view');
 const RootComponent = isViewPath ? PresenterViewContainer : PresenterApp;
 
-createApp(RootComponent).mount('#app');
+const app = createApp(RootComponent);
+app.config.globalProperties.$toggleTheme = toggleTheme;
+app.config.globalProperties.$getTheme = getTheme;
+app.mount('#app');

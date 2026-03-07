@@ -5,8 +5,15 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
 import 'prismjs/themes/prism-tomorrow.css';
 import './shared.css';
+import { initTheme, toggleTheme, getTheme } from './theme.js';
+
+// Initialize theme before mount
+initTheme();
 
 // Initialize Prism for syntax highlighting
 window.Prism = Prism;
 
-createApp(PlayerApp).mount('#app');
+const app = createApp(PlayerApp);
+app.config.globalProperties.$toggleTheme = toggleTheme;
+app.config.globalProperties.$getTheme = getTheme;
+app.mount('#app');

@@ -11,6 +11,11 @@
             <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
         </div>
 
+        <div v-if="quizMode === 'sizes' && question.useCompactHeaders !== undefined" class="mode-hint">
+            <span class="subtle">Answer uses</span>
+            <span class="pill">Compact headers: {{ question.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+        </div>
+
         <div class="options">
             <button
                 v-for="option in options"
@@ -118,7 +123,7 @@ export default {
         },
         formatOption(option) {
             if (this.quizMode === 'sizes') {
-                return String(option);
+                return option + ' B';
             }
             return `Java ${this.formatVersion(option)}`;
         },

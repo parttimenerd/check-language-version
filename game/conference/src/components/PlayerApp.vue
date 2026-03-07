@@ -1,9 +1,17 @@
 <template>
-    <div>
+    <div class="player-root">
         <h1>
             {{ quizModeLocal === 'sizes' ? 'Guess the Object Size' : 'Guess the Java Version' }}
-            <span v-if="qrCode" class="qr-toggle" @click="showQr = !showQr">📱 QR</span>
+            <span v-if="qrCode" class="qr-toggle" @click="showQrFullscreen = true">📱 QR</span>
         </h1>
+
+        <!-- Prominent user name badge (shown when in game) -->
+        <div v-if="step !== 'join' && displayName" class="player-name-banner">
+            <span class="player-name-icon">👤</span>
+            <span class="player-name-text">{{ displayName }}</span>
+            <span v-if="score > 0" class="player-name-score">⭐ {{ score }}</span>
+        </div>
+
         <JoinGame v-if="step === 'join'" @join="handleJoin" />
         <WaitingScreen
             v-else-if="step === 'waiting'"
@@ -37,13 +45,23 @@
             :selected-answer="selectedAnswer"
             :quiz-mode="quizModeLocal"
             :score="score"
+            :bonus="bonus"
         />
+
+        <!-- Fullscreen QR Code Overlay -->
+        <div v-if="showQrFullscreen && qrCode" class="qr-fullscreen-backdrop" @click.self="showQrFullscreen = false" role="dialog" aria-modal="true">
+            <button class="qr-fullscreen-close" @click="showQrFullscreen = false" aria-label="Close">&#x2715;</button>
+            <div class="qr-fullscreen-content" @click="showQrFullscreen = false">
+                <img :src="qrCode" alt="Join QR Code" class="qr-fullscreen-img" />
+                <p class="qr-fullscreen-label">Scan to join!</p>
+                <p class="qr-fullscreen-hint">Tap anywhere to close</p>
+            </div>
+        </div>
 
         <!-- Footer -->
         <footer class="site-footer">
-            <div v-if="qrCode && showQr" class="qr-share">
-                <img :src="qrCode" alt="Join QR Code" class="qr-share-img" />
-                <span class="qr-share-label">Scan to join!</span>
+            <div v-if="step !== 'join'" class="quit-row">
+                <a href="#" class="quit-link" @click.prevent="quitGame">🚪 Quit Game</a>
             </div>
             This is just a fun quiz and may contain errors. &nbsp;&nbsp;
             Created by <a href="https://mostlynerdless.de" target="_blank" rel="noopener">Johannes Bechberger</a>
@@ -52,6 +70,8 @@
             <a href="https://github.com/parttimenerd/check-language-version/tree/main/game" target="_blank" rel="noopener">GitHub</a>
             &nbsp;&nbsp;
             <a href="#" @click.prevent="showPrivacy = true">Privacy</a>
+            &nbsp;&nbsp;
+            <a href="#" class="theme-toggle" @click.prevent="doToggleTheme">{{ currentTheme === 'dark' ? '☀️' : '🌙' }}</a>
         </footer>
 
         <!-- Privacy modal -->
@@ -63,6 +83,14 @@
                 <p><strong>Session data:</strong> When you join, you are assigned a randomly generated anonymous name (e.g. "HappyPanda") and a random session ID. Both are stored in a browser cookie (8-hour expiry) solely so you can reconnect automatically if you reload the page. They are never shared with third parties.</p>
                 <p><strong>Server logs:</strong> Standard access logs (IP, timestamp, path) may be retained per the hosting provider's policy. No quiz answers are stored after the session ends.</p>
                 <p><strong>External requests:</strong> All assets load from the same host. No third-party tracking scripts are used.</p>
+                <hr class="privacy-divider">
+                <p><strong>Delete my data:</strong> This will remove your player record, all your quiz answers from the database, and clear the browser cookie. <em>Standard server access logs (IP address, timestamps) retained by the hosting provider cannot be deleted here.</em></p>
+                <button
+                    class="privacy-delete-btn"
+                    :disabled="deletingData"
+                    @click="deleteMyData"
+                >{{ deletingData ? 'Deleting…' : '&#128465; Delete All My Data' }}</button>
+                <p v-if="deleteDataMsg" :class="deleteDataMsgIsError ? 'privacy-delete-error' : 'privacy-delete-ok'">{{ deleteDataMsg }}</p>
                 <p style="margin-bottom:0;">Questions? <a href="https://github.com/parttimenerd/check-language-version" target="_blank" rel="noopener">GitHub</a>.</p>
             </div>
         </div>
@@ -78,23 +106,80 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
 
 let ws = null;
+let quizDataJava = { entries: [] };
+let quizDataSizes = [];
 let quizData = { entries: [] };
 let quizMode = 'java';
 
 async function loadQuizData() {
+    // Load both quiz data files so the correct one can be selected
+    // based on the session's quizMode from the server
     try {
         const res = await fetch('code.json');
-        quizData = await res.json();
-        quizMode = 'java';
-    } catch (e1) {
-        try {
-            const res = await fetch('object-sizes.json');
-            quizData = await res.json();
-            quizMode = 'sizes';
-        } catch (e2) {
-            console.error('Failed to load quiz data', e1, e2);
-            quizData = { entries: [] };
+        if (res.ok) quizDataJava = await res.json();
+    } catch (e) {
+        console.warn('No code.json found', e);
+    }
+    try {
+        const res = await fetch('object-sizes.json');
+        if (res.ok) {
+            const raw = await res.json();
+            quizDataSizes = preprocessSizesData(raw);
         }
+    } catch (e) {
+        console.warn('No object-sizes.json found', e);
+    }
+    // Default to java; will be overridden when server sends quizMode
+    quizData = quizDataJava;
+    quizMode = 'java';
+}
+
+/**
+ * Simple 32-bit FNV-1a hash (matches original game).
+ */
+function fnv1a32(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+    }
+    return h >>> 0;
+}
+
+/**
+ * Preprocess raw object-sizes.json entries into a quiz-ready format
+ * with `correct` (totalSize), `code`, and `useCompactHeaders` fields.
+ * Deterministically chooses between compact and non-compact variants
+ * per question (matching the original game logic).
+ */
+function preprocessSizesData(raw) {
+    if (!Array.isArray(raw)) return [];
+    return raw.map(e => {
+        if (!e) return null;
+        const variants = Array.isArray(e.layout) ? e.layout : [];
+        const nonCompact = variants.find(v => v && v.UseCompactObjectHeaders === false);
+        const compact = variants.find(v => v && v.UseCompactObjectHeaders === true);
+        // Deterministic choice between compact/non-compact per question
+        const questionKey = (e['class'] || '') + '|' + ((e.sanitizedCode || e.code || '').trim());
+        const preferCompact = (fnv1a32('|' + questionKey) & 1) === 1;
+        const chosen = (preferCompact ? (compact || nonCompact) : (nonCompact || compact)) || variants[0] || null;
+        const totalSize = chosen && typeof chosen.totalSize === 'number' ? chosen.totalSize : null;
+        if (typeof totalSize !== 'number') return null;
+        return {
+            kind: 'sizes',
+            code: (e.sanitizedCode || e.code || '').trim(),
+            correct: totalSize,
+            useCompactHeaders: chosen.UseCompactObjectHeaders === true,
+        };
+    }).filter(Boolean);
+}
+
+function selectQuizMode(mode) {
+    quizMode = mode;
+    if (mode === 'sizes') {
+        quizData = quizDataSizes;
+    } else {
+        quizData = quizDataJava;
     }
 }
 
@@ -121,13 +206,18 @@ export default {
             quizModeLocal: quizMode,
             serverAnswers: [],
             showPrivacy: false,
+            deletingData: false,
+            deleteDataMsg: '',
+            deleteDataMsgIsError: false,
             showingSolution: false,
             score: 0,
             qrCode: '',
-            showQr: false,
+            showQrFullscreen: false,
+            currentTheme: 'light',
         };
     },
     async mounted() {
+        this.currentTheme = this.$getTheme();
         await loadQuizData();
         this.quizModeLocal = quizMode;
         this.tryResumeFromCookie();
@@ -168,6 +258,47 @@ export default {
         },
         clearPlayerCookie() {
             document.cookie = 'player_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax';
+        },
+        async deleteMyData() {
+            if (!this.uuid) {
+                // No active session – just clear cookies
+                this.clearPlayerCookie();
+                this.deleteDataMsg = 'Cookies cleared. No server data was associated with this browser.';
+                this.deleteDataMsgIsError = false;
+                return;
+            }
+            this.deletingData = true;
+            this.deleteDataMsg = '';
+            try {
+                const res = await fetch('/player/delete-data', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ uuid: this.uuid }),
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    throw new Error(err.error || 'Server error');
+                }
+                // Close WebSocket
+                if (ws) { try { ws.close(); } catch (_) {} ws = null; }
+                // Clear all local state
+                this.clearPlayerCookie();
+                this.uuid = '';
+                this.displayName = '';
+                this.sessionId = '';
+                this.currentQuestion = null;
+                this.hasAnswered = false;
+                this.selectedAnswer = null;
+                this.score = 0;
+                this.step = 'join';
+                this.deleteDataMsg = 'All your data has been deleted. Note: standard server access logs (IP, timestamps) may still be retained by the hosting provider.';
+                this.deleteDataMsgIsError = false;
+            } catch (e) {
+                this.deleteDataMsg = 'Failed to delete data: ' + e.message;
+                this.deleteDataMsgIsError = true;
+            } finally {
+                this.deletingData = false;
+            }
         },
         tryResumeFromCookie() {
             const match = document.cookie.match(/(?:^|;\s*)player_session=([^;]*)/);
@@ -231,6 +362,11 @@ export default {
                 if (msg.type === 'joined') {
                     if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; }
                     this.score = msg.score || 0;
+                    // Update quiz mode from server
+                    if (msg.quizMode) {
+                        selectQuizMode(msg.quizMode);
+                        this.quizModeLocal = msg.quizMode;
+                    }
                     // If a question is already active when we (re)connect, show it immediately
                     if (msg.state === 'active' && msg.currentQuestion != null) {
                         this.serverAnswers = msg.answerOptions || [];
@@ -264,6 +400,7 @@ export default {
                 } else if (msg.type === 'answer_received') {
                     this.isCorrect = msg.correct;
                     this.score = msg.score;
+                    this.bonus = msg.bonus || 0;
                 } else if (msg.type === 'leaderboard') {
                     this.leaderboard = msg.data || [];
                 } else if (msg.type === 'next-question-in') {
@@ -299,6 +436,7 @@ export default {
             this.hasAnswered = false;
             this.selectedAnswer = null;
             this.isCorrect = false;
+            this.bonus = 0;
             this.showingSolution = false;
             this.timerRemaining = 0;
             this.timerActive = false;
@@ -350,6 +488,33 @@ export default {
                 this.timerInterval = null;
             }
         },
+        async quitGame() {
+            if (!confirm('Quit the game? This will delete all your data.')) return;
+            if (this.uuid) {
+                try {
+                    await fetch('/player/delete-data', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ uuid: this.uuid }),
+                    });
+                } catch (_) { /* best effort */ }
+            }
+            if (ws) { try { ws.close(); } catch (_) {} ws = null; }
+            this.clearPlayerCookie();
+            this.clearTimer();
+            this.uuid = '';
+            this.displayName = '';
+            this.sessionId = '';
+            this.currentQuestion = null;
+            this.hasAnswered = false;
+            this.selectedAnswer = null;
+            this.score = 0;
+            this.qrCode = '';
+            this.step = 'join';
+        },
+        doToggleTheme() {
+            this.currentTheme = this.$toggleTheme();
+        },
     },
     beforeUnmount() {
         this.clearTimer();
@@ -359,16 +524,26 @@ export default {
 </script>
 
 <style scoped>
+.player-root {
+    display: flex;
+    flex-direction: column;
+    min-height: calc(100vh - 48px); /* account for body padding */
+}
 .site-footer {
-    margin-top: 24px;
+    margin-top: auto;
     padding: 10px 16px;
     font-size: 0.78em;
-    color: #6c757d;
+    color: var(--text-muted);
     text-align: center;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--border-separator);
 }
-.site-footer a { color: #007bff; text-decoration: none; }
+.site-footer a { color: var(--accent); text-decoration: none; }
 .site-footer a:hover { text-decoration: underline; }
+.theme-toggle {
+    font-size: 1.2em;
+    cursor: pointer;
+    user-select: none;
+}
 
 .privacy-backdrop {
     position: fixed;
@@ -380,7 +555,7 @@ export default {
     justify-content: center;
 }
 .privacy-modal {
-    background: #fff;
+    background: var(--bg-app);
     border-radius: 8px;
     padding: 28px 32px;
     max-width: 480px;
@@ -389,11 +564,11 @@ export default {
     position: relative;
     font-size: 0.92em;
     line-height: 1.6;
-    color: #333;
+    color: var(--text-primary);
 }
 .privacy-modal h2 { margin: 0 0 14px 0; font-size: 1.15em; }
-.privacy-modal p  { margin: 0 0 10px 0; color: #444; }
-.privacy-modal a  { color: #007bff; text-decoration: none; }
+.privacy-modal p  { margin: 0 0 10px 0; color: var(--text-body); }
+.privacy-modal a  { color: var(--accent); text-decoration: none; }
 .privacy-modal a:hover { text-decoration: underline; }
 .privacy-close {
     position: absolute;
@@ -403,11 +578,34 @@ export default {
     border: none;
     font-size: 1.3em;
     cursor: pointer;
-    color: #555;
+    color: var(--text-secondary);
     line-height: 1;
     padding: 2px 6px;
 }
-.privacy-close:hover { color: #000; }
+.privacy-close:hover { color: var(--text-primary); }
+
+.privacy-divider {
+    margin: 16px 0;
+    border: none;
+    border-top: 1px solid var(--border-separator);
+}
+
+.privacy-delete-btn {
+    display: inline-block;
+    padding: 8px 18px;
+    background: var(--danger);
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    font-size: 0.92em;
+    cursor: pointer;
+    margin-bottom: 10px;
+    transition: background 0.15s;
+}
+.privacy-delete-btn:hover:not(:disabled) { background: #b02a37; }
+.privacy-delete-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+.privacy-delete-ok  { color: var(--success); font-size: 0.88em; margin-top: 6px; }
+.privacy-delete-error { color: var(--danger); font-size: 0.88em; margin-top: 6px; }
 
 .waiting-container {
     display: flex;
@@ -416,7 +614,7 @@ export default {
 }
 
 .code-container {
-    background: #f5f5f5;
+    background: var(--bg-section);
     border-radius: 8px;
     padding: 12px 16px;
     margin: 16px 0;
@@ -434,52 +632,150 @@ export default {
     text-align: center;
     padding: 32px 16px;
     font-size: 1.1em;
-    color: #666;
-    background: #f8f9fa;
+    color: var(--text-secondary);
+    background: var(--bg-section);
     border-radius: 8px;
-    border-left: 4px solid #007bff;
+    border-left: 4px solid var(--accent);
 }
 
 .score-display {
     text-align: center;
     padding: 16px;
     font-size: 1.15em;
-    color: #333;
-    background: #fff8e1;
+    color: var(--text-primary);
+    background: var(--bg-section);
     border-radius: 8px;
-    border-left: 4px solid #ffc107;
+    border-left: 4px solid var(--warning);
 }
 
-.qr-share {
+/* ── Prominent player name banner ─────────────────────────── */
+.player-name-banner {
     display: flex;
-    flex-direction: column;
     align-items: center;
-    margin-bottom: 10px;
+    justify-content: center;
+    gap: 8px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%);
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    margin-bottom: 16px;
+    font-size: 1.1em;
+    font-weight: 600;
+    box-shadow: 0 2px 8px rgba(0, 123, 255, 0.25);
+}
+.player-name-icon {
+    font-size: 1.2em;
+}
+.player-name-text {
+    letter-spacing: 0.02em;
+}
+.player-name-score {
+    margin-left: auto;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 0.9em;
 }
 
-.qr-share-img {
-    width: 100px;
-    height: 100px;
-    border-radius: 6px;
-}
-
-.qr-share-label {
-    font-size: 0.82em;
-    color: #555;
-    margin-top: 4px;
-}
-
+/* ── QR toggle button in header ──────────────────────────── */
 .qr-toggle {
     font-size: 0.5em;
     cursor: pointer;
     margin-left: 12px;
     padding: 2px 10px;
     border-radius: 6px;
-    background: #e9ecef;
+    background: var(--bg-badge);
     vertical-align: middle;
     user-select: none;
 }
 .qr-toggle:hover {
-    background: #dee2e6;
+    background: var(--border-separator);
+}
+
+/* ── Fullscreen QR code overlay ──────────────────────────── */
+.qr-fullscreen-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+.qr-fullscreen-close {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    color: #fff;
+    font-size: 1.8em;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 8px;
+    line-height: 1;
+    z-index: 2001;
+    transition: background 0.15s;
+}
+.qr-fullscreen-close:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+.qr-fullscreen-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    padding: 24px;
+}
+.qr-fullscreen-img {
+    width: min(80vw, 80vh, 500px);
+    height: min(80vw, 80vh, 500px);
+    border-radius: 16px;
+    background: #fff;
+    padding: 16px;
+    box-sizing: border-box;
+}
+.qr-fullscreen-label {
+    color: #fff;
+    font-size: 1.6em;
+    font-weight: 600;
+    margin: 0;
+}
+.qr-fullscreen-hint {
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 0.9em;
+    margin: 0;
+}
+
+/* ── Small phone improvements ────────────────────────────── */
+@media (max-width: 400px) {
+    .player-name-banner {
+        font-size: 0.95em;
+        padding: 8px 12px;
+        gap: 6px;
+    }
+    .qr-fullscreen-img {
+        width: min(90vw, 90vh, 400px);
+        height: min(90vw, 90vh, 400px);
+        padding: 12px;
+        border-radius: 12px;
+    }
+    .qr-fullscreen-label {
+        font-size: 1.2em;
+    }
+}
+
+.quit-row {
+    margin-bottom: 8px;
+}
+.quit-link {
+    color: var(--danger);
+    text-decoration: none;
+    font-size: 0.9em;
+    cursor: pointer;
+}
+.quit-link:hover {
+    text-decoration: underline;
 }
 </style>

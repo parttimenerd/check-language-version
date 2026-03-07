@@ -119,6 +119,66 @@ Once the server is running:
 - **Players** → `http://localhost:3000/` – enter the Session ID shown by the presenter
 - **Presenter** → `http://localhost:3000/presenter` – log in with your secret, create a session, start questions
 
+### URL parameters
+
+Both the player and presenter pages support the following query parameters:
+
+| Parameter | Example | Description |
+|---|---|---|
+| `theme` | `?theme=dark` | Force light or dark mode (`light` / `dark`) |
+| `secret` | `?secret=mypass` | Auto-authenticate the presenter (skips the login screen) |
+
+Parameters can be combined: `?secret=mypass&theme=dark`
+
+### Embedding in a Slidev presentation
+
+You can embed the presenter view directly into a [Slidev](https://sli.dev) slide using an
+iframe. This is useful for running the quiz from within your talk deck.
+
+1. **Start the quiz server** (e.g. on port 3003):
+
+   ```shell
+   ./game/run_game.sh --secret "your-password" --port 3003
+   ```
+
+2. **Create a Slidev slide** that contains an iframe pointing to the presenter view.
+   Use the `?secret=` parameter so you don't have to type the password interactively,
+   and `?theme=dark` if your slides use a dark background:
+
+   ```md
+   ---
+   layout: iframe
+   url: http://localhost:3003/presenter?secret=your-password&theme=dark
+   ---
+   ```
+
+   Or, if you prefer more control, use a raw iframe in a regular slide:
+
+   ```md
+   ---
+   ---
+
+   <iframe
+     src="http://localhost:3003/presenter?secret=your-password&theme=dark"
+     style="width: 100%; height: 90%; border: none; border-radius: 8px;"
+   />
+   ```
+
+3. **Player QR code**: The presenter view shows a QR code that players scan to join.
+   Alternatively, put just the player join page on a slide:
+
+   ```md
+   ---
+   layout: iframe
+   url: http://localhost:3003/presenter/view/MySession?secret=your-password&theme=dark
+   ---
+   ```
+
+   Replace `MySession` with your session name – it will be auto-created if it doesn't exist.
+
+> **Tip:** The theme toggle (🌙 / ☀️) in the footer/header also works inside the iframe
+> and persists via `localStorage`, but the `?theme=` parameter always wins on page load.
+
 See [CONFERENCE_QUICKSTART.md](CONFERENCE_QUICKSTART.md) and [conference/README.md](conference/README.md) for more details.
 
 TODO

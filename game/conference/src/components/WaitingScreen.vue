@@ -2,24 +2,13 @@
     <div class="waiting-screen">
         <div class="waiting-content">
             <h2>👋 Welcome, {{ displayName }}!</h2>
-            <p style="color: #6c757d; margin-bottom: 30px">Waiting for the quiz to start...</p>
+            <p class="waiting-hint">Waiting for the quiz to start...</p>
 
-            <div style="margin: 40px 0">
-                <div
-                    class="spinner"
-                    style="
-                        display: inline-block;
-                        border: 3px solid #e9ecef;
-                        border-top: 3px solid #007bff;
-                        border-radius: 50%;
-                        width: 50px;
-                        height: 50px;
-                        animation: spin 1s linear infinite;
-                    "
-                ></div>
+            <div class="spinner-wrap">
+                <div class="spinner"></div>
             </div>
 
-            <p style="color: #6c757d; font-size: 14px">
+            <p class="session-label">
                 Session: <strong>{{ sessionId }}</strong>
             </p>
         </div>
@@ -52,6 +41,30 @@ export default {
 
 .waiting-content {
     padding: 20px;
+}
+
+.waiting-hint {
+    color: var(--text-muted);
+    margin-bottom: 30px;
+}
+
+.spinner-wrap {
+    margin: 40px 0;
+}
+
+.spinner {
+    display: inline-block;
+    border: 3px solid var(--spinner-track);
+    border-top: 3px solid var(--spinner-indicator);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+}
+
+.session-label {
+    color: var(--text-muted);
+    font-size: 14px;
 }
 
 @keyframes spin {

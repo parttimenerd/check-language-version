@@ -4,6 +4,11 @@
             <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
         </div>
 
+        <div v-if="quizMode === 'sizes' && question.useCompactHeaders !== undefined" class="mode-hint">
+            <span class="subtle">Answer uses</span>
+            <span class="pill">Compact headers: {{ question.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+        </div>
+
         <div class="solution-container">
             <div class="solution-header" v-if="selectedAnswer !== null">
                 <strong v-if="isCorrect" class="correct-text">✓ Correct!</strong>
@@ -27,6 +32,7 @@
 
             <div class="solution-score">
                 🏆 Your score: <strong>{{ score }}</strong>
+                <span v-if="bonus > 0" class="speed-bonus">⚡ +{{ bonus }} speed bonus!</span>
             </div>
         </div>
     </div>
@@ -58,6 +64,10 @@ export default {
             type: Number,
             default: 0,
         },
+        bonus: {
+            type: Number,
+            default: 0,
+        },
     },
     computed: {
         highlightedCode() {
@@ -80,7 +90,7 @@ export default {
         },
         formatOption(option) {
             if (this.quizMode === 'sizes') {
-                return String(option);
+                return option + ' B';
             }
             return `Java ${this.formatVersion(option)}`;
         },
@@ -90,7 +100,7 @@ export default {
 
 <style scoped>
 .code-container {
-    background: #f5f5f5;
+    background: var(--bg-section);
     border-radius: 8px;
     padding: 12px 16px;
     margin: 16px 0;
@@ -110,27 +120,27 @@ export default {
     gap: 12px;
     margin: 20px 0;
     padding: 16px;
-    background: #f8f9fa;
-    border-left: 4px solid #007bff;
+    background: var(--bg-section);
+    border-left: 4px solid var(--accent);
     border-radius: 4px;
 }
 
 .solution-header {
     font-size: 1.1em;
     font-weight: bold;
-    color: #333;
+    color: var(--text-primary);
 }
 
 .correct-text {
-    color: #28a745;
+    color: var(--success);
 }
 
 .wrong-text {
-    color: #dc3545;
+    color: var(--danger);
 }
 
 .missed-text {
-    color: #6c757d;
+    color: var(--text-muted);
 }
 
 .solution-answer,
@@ -143,31 +153,37 @@ export default {
 
 .label {
     font-weight: 500;
-    color: #666;
+    color: var(--text-secondary);
     min-width: 120px;
 }
 
 .answer {
     font-weight: bold;
     font-size: 1.05em;
-    color: #007bff;
+    color: var(--accent);
 }
 
 .solution-your-answer .correct {
-    color: #28a745;
+    color: var(--success);
     font-weight: bold;
 }
 
 .solution-your-answer .wrong {
-    color: #dc3545;
+    color: var(--danger);
     font-weight: bold;
 }
 
 .solution-score {
     margin-top: 8px;
     padding-top: 10px;
-    border-top: 1px solid #dee2e6;
+    border-top: 1px solid var(--border-separator);
     font-size: 1.05em;
-    color: #333;
+    color: var(--text-primary);
+}
+
+.speed-bonus {
+    margin-left: 8px;
+    color: var(--warning);
+    font-weight: bold;
 }
 </style>

@@ -1,46 +1,20 @@
 <template>
     <div id="presenter-view-container">
         <template v-if="!isAuthenticated">
-            <div
-                style="
-                    max-width: 400px;
-                    margin: 40px auto;
-                    padding: 30px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                    text-align: center;
-                "
-            >
+            <div class="auth-section">
                 <h2>🔐 Presenter Authentication</h2>
-                <p style="color: #6c757d">Enter your admin secret to access presenter controls</p>
+                <p class="auth-hint">Enter your admin secret to access presenter controls</p>
                 <input
                     v-model="authSecret"
                     type="password"
                     placeholder="Admin Secret"
                     @keyup.enter="authenticate"
-                    style="
-                        width: 100%;
-                        padding: 10px;
-                        margin-bottom: 10px;
-                        border: 1px solid #ccc;
-                        border-radius: 4px;
-                        box-sizing: border-box;
-                        font-size: 14px;
-                    "
+                    class="auth-input"
                 />
-                <p v-if="authError" style="color: #d9534f; margin: 10px 0">{{ authError }}</p>
+                <p v-if="authError" class="auth-error">{{ authError }}</p>
                 <button
                     @click="authenticate"
-                    style="
-                        width: 100%;
-                        padding: 10px;
-                        background: #007bff;
-                        color: white;
-                        border: none;
-                        border-radius: 4px;
-                        cursor: pointer;
-                        font-size: 16px;
-                    "
+                    class="auth-btn"
                 >
                     Authenticate
                 </button>
@@ -79,6 +53,7 @@ export default {
         };
     },
     mounted() {
+        this.checkAuthFromUrl();
         this.checkAuthFromCookie();
         this.getSessionFromUrl();
         if (this.isAuthenticated && this.sessionSlug) {
@@ -90,6 +65,15 @@ export default {
         }
     },
     methods: {
+        checkAuthFromUrl() {
+            const params = new URLSearchParams(window.location.search);
+            const secret = params.get('secret');
+            if (secret) {
+                this.authSecret = secret;
+                this.isAuthenticated = true;
+                this.setAuthCookie(secret);
+            }
+        },
         checkAuthFromCookie() {
             const cookie = document.cookie
                 .split('; ')
@@ -216,5 +200,36 @@ export default {
 <style scoped>
 #presenter-view-container {
     /* Layout is handled by shared.css #app */
+}
+.auth-section {
+    max-width: 400px;
+    margin: 40px auto;
+    padding: 30px;
+    background: var(--bg-section);
+    border-radius: 8px;
+    text-align: center;
+}
+.auth-hint { color: var(--text-muted); }
+.auth-input {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 14px;
+    background: var(--bg-input);
+    color: var(--text-primary);
+}
+.auth-error { color: var(--danger); margin: 10px 0; }
+.auth-btn {
+    width: 100%;
+    padding: 10px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
 }
 </style>

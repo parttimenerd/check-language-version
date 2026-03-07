@@ -147,6 +147,18 @@ const ADJECTIVES = ['Happy', 'Silly', ...];
 const ANIMALS = ['Panda', 'Eagle', ...];
 ```
 
+You can also configure a blacklist of adjective+animal combinations that should never be generated
+by setting the `BANNED_NAME_COMBINATIONS` environment variable to a comma-separated list of
+`adjective|animal` pairs (case-insensitive). Example:
+
+```bash
+export BANNED_NAME_COMBINATIONS="tiny|elephant,tiny|whale"
+```
+
+This is useful to avoid awkward or potentially insulting combinations such as pairing
+`Tiny` with very large animals. The server skips any generated name that matches a
+blacklisted pair and will try alternative combinations.
+
 ### Change Scoring Rules
 
 Edit the scoring logic when answers are processed. Currently in `/admin/stats`:
@@ -239,3 +251,6 @@ node stress-test.js -s test -n 5 -v
 ## License
 
 Same as parent project
+
+
+embed into slides

@@ -53,13 +53,17 @@
                 <div class="code-container">
                     <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
                 </div>
+                <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint">
+                    <span class="subtle">Answer uses</span>
+                    <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+                </div>
                 <div class="options">
                     <button
                         v-for="(option, idx) in answerOptions"
                         :key="idx"
                         class="option-btn"
                     >
-                        {{ quizMode === 'sizes' ? option : 'Java ' + formatVersion(option) }}
+                        {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
                     </button>
                 </div>
             </div>
@@ -81,9 +85,35 @@
                 <strong>Correct Answer:</strong>
                 {{
                     quizMode === 'sizes'
-                        ? currentQuestion.correct + ' bytes'
+                        ? currentQuestion.correct + ' B'
                         : 'Java ' + formatVersion(currentQuestion.correct)
                 }}
+                <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint" style="margin-top:8px;">
+                    <span class="subtle">Answer uses</span>
+                    <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+                </div>
+                <div v-if="quizMode === 'sizes' && currentQuestion.classLayout && currentQuestion.classLayout.length" class="layout-info">
+                    <div v-for="(cl, clIdx) in currentQuestion.classLayout" :key="clIdx" class="class-layout-block">
+                        <div class="class-layout-title">
+                            <span class="type">{{ prettifyJvmTypeName(cl.type) }}</span>
+                            <span v-if="cl.instanceSize != null" class="tag">Instance size: {{ cl.instanceSize }} B</span>
+                            <span v-if="cl.spaceLosses && cl.spaceLosses.total" class="tag">Space losses: {{ cl.spaceLosses.total }} B</span>
+                        </div>
+                        <div class="table-wrap">
+                            <table class="data mono">
+                                <thead><tr><th>offset</th><th>size</th><th>type</th><th>description</th></tr></thead>
+                                <tbody>
+                                    <tr v-for="(row, rIdx) in cl.rows" :key="rIdx">
+                                        <td>{{ row.offset }}</td>
+                                        <td>{{ row.size }}</td>
+                                        <td>{{ prettifyJvmTypeName(row.type) }}</td>
+                                        <td class="wrap">{{ row.description }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
                 <div v-if="detectedFeatures.length" class="feature-list">
                     <h3>Features Used:</h3>
                     <div class="feature-accordion">
@@ -118,7 +148,7 @@
                 <div class="bars">
                     <div v-for="(option, idx) in answerOptions" :key="idx" class="bar-row">
                         <div class="bar-label">
-                            {{ quizMode === 'sizes' ? option : 'Java ' + formatVersion(option) }}
+                            {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
                         </div>
                         <div class="bar-container">
                             <div
@@ -129,7 +159,7 @@
                                             ? (answerCounts[idx] / totalPlayers) * 100 + '%'
                                             : '0%',
                                     background:
-                                        option === currentQuestion.correct ? '#28a745' : '#dc3545',
+                                        option === currentQuestion.correct ? 'var(--success)' : 'var(--danger)',
                                 }"
                             ></div>
                         </div>
@@ -150,11 +180,10 @@
                 <span>{{ totalPlayers }} players connected</span>
                 <span class="qr-link" @click="showQrOverlay = true">📱 QR</span>
             </div>
-            <p style="font-size: 1.1em; color: #555; margin-bottom: 20px;">Ready for the next question?</p>
+            <p class="ready-hint">Ready for the next question?</p>
             <button
                 @click="startRandomQuestion"
-                class="next-btn"
-                style="background-color: #28a745;"
+                class="next-btn start-btn"
                 :disabled="!hasQuizData"
             >
                 Start Random Question
@@ -165,6 +194,11 @@
         <!-- Waiting -->
         <div v-else-if="!currentSession" class="waiting">
             <p>Waiting for session...</p>
+        </div>
+
+        <!-- Quit Game Button (always visible when session is active) -->
+        <div v-if="currentSession" class="quit-section">
+            <button @click="quitGame" class="quit-btn">🚪 Quit Game</button>
         </div>
     </div>
 </template>
@@ -306,7 +340,12 @@ export default {
                     }
                 }
                 const data = await response.json();
-                this.quizData = Array.isArray(data) ? data : data.entries || [];
+                let entries = Array.isArray(data) ? data : data.entries || [];
+                // Preprocess sizes data to add correct/code fields
+                if (this.quizMode === 'sizes') {
+                    entries = this.preprocessSizesData(entries);
+                }
+                this.quizData = entries;
                 if (this.quizMode === 'java') {
                     this.loadDescriptions();
                 }
@@ -356,13 +395,29 @@ export default {
             }
         },
         formatVersion(version) {
+            if (version === -3) return '1.0-\u03b11';
+            if (version === -2) return '1.0-\u03b12';
+            if (version === -1) return '1.0-\u03b13';
             if (version === 0) return '1.0';
-            if (version === 1) return '1.1';
-            if (version === 2) return '1.2';
-            if (version === 3) return '1.3';
-            if (version === 4) return '1.4';
+            if (version >= 1 && version <= 4) return '1.' + version;
             if (version === null || version === undefined) return '?';
             return String(version);
+        },
+        prettifyJvmTypeName(t) {
+            if (!t) return '';
+            const s = String(t);
+            if (!s.startsWith('[') && s.endsWith(';') && s.startsWith('L')) return s.slice(1, -1);
+            if (!s.startsWith('[')) return s;
+            let dims = 0;
+            while (s.charAt(dims) === '[') dims++;
+            const base = s.slice(dims);
+            const primMap = { Z:'boolean', B:'byte', C:'char', S:'short', I:'int', J:'long', F:'float', D:'double' };
+            let name = '';
+            if (primMap[base]) name = primMap[base];
+            else if (base.startsWith('L') && base.endsWith(';')) name = base.slice(1, -1);
+            else name = base;
+            for (let i = 0; i < dims; i++) name += '[]';
+            return name;
         },
         renderMarkdown(md) {
             if (!this.md || !md) return '';
@@ -588,8 +643,7 @@ export default {
         },
         computeAnswerOptions(question) {
             if (this.quizMode === 'sizes') {
-                // For size quiz, use answers as-is
-                return question.answers || [];
+                return this.generateSizesOptions(question);
             }
             // For Java quiz, generate deterministic options using question code as seed
             const correct = question.correct;
@@ -607,7 +661,87 @@ export default {
             }
             return [...new Set([correct, ...wrong])].sort((a, b) => a - b).slice(0, 5);
         },
+        /**
+         * Simple 32-bit FNV-1a hash (matches original game).
+         */
+        fnv1a32(str) {
+            let h = 0x811c9dc5;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+            }
+            return h >>> 0;
+        },
+        /**
+         * Preprocess raw object-sizes entries into quiz-ready format.
+         * Deterministically chooses between compact and non-compact variants.
+         */
+        preprocessSizesData(raw) {
+            if (!Array.isArray(raw)) return [];
+            return raw.map(e => {
+                if (!e) return null;
+                const variants = Array.isArray(e.layout) ? e.layout : [];
+                const nonCompact = variants.find(v => v && v.UseCompactObjectHeaders === false);
+                const compact = variants.find(v => v && v.UseCompactObjectHeaders === true);
+                const questionKey = (e['class'] || '') + '|' + ((e.sanitizedCode || e.code || '').trim());
+                const preferCompact = (this.fnv1a32('|' + questionKey) & 1) === 1;
+                const chosen = (preferCompact ? (compact || nonCompact) : (nonCompact || compact)) || variants[0] || null;
+                const totalSize = chosen && typeof chosen.totalSize === 'number' ? chosen.totalSize : null;
+                if (typeof totalSize !== 'number') return null;
+                return {
+                    kind: 'sizes',
+                    code: (e.sanitizedCode || e.code || '').trim(),
+                    correct: totalSize,
+                    useCompactHeaders: chosen.UseCompactObjectHeaders === true,
+                    classLayout: Array.isArray(chosen.classLayout) ? chosen.classLayout : [],
+                    footprint: Array.isArray(chosen.footprint) ? chosen.footprint : [],
+                    rawCode: (e.code || '').trim(),
+                };
+            }).filter(Boolean);
+        },
+        /**
+         * Generate plausible answer options for a sizes question.
+         * Picks wrong answers from the pool of all correct sizes in the dataset,
+         * falling back to multiples of 8 near the correct answer.
+         */
+        generateSizesOptions(question) {
+            const correct = question.correct;
+            // Build a pool of all unique sizes from the quiz data
+            let pool = (this.quizData || []).map(q => q && typeof q.correct === 'number' ? q.correct : null).filter(v => typeof v === 'number');
+            pool = [...new Set(pool)].filter(v => v !== correct);
+
+            // Deterministic shuffle using code hash
+            const codeHash = (question.code || '').split('').reduce((h, c) => (h << 5) - h + c.charCodeAt(0), 0);
+            const seed = Math.abs(codeHash);
+            pool.sort((a, b) => {
+                const ha = ((seed ^ (a * 2654435761)) >>> 0) % 1000000;
+                const hb = ((seed ^ (b * 2654435761)) >>> 0) % 1000000;
+                return ha - hb;
+            });
+
+            const wrong = pool.slice(0, 4);
+
+            // If not enough, fill with nearby multiples of 8
+            let step = 8;
+            let candidate = correct;
+            while (wrong.length < 4) {
+                candidate += step;
+                if (candidate !== correct && !wrong.includes(candidate)) wrong.push(candidate);
+                if (wrong.length >= 4) break;
+                const low = correct - (wrong.length * step);
+                if (low > 0 && low !== correct && !wrong.includes(low)) wrong.push(low);
+            }
+
+            return [...new Set([correct, ...wrong.slice(0, 4)])].sort((a, b) => a - b);
+        },
         logout() {
+            this.$emit('back');
+        },
+        quitGame() {
+            if (!confirm('Quit the game?')) return;
+            if (ws) ws.close();
+            if (this.statsInterval) clearInterval(this.statsInterval);
+            this.cancelCountdown();
             this.$emit('back');
         },
     },
@@ -630,7 +764,7 @@ export default {
     justify-content: space-between;
     margin-bottom: 20px;
     padding: 10px;
-    background: #e9ecef;
+    background: var(--bg-badge);
     border-radius: 4px;
     font-size: 0.9em;
 }
@@ -655,7 +789,7 @@ export default {
 }
 
 .feature-accordion details {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--bg-section);
     border-radius: 6px;
     margin: 6px 0;
     padding: 0;
@@ -731,8 +865,8 @@ export default {
 }
 
 .feature-body code {
-    background: #e8e8e8;
-    color: #1a1a1a;
+    background: var(--bg-badge);
+    color: var(--text-primary);
     padding: 1px 5px;
     border-radius: 3px;
     font-size: 0.9em;
@@ -759,7 +893,7 @@ export default {
 .feature-item {
     margin: 4px 0;
     padding: 4px 8px;
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--bg-section);
     border-radius: 3px;
 }
 
@@ -770,7 +904,7 @@ export default {
 .qr-heading {
     font-size: 1.3em;
     font-weight: 600;
-    color: #333;
+    color: var(--text-primary);
     margin: 0 0 10px;
 }
 
@@ -782,10 +916,10 @@ export default {
 .qr-card {
     margin: 0 auto;
     max-width: 420px;
-    background: #f8f9fa;
+    background: var(--bg-section);
     border-radius: 10px;
     padding: 20px;
-    border: 1px solid #e0e0e0;
+    border: 1px solid var(--border-color);
 }
 
 .qr-stats {
@@ -796,7 +930,7 @@ export default {
 .qr-image {
     width: 260px;
     height: 260px;
-    border: 3px solid #007bff;
+    border: 3px solid var(--accent);
     border-radius: 8px;
     background: white;
     margin: 8px auto 12px;
@@ -804,14 +938,14 @@ export default {
 }
 
 .qr-session {
-    color: #666;
+    color: var(--text-secondary);
     font-size: 14px;
     margin-bottom: 16px;
 }
 
 .go-quiz-btn {
     padding: 10px 24px;
-    background: #28a745;
+    background: var(--success);
     color: white;
     border: none;
     border-radius: 6px;
@@ -838,7 +972,7 @@ export default {
 }
 
 .bar-container {
-    background: #e9ecef;
+    background: var(--bg-badge);
     border-radius: 4px;
     overflow: hidden;
     height: 30px;
@@ -866,7 +1000,7 @@ export default {
     width: 100%;
     margin-top: 20px;
     padding: 12px;
-    background-color: #495057;
+    background-color: var(--text-secondary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -901,8 +1035,18 @@ export default {
 
 .loading-hint {
     margin: 6px 0 14px;
-    color: #888;
+    color: var(--text-muted);
     font-size: 13px;
+}
+
+.ready-hint {
+    font-size: 1.1em;
+    color: var(--text-secondary);
+    margin-bottom: 20px;
+}
+
+.start-btn {
+    background-color: var(--success);
 }
 
 /* Two close buttons wrapper */
@@ -917,8 +1061,8 @@ export default {
 .close-btn-small {
     display: inline-block;
     padding: 6px 14px;
-    background: #ffc107;
-    color: #333;
+    background: var(--warning);
+    color: var(--text-primary);
     border: none;
     border-radius: 4px;
     cursor: pointer;
@@ -927,7 +1071,7 @@ export default {
 }
 
 .close-btn-now {
-    background: #dc3545;
+    background: var(--danger);
     color: #fff;
 }
 
@@ -946,8 +1090,8 @@ export default {
     width: 32px;
     height: 32px;
     background: rgba(220, 53, 69, 0.15);
-    color: #dc3545;
-    border: 2px solid #dc3545;
+    color: var(--danger);
+    border: 2px solid var(--danger);
     border-radius: 50%;
     cursor: pointer;
     font-size: 16px;
@@ -959,7 +1103,109 @@ export default {
 }
 
 .countdown-cancel-inline:hover {
-    background: #dc3545;
+    background: var(--danger);
     color: #fff;
+}
+
+.quit-section {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-separator);
+    text-align: center;
+}
+.quit-btn {
+    background: var(--text-muted);
+    color: #fff;
+    border: none;
+    padding: 10px 28px;
+    border-radius: 6px;
+    font-size: 0.95em;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.quit-btn:hover {
+    background: var(--text-secondary);
+}
+.quit-hint {
+    margin-top: 6px;
+    font-size: 0.8em;
+    color: var(--text-muted);
+}
+
+/* Layout info tables for object-size mode */
+.layout-info {
+    margin-top: 16px;
+}
+.class-layout-block {
+    margin-bottom: 16px;
+    background: var(--bg-section);
+    border-radius: 6px;
+    padding: 12px;
+}
+.class-layout-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+}
+.class-layout-title .type {
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+}
+.class-layout-title .tag {
+    display: inline-block;
+    background: var(--bg-badge);
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.82em;
+    color: var(--text-secondary);
+}
+.table-wrap {
+    overflow-x: auto;
+}
+table.data {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85em;
+}
+table.data th,
+table.data td {
+    padding: 4px 8px;
+    border: 1px solid var(--border-separator);
+    text-align: left;
+}
+table.data th {
+    background: var(--bg-badge);
+    font-weight: 600;
+    white-space: nowrap;
+}
+table.data td.wrap {
+    word-break: break-word;
+}
+table.mono td {
+    font-family: 'Courier New', monospace;
+    font-size: 0.92em;
+}
+
+/* Compact-headers hint for object-size mode */
+.mode-hint {
+    text-align: center;
+    margin: 8px 0 12px;
+    font-size: 0.92em;
+}
+.mode-hint .subtle {
+    color: var(--text-muted);
+    margin-right: 6px;
+}
+.mode-hint .pill {
+    display: inline-block;
+    background: var(--bg-pill);
+    color: var(--pill-text);
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.95em;
 }
 </style>
