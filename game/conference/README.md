@@ -251,6 +251,3 @@ node stress-test.js -s test -n 5 -v
 ## License
 
 Same as parent project
-
-
-embed into slides

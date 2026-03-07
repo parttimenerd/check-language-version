@@ -356,6 +356,7 @@
 <script>
 import Leaderboard from './Leaderboard.vue';
 import PresenterViewGame from './PresenterViewGame.vue';
+import { apiUrl, wsUrl, navUrl } from '../basePath.js';
 
 let ws = null;
 
@@ -385,10 +386,10 @@ export default {
             currentTheme: 'light',
         };
     },
-    mounted() {
+    async mounted() {
         this.currentTheme = this.$getTheme();
-        this.checkAuthFromUrl();
-        this.checkAuthFromCookie();
+        await this.checkAuthFromUrl();
+        if (!this.isAuthenticated) this.checkAuthFromCookie();
         this.loadSessionFromStorage();
         // Load sessions list for display
         if (this.isAuthenticated) {
@@ -399,13 +400,27 @@ export default {
         doToggleTheme() {
             this.currentTheme = this.$toggleTheme();
         },
-        checkAuthFromUrl() {
+        async checkAuthFromUrl() {
             const params = new URLSearchParams(window.location.search);
-            const secret = params.get('secret');
+            const secret = params.get('secret') || params.get('password');
             if (secret) {
                 this.authSecret = secret;
-                this.isAuthenticated = true;
-                this.setAuthCookie(secret);
+                // Verify secret against the server
+                try {
+                    const res = await fetch(apiUrl('/admin/sessions'), {
+                        headers: { 'x-admin-secret': secret },
+                    });
+                    if (res.ok) {
+                        this.isAuthenticated = true;
+                        this.setAuthCookie(secret);
+                        const data = await res.json();
+                        this.sessionsList = data.sessions || [];
+                    } else {
+                        this.authError = 'Invalid secret in URL';
+                    }
+                } catch (e) {
+                    console.error('Failed to verify secret from URL', e);
+                }
             }
         },
         loadSessionFromStorage() {
@@ -420,7 +435,7 @@ export default {
             if (!this.isAuthenticated) return Promise.resolve();
             try {
                 this.sessionsLoading = true;
-                const res = await fetch('/admin/sessions', {
+                const res = await fetch(apiUrl('/admin/sessions'), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -428,6 +443,10 @@ export default {
                 if (res.ok) {
                     const data = await res.json();
                     this.sessionsList = data.sessions || [];
+                } else if (res.status === 401) {
+                    this.isAuthenticated = false;
+                    this.deleteAuthCookie();
+                    this.authError = 'Session expired – please log in again';
                 }
             } catch (e) {
                 console.error('Failed to load sessions list', e);
@@ -459,16 +478,30 @@ export default {
                 return;
             }
             this.authError = '';
-            this.isAuthenticated = true;
-            this.setAuthCookie(this.authSecret);
-            // Immediately load and display sessions
-            await this.loadSessionsList();
+            // Verify secret against the server before granting access
+            try {
+                const res = await fetch(apiUrl('/admin/sessions'), {
+                    headers: { 'x-admin-secret': this.authSecret },
+                });
+                if (!res.ok) {
+                    this.authError = 'Invalid admin secret';
+                    this.isAuthenticated = false;
+                    return;
+                }
+                this.isAuthenticated = true;
+                this.setAuthCookie(this.authSecret);
+                const data = await res.json();
+                this.sessionsList = data.sessions || [];
+            } catch (e) {
+                this.authError = 'Connection error – please try again';
+                this.isAuthenticated = false;
+            }
         },
         async createNewSession(quizMode = 'java') {
             let sessionName = this.sessionNameInput.trim();
 
             try {
-                const res = await fetch('/session/create', {
+                const res = await fetch(apiUrl('/session/create'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -496,7 +529,7 @@ export default {
                         })
                     );
                     // Navigate to view
-                    window.location.href = `/presenter/view/${encodeURIComponent(sessionName)}`;
+                    window.location.href = navUrl(`/presenter/view/${encodeURIComponent(sessionName)}`);
                 } else {
                     alert('Failed to create session');
                 }
@@ -525,7 +558,7 @@ export default {
             if (!sessionId) return;
 
             try {
-                const res = await fetch(`/session/${sessionId}`, {
+                const res = await fetch(apiUrl(`/session/${sessionId}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -545,16 +578,15 @@ export default {
                     })
                 );
                 // Navigate to view
-                window.location.href = `/presenter/view/${encodeURIComponent(sessionId)}`;
+                window.location.href = navUrl(`/presenter/view/${encodeURIComponent(sessionId)}`);
             } catch (e) {
                 console.error('Failed to load session', e);
                 alert('Error loading session');
             }
         },
         connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const presenterId = `presenter-${Math.random().toString(36).slice(2, 10)}`;
-            ws = new WebSocket(`${protocol}//${window.location.host}/ws?uuid=${presenterId}`);
+            ws = new WebSocket(wsUrl(`/ws?uuid=${presenterId}`));
 
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
@@ -580,7 +612,7 @@ export default {
             if (this.statsInterval) clearInterval(this.statsInterval);
             this.statsInterval = setInterval(async () => {
                 try {
-                    const res = await fetch(`/session/${this.currentSession.sessionId}/stats`, {
+                    const res = await fetch(apiUrl(`/session/${this.currentSession.sessionId}/stats`), {
                         headers: {
                             'x-admin-secret': this.authSecret,
                         },
@@ -597,7 +629,7 @@ export default {
         },
         async fetchQRAndStats() {
             try {
-                const res = await fetch(`/session/${this.sessionIdCreated}/qr`, {
+                const res = await fetch(apiUrl(`/session/${this.sessionIdCreated}/qr`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -615,12 +647,12 @@ export default {
             const sessionSlug = (session && session.name) || (session && session.sessionId) || '';
             if (!sessionSlug.trim()) return;
             // Navigate to view
-            window.location.href = `/presenter/view/${encodeURIComponent(sessionSlug.trim())}`;
+            window.location.href = navUrl(`/presenter/view/${encodeURIComponent(sessionSlug.trim())}`);
         },
         async restartSession(sessionId) {
             if (!confirm(`Restart session ${sessionId}?`)) return;
             try {
-                const res = await fetch('/admin/session/restart', {
+                const res = await fetch(apiUrl('/admin/session/restart'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -641,7 +673,7 @@ export default {
         async deleteSession(sessionId) {
             if (!confirm(`Delete session ${sessionId}?`)) return;
             try {
-                await fetch('/admin/session/delete', {
+                await fetch(apiUrl('/admin/session/delete'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -658,7 +690,7 @@ export default {
         async startQuiz() {
             if (!this.sessionIdCreated) return;
             try {
-                const res = await fetch(`/session/${this.sessionIdCreated}`, {
+                const res = await fetch(apiUrl(`/session/${this.sessionIdCreated}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },

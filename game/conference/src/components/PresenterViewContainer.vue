@@ -37,6 +37,7 @@
 
 <script>
 import PresenterViewGame from './PresenterViewGame.vue';
+import { apiUrl, navUrl } from '../basePath.js';
 
 export default {
     components: {
@@ -52,9 +53,9 @@ export default {
             currentSession: null,
         };
     },
-    mounted() {
-        this.checkAuthFromUrl();
-        this.checkAuthFromCookie();
+    async mounted() {
+        await this.checkAuthFromUrl();
+        if (!this.isAuthenticated) this.checkAuthFromCookie();
         this.getSessionFromUrl();
         if (this.isAuthenticated && this.sessionSlug) {
             this.resolveSessionId().then(() => {
@@ -65,13 +66,24 @@ export default {
         }
     },
     methods: {
-        checkAuthFromUrl() {
+        async checkAuthFromUrl() {
             const params = new URLSearchParams(window.location.search);
-            const secret = params.get('secret');
+            const secret = params.get('secret') || params.get('password');
             if (secret) {
                 this.authSecret = secret;
-                this.isAuthenticated = true;
-                this.setAuthCookie(secret);
+                try {
+                    const res = await fetch(apiUrl('/admin/sessions'), {
+                        headers: { 'x-admin-secret': secret },
+                    });
+                    if (res.ok) {
+                        this.isAuthenticated = true;
+                        this.setAuthCookie(secret);
+                    } else {
+                        this.authError = 'Invalid secret in URL';
+                    }
+                } catch (e) {
+                    console.error('Failed to verify secret from URL', e);
+                }
             }
         },
         checkAuthFromCookie() {
@@ -98,7 +110,7 @@ export default {
         async resolveSessionId() {
             if (!this.sessionSlug) return;
             try {
-                const res = await fetch('/admin/sessions', {
+                const res = await fetch(apiUrl('/admin/sessions'), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -122,7 +134,7 @@ export default {
         },
         async createSessionFromSlug() {
             try {
-                const res = await fetch('/session/create', {
+                const res = await fetch(apiUrl('/session/create'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -158,8 +170,23 @@ export default {
                 return;
             }
             this.authError = '';
-            this.isAuthenticated = true;
-            this.setAuthCookie(this.authSecret);
+            // Verify secret against the server before granting access
+            try {
+                const res = await fetch(apiUrl('/admin/sessions'), {
+                    headers: { 'x-admin-secret': this.authSecret },
+                });
+                if (!res.ok) {
+                    this.authError = 'Invalid admin secret';
+                    this.isAuthenticated = false;
+                    return;
+                }
+                this.isAuthenticated = true;
+                this.setAuthCookie(this.authSecret);
+            } catch (e) {
+                this.authError = 'Connection error – please try again';
+                this.isAuthenticated = false;
+                return;
+            }
             // Load the session after authentication
             if (this.sessionSlug) {
                 await this.resolveSessionId();
@@ -170,7 +197,7 @@ export default {
         },
         async loadSession() {
             try {
-                const res = await fetch(`/session/${this.sessionId}`, {
+                const res = await fetch(apiUrl(`/session/${this.sessionId}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -188,7 +215,7 @@ export default {
             }
         },
         goBack() {
-            window.location.href = '/presenter';
+            window.location.href = navUrl('/presenter');
         },
     },
     beforeUnmount() {

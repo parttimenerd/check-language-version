@@ -13,10 +13,37 @@ const QRCode = require('qrcode');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const ADMIN_SECRET = process.env.ADMIN_SECRET;
+// BASE_PATH: subpath prefix when deployed behind a reverse proxy (e.g. '/conference-game')
+// Must start with '/' (or be empty). No trailing slash.
+const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/+$/, '');
 
 if (!ADMIN_SECRET) {
     console.error('Error: ADMIN_SECRET environment variable must be set');
     process.exit(1);
+}
+
+// Strip BASE_PATH prefix from incoming requests so all routes stay clean
+if (BASE_PATH) {
+    app.use((req, res, next) => {
+        if (req.path === BASE_PATH || req.path.startsWith(BASE_PATH + '/')) {
+            req.url = req.url.slice(BASE_PATH.length) || '/';
+            next();
+        } else {
+            res.status(404).send('Not Found');
+        }
+    });
+}
+
+// Helper: send an HTML file with BASE_PATH injected as a global
+function sendHtmlWithBasePath(res, filePath) {
+    let html = fs.readFileSync(filePath, 'utf8');
+    // Inject <base href> so relative asset paths (dist/bundle.js) resolve correctly
+    // even when the browser URL is a deep subpath like /conference-game/presenter/view/XYZ
+    const baseHref = `<base href="${BASE_PATH}/">`;
+    const script = `<script>window.__BASE_PATH=${JSON.stringify(BASE_PATH)};</script>`;
+    html = html.replace('<head>', `<head>\n${baseHref}`);
+    html = html.replace('</head>', `${script}\n</head>`);
+    res.type('html').send(html);
 }
 
 // Public static files
@@ -1001,7 +1028,7 @@ app.get('/session/:sessionId/qr-public', async (req, res) => {
 
     const host = req.headers.host || 'localhost:3000';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const playerUrl = `${protocol}://${host}/?session=${encodeURIComponent(sessionId)}`;
+    const playerUrl = `${protocol}://${host}${BASE_PATH}/?session=${encodeURIComponent(sessionId)}`;
 
     try {
         const qrCode = await QRCode.toDataURL(playerUrl, { width: 512, margin: 1 });
@@ -1028,7 +1055,7 @@ app.get('/session/:sessionId/qr', async (req, res) => {
 
     const host = req.headers.host || 'localhost:3000';
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
-    const playerUrl = `${protocol}://${host}/?session=${encodeURIComponent(sessionId)}`;
+    const playerUrl = `${protocol}://${host}${BASE_PATH}/?session=${encodeURIComponent(sessionId)}`;
 
     try {
         const qrCode = await QRCode.toDataURL(playerUrl, { width: 512, margin: 1 });
@@ -1161,25 +1188,28 @@ app.get('/leaderboard/:sessionId', (req, res) => {
 
 // Root redirect
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'player.html'));
+    sendHtmlWithBasePath(res, path.join(__dirname, 'public', 'player.html'));
 });
 
 app.get('/presenter', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'presenter.html'));
+    sendHtmlWithBasePath(res, path.join(__dirname, 'public', 'presenter.html'));
 });
 
 app.get('/presenter/view', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'presenter.html'));
+    sendHtmlWithBasePath(res, path.join(__dirname, 'public', 'presenter.html'));
 });
 
 app.get('/presenter/view/:sessionId', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'presenter.html'));
+    sendHtmlWithBasePath(res, path.join(__dirname, 'public', 'presenter.html'));
 });
 
 // HTTP upgrade to WebSocket
 const server = http.createServer(app);
+const wsPrefix = BASE_PATH + '/ws';
 server.on('upgrade', (request, socket, head) => {
-    if (request.url.startsWith('/ws')) {
+    if (request.url.startsWith(wsPrefix)) {
+        // Strip BASE_PATH from the upgrade URL so the WS handler sees /ws?...
+        if (BASE_PATH) request.url = request.url.slice(BASE_PATH.length);
         wss.handleUpgrade(request, socket, head, (ws) => {
             wss.emit('connection', ws, request);
         });
@@ -1189,10 +1219,12 @@ server.on('upgrade', (request, socket, head) => {
 });
 
 server.listen(PORT, () => {
+    const bp = BASE_PATH || '';
     console.log('\n╔═══════════════════════════════════════════════════════════╗');
-    console.log(`║   Conference Quiz Server running on http://localhost:${PORT}`);
+    console.log(`║   Conference Quiz Server running on http://localhost:${PORT}${bp}`);
     console.log('╚═══════════════════════════════════════════════════════════╝');
-    console.log(`\nPlayer:    http://localhost:${PORT}`);
-    console.log(`Presenter: http://localhost:${PORT}/presenter`);
+    console.log(`\nPlayer:    http://localhost:${PORT}${bp}/`);
+    console.log(`Presenter: http://localhost:${PORT}${bp}/presenter`);
+    if (bp) console.log(`BASE_PATH: ${bp}`);
     console.log(`\nADMIN_SECRET is set: ${ADMIN_SECRET ? 'Yes ✓' : 'No ✗'}\n`);
 });

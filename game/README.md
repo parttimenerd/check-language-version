@@ -107,7 +107,7 @@ To remove the services:
 | `--setup-supervisor` | – | Install & start supervisord services |
 | `--teardown-supervisor` | – | Stop & remove supervisord services |
 | `--port PORT` | `3000` | Server port |
-| `--secret SECRET` | `changeme` | Presenter / admin password |
+| `--secret SECRET` | **(required)** | Presenter / admin password |
 | `--base-url URL` | `http://localhost:PORT/` | Base URL for quiz JSON generation |
 | `--service-name NAME` | `java-quiz` | Supervisord program name prefix |
 | `--supervisor-dir DIR` | `~/etc/services.d` | Where to write `.ini` files |
@@ -126,7 +126,7 @@ Both the player and presenter pages support the following query parameters:
 | Parameter | Example | Description |
 |---|---|---|
 | `theme` | `?theme=dark` | Force light or dark mode (`light` / `dark`) |
-| `secret` | `?secret=mypass` | Auto-authenticate the presenter (skips the login screen) |
+| `secret` | `?secret=mypass` | Auto-authenticate the presenter (skips the login screen). `password` is accepted as an alias. |
 
 Parameters can be combined: `?secret=mypass&theme=dark`
 
@@ -180,6 +180,50 @@ iframe. This is useful for running the quiz from within your talk deck.
 > and persists via `localStorage`, but the `?theme=` parameter always wins on page load.
 
 See [CONFERENCE_QUICKSTART.md](CONFERENCE_QUICKSTART.md) and [conference/README.md](conference/README.md) for more details.
+
+### Deploying to Uberspace
+
+A single script handles the full deployment to [Uberspace](https://uberspace.de) –
+generating quiz data locally, uploading via rsync, and setting up supervisord + web backend
+on the server. It also detects existing installations and performs an update instead.
+
+**Initial deploy:**
+
+```shell
+./game/deploy_uberspace.sh \
+  --host <user>@<host>.uberspace.de \
+  --secret "your-password"
+```
+
+**Update after code changes** (same command – detects existing install automatically):
+
+```shell
+./game/deploy_uberspace.sh \
+  --host <user>@<host>.uberspace.de \
+  --secret "your-password"
+```
+
+**All deploy options:**
+
+| Flag | Default | Description |
+|---|---|---|
+| `--host HOST` | **(required)** | SSH destination (e.g. `alice@alcor.uberspace.de`) |
+| `--secret SECRET` | **(required)** | Presenter / admin password |
+| `--port PORT` | `3000` | Server port on Uberspace |
+| `--remote-dir DIR` | `~/java-quiz` | Remote install directory |
+| `--base-url URL` | auto-derived | Public URL (derived from host if omitted) |
+| `--web-path PATH` | `/` | `uberspace web backend` path |
+| `--service-name NAME` | `java-quiz` | Supervisord program name prefix |
+| `--node-version VER` | `20` | Node.js version to set on Uberspace |
+| `--skip-generate` | – | Skip local quiz JSON generation |
+| `--dry-run` | – | Show what would be done without executing |
+
+**Tear down** (SSH in and run):
+
+```shell
+./game/run_game.sh --teardown-supervisor
+uberspace web backend del /
+```
 
 TODO
 ----

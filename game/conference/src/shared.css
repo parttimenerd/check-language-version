@@ -47,6 +47,8 @@
     --success: #28a745;
     --danger: #dc3545;
     --warning: #ffc107;
+    --link: #0969da;
+    --link-hover: #0550ae;
 
     --pill-text: #0c5460;
     --session-info-text: #0c5460;
@@ -102,7 +104,9 @@
     --accent-hover: #74c0fc;
     --success: #51cf66;
     --danger: #ff6b6b;
-    --warning: #ffd43b;
+    --warning: #e8890c;
+    --link: #58a6ff;
+    --link-hover: #79c0ff;
 
     --pill-text: #8ecae6;
     --session-info-text: #8ecae6;
@@ -124,6 +128,14 @@ body {
     padding: 20px;
     display: flex;
     justify-content: center;
+}
+
+a {
+    color: var(--link);
+}
+
+a:hover {
+    color: var(--link-hover);
 }
 
 #app {

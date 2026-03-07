@@ -1,37 +1,28 @@
 <template>
-    <div
-        class="leaderboard-container"
-        style="margin-top: 30px; padding: 15px; background: #f8f9fa; border-radius: 4px"
-    >
+    <div class="leaderboard-container">
         <h3>🏆 Leaderboard</h3>
-        <div style="max-height: 250px; overflow-y: auto">
-            <table
-                v-if="players.length > 0"
-                style="width: 100%; border-collapse: collapse; font-size: 14px"
-            >
+        <div class="leaderboard-scroll">
+            <table v-if="players.length > 0" class="leaderboard-table">
                 <thead>
-                    <tr style="background: #e9ecef; border-bottom: 1px solid #dee2e6">
-                        <th style="padding: 8px; text-align: left">Rank</th>
-                        <th style="padding: 8px; text-align: left">Player</th>
-                        <th style="padding: 8px; text-align: right">Score</th>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th class="score-col">Score</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr
                         v-for="(player, index) in players"
                         :key="player.uuid"
-                        :style="{
-                            background: player.uuid === currentUuid ? '#fff3cd' : '',
-                            borderBottom: '1px solid #dee2e6',
-                        }"
+                        :class="{ 'current-player': player.uuid === currentUuid }"
                     >
-                        <td style="padding: 8px">#{{ index + 1 }}</td>
-                        <td style="padding: 8px">{{ player.displayName }}</td>
-                        <td style="padding: 8px; text-align: right">{{ player.score ?? player.correctCount ?? 0 }}</td>
+                        <td>#{{ index + 1 }}</td>
+                        <td>{{ player.displayName }}</td>
+                        <td class="score-col">{{ player.score ?? player.correctCount ?? 0 }}</td>
                     </tr>
                 </tbody>
             </table>
-            <p v-else style="color: #6c757d">No players yet</p>
+            <p v-else class="no-players">No players yet</p>
         </div>
     </div>
 </template>
@@ -50,3 +41,43 @@ export default {
     },
 };
 </script>
+
+<style scoped>
+.leaderboard-container {
+    margin-top: 30px;
+    padding: 15px;
+    background: var(--bg-badge);
+    border-radius: 4px;
+}
+.leaderboard-scroll {
+    max-height: 250px;
+    overflow-y: auto;
+}
+.leaderboard-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+.leaderboard-table thead tr {
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-separator);
+}
+.leaderboard-table th,
+.leaderboard-table td {
+    padding: 8px;
+    text-align: left;
+}
+.score-col {
+    text-align: right;
+}
+.leaderboard-table tbody tr {
+    border-bottom: 1px solid var(--border-separator);
+}
+.leaderboard-table tbody tr.current-player {
+    background: var(--warning);
+    color: var(--bg-body);
+}
+.no-players {
+    color: var(--text-muted);
+}
+</style>

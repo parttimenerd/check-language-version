@@ -104,6 +104,7 @@ import Question from './Question.vue';
 import Solution from './Solution.vue';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
+import { apiUrl, wsUrl } from '../basePath.js';
 
 let ws = null;
 let quizDataJava = { entries: [] };
@@ -115,13 +116,13 @@ async function loadQuizData() {
     // Load both quiz data files so the correct one can be selected
     // based on the session's quizMode from the server
     try {
-        const res = await fetch('code.json');
+        const res = await fetch(apiUrl('/code.json'));
         if (res.ok) quizDataJava = await res.json();
     } catch (e) {
         console.warn('No code.json found', e);
     }
     try {
-        const res = await fetch('object-sizes.json');
+        const res = await fetch(apiUrl('/object-sizes.json'));
         if (res.ok) {
             const raw = await res.json();
             quizDataSizes = preprocessSizesData(raw);
@@ -237,7 +238,7 @@ export default {
         async fetchQrCode() {
             if (!this.sessionId) return;
             try {
-                const res = await fetch(`/session/${encodeURIComponent(this.sessionId)}/qr-public`);
+                const res = await fetch(apiUrl(`/session/${encodeURIComponent(this.sessionId)}/qr-public`));
                 if (!res.ok) return;
                 const data = await res.json();
                 this.qrCode = data.qrCode || '';
@@ -270,7 +271,7 @@ export default {
             this.deletingData = true;
             this.deleteDataMsg = '';
             try {
-                const res = await fetch('/player/delete-data', {
+                const res = await fetch(apiUrl('/player/delete-data'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ uuid: this.uuid }),
@@ -321,7 +322,7 @@ export default {
         async handleJoin(sessionId) {
             this.sessionId = sessionId;
             try {
-                const joinRes = await fetch('/player/join', {
+                const joinRes = await fetch(apiUrl('/player/join'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ sessionId }),
@@ -343,8 +344,7 @@ export default {
             }
         },
         connectWebSocket({ resuming = false } = {}) {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            ws = new WebSocket(`${protocol}//${window.location.host}/ws?uuid=${this.uuid}`);
+            ws = new WebSocket(wsUrl(`/ws?uuid=${this.uuid}`));
             // Reset solution flag when connecting to a new question set
             this.showingSolution = false;
 
@@ -492,7 +492,7 @@ export default {
             if (!confirm('Quit the game? This will delete all your data.')) return;
             if (this.uuid) {
                 try {
-                    await fetch('/player/delete-data', {
+                    await fetch(apiUrl('/player/delete-data'), {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ uuid: this.uuid }),

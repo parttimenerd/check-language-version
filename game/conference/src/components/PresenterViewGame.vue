@@ -1,11 +1,15 @@
 <template>
     <div id="presenter-view-game">
-        <h1>
+        <h1 class="header-bar">
             <template v-if="countdown !== null">
                 Guess in {{ countdown }} seconds
                 <button @click="cancelCountdown" class="countdown-cancel-inline" title="Cancel countdown">✕</button>
             </template>
             <template v-else>{{ quizMode === 'sizes' ? 'Guess the Object Size' : 'Guess the Java Version' }}</template>
+            <span v-if="currentSession && showQuiz && currentSession.state === 'active' && !showingResults" class="header-meta">
+                <span class="header-stat">{{ submittedCount }}/{{ totalPlayers }} submitted</span>
+                <span class="qr-link" @click="showQrOverlay = true">📱 QR</span>
+            </span>
         </h1>
 
         <!-- Pre-Quiz QR View -->
@@ -43,11 +47,6 @@
         <div
             v-else-if="currentSession && showQuiz && currentSession.state === 'active' && !showingResults"
         >
-            <div class="stats">
-                <span>{{ submittedCount }}/{{ totalPlayers }} players submitted</span>
-                <span v-if="currentSession && showQuiz" class="qr-link" @click="showQrOverlay = true">📱 QR</span>
-            </div>
-
             <!-- Question Content -->
             <div v-if="currentQuestion" class="question-content">
                 <div class="code-container">
@@ -72,6 +71,7 @@
                 <button @click="closeQuestion" class="close-btn-small close-btn-now" title="Close immediately">✕ Close</button>
                 <button v-if="countdown === null" @click="startCountdown(10)" class="close-btn-small" title="Close in 10 seconds">✕ Close (10s)</button>
                 <button v-if="countdown === null" @click="startCountdown(20)" class="close-btn-small" title="Close in 20 seconds">✕ Close (20s)</button>
+                <button @click="quitGame" class="close-btn-small quit-btn-inline" title="Quit game">🚪 Quit</button>
             </div>
         </div>
 
@@ -196,8 +196,8 @@
             <p>Waiting for session...</p>
         </div>
 
-        <!-- Quit Game Button (always visible when session is active) -->
-        <div v-if="currentSession" class="quit-section">
+        <!-- Quit Game Button (shown when no question is active) -->
+        <div v-if="currentSession && (!showQuiz || (!currentSession.state === 'active' || showingResults))" class="quit-section">
             <button @click="quitGame" class="quit-btn">🚪 Quit Game</button>
         </div>
     </div>
@@ -208,6 +208,7 @@ import Leaderboard from './Leaderboard.vue';
 import MarkdownIt from 'markdown-it';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
+import { apiUrl, wsUrl } from '../basePath.js';
 
 let ws = null;
 
@@ -310,7 +311,7 @@ export default {
     methods: {
         async fetchQrCode() {
             try {
-                const res = await fetch(`/session/${this.sessionId}/qr`, {
+                const res = await fetch(apiUrl(`/session/${this.sessionId}/qr`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -330,12 +331,12 @@ export default {
                 // Load data based on quizMode (set from session)
                 let response;
                 if (this.quizMode === 'sizes') {
-                    response = await fetch('/object-sizes.json');
+                    response = await fetch(apiUrl('/object-sizes.json'));
                 } else {
-                    response = await fetch('/code.json');
+                    response = await fetch(apiUrl('/code.json'));
                     if (!response.ok) {
                         // Fall back to sizes if code.json doesn't exist
-                        response = await fetch('/object-sizes.json');
+                        response = await fetch(apiUrl('/object-sizes.json'));
                         this.quizMode = 'sizes';
                     }
                 }
@@ -356,7 +357,7 @@ export default {
         },
         async loadDescriptions() {
             try {
-                const res = await fetch('/descriptions.json');
+                const res = await fetch(apiUrl('/descriptions.json'));
                 if (!res.ok) return;
                 const data = await res.json();
                 this.featureDescriptions = (data && data.features) || {};
@@ -366,7 +367,7 @@ export default {
         },
         async loadSession() {
             try {
-                const res = await fetch(`/session/${this.sessionId}`, {
+                const res = await fetch(apiUrl(`/session/${this.sessionId}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -432,9 +433,8 @@ export default {
             sessionStorage.setItem(`showingResults_${this.sessionId}`, String(val));
         },
         connectWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
             const presenterId = `presenter-${Math.random().toString(36).slice(2, 10)}`;
-            ws = new WebSocket(`${protocol}//${window.location.host}/ws?uuid=${presenterId}`);
+            ws = new WebSocket(wsUrl(`/ws?uuid=${presenterId}`));
 
             ws.onmessage = (event) => {
                 const msg = JSON.parse(event.data);
@@ -492,7 +492,7 @@ export default {
         },
         async fetchStats() {
             try {
-                const res = await fetch('/admin/stats', {
+                const res = await fetch(apiUrl('/admin/stats'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -518,7 +518,7 @@ export default {
         startCountdown(seconds = 20) {
             this.countdown = seconds;
             // Notify server so it can relay countdown to players
-            fetch('/admin/start_countdown', {
+            fetch(apiUrl('/admin/start_countdown'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -547,7 +547,7 @@ export default {
         async closeQuestion() {
             this.cancelCountdown();
             try {
-                const res = await fetch(`/admin/stop_question`, {
+                const res = await fetch(apiUrl(`/admin/stop_question`), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ export default {
                 }
                 const fullQuestion = this.quizData ? this.quizData[questionId] : null;
                 const correctAnswer = fullQuestion ? fullQuestion.correct : null;
-                const res = await fetch('/admin/start_question', {
+                const res = await fetch(apiUrl('/admin/start_question'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -767,6 +767,27 @@ export default {
     background: var(--bg-badge);
     border-radius: 4px;
     font-size: 0.9em;
+}
+
+.header-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-meta {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.5em;
+    font-weight: normal;
+}
+
+.header-stat {
+    background: var(--bg-badge);
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 .qr-link {
@@ -1075,9 +1096,19 @@ export default {
     color: #fff;
 }
 
+.quit-btn-inline {
+    background: var(--text-muted);
+    color: #fff;
+    margin-left: auto;
+}
+.quit-btn-inline:hover {
+    background: var(--text-secondary);
+}
+
 @media (hover: hover) and (pointer: fine) {
     .close-btn-small:hover {
-        background: #e0a800;
+        background: var(--warning);
+        filter: brightness(0.85);
     }
 }
 

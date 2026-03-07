@@ -26,6 +26,7 @@ set -euo pipefail
 PORT=3000
 ADMIN_SECRET="changeme"
 BASE_URL=""
+BASE_PATH=""
 MODE="production"          # production | dev | setup-supervisor | teardown-supervisor
 SERVICE_NAME="java-quiz"
 SUPERVISOR_DIR="${HOME}/etc/services.d"
@@ -51,6 +52,7 @@ while [[ $# -gt 0 ]]; do
     --port)               PORT="$2"; shift ;;
     --secret)             ADMIN_SECRET="$2"; shift ;;
     --base-url)           BASE_URL="$2"; shift ;;
+    --base-path)          BASE_PATH="$2"; shift ;;
     --service-name)       SERVICE_NAME="$2"; shift ;;
     --supervisor-dir)     SUPERVISOR_DIR="$2"; shift ;;
     --skip-generate)      SKIP_GENERATE=true ;;
@@ -63,13 +65,20 @@ done
 
 [[ -z "$BASE_URL" ]] && BASE_URL="http://localhost:${PORT}/"
 
+# ── Require explicit secret in non-dev modes ──────────────────────────────────
+if [[ "$MODE" != "dev" && "$ADMIN_SECRET" == "changeme" ]]; then
+  error "You must set an admin secret with --secret <password> (the default 'changeme' is not allowed in production / supervisor mode)"
+fi
+
 # ── Locate project roots ──────────────────────────────────────────────────────
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 GAME_DIR="${SCRIPT_DIR}"
 CONF_DIR="${GAME_DIR}/conference"
 
-[[ -f "${GAME_DIR}/generate_quiz.py" ]] || error "generate_quiz.py not found in ${GAME_DIR}"
+if ! $SKIP_GENERATE; then
+  [[ -f "${GAME_DIR}/generate_quiz.py" ]] || error "generate_quiz.py not found in ${GAME_DIR}"
+fi
 [[ -f "${CONF_DIR}/package.json" ]]     || error "conference/package.json not found – is the repo complete?"
 
 # ── Teardown shortcut (no build needed) ───────────────────────────────────────
@@ -123,6 +132,7 @@ fi
 # ── Step 3: Mode dispatch ─────────────────────────────────────────────────────
 export ADMIN_SECRET
 export PORT
+export BASE_PATH
 
 case "$MODE" in
 
@@ -167,17 +177,19 @@ case "$MODE" in
 
     # ── webpack watch daemon ──────────────────────────────────────────────────
     info "Writing ${WP_INI}…"
+    NPM_BIN="${CONF_DIR}/node_modules/.bin"
+
     cat > "${WP_INI}" <<INIEOF
 [program:${SERVICE_NAME}-webpack]
 directory=${CONF_DIR}
-command=$(npm bin)/webpack --watch
+command=${NPM_BIN}/webpack --watch
 autostart=true
 autorestart=true
 redirect_stderr=true
 stdout_logfile=${HOME}/logs/supervisord/${SERVICE_NAME}-webpack.log
 stdout_logfile_maxbytes=5MB
 stdout_logfile_backups=3
-environment=NODE_ENV="production",PATH="$(npm bin):%(ENV_PATH)s"
+environment=NODE_ENV="production",PATH="${NPM_BIN}:%(ENV_PATH)s"
 INIEOF
 
     # ── node server daemon ────────────────────────────────────────────────────
@@ -199,7 +211,7 @@ redirect_stderr=true
 stdout_logfile=${HOME}/logs/supervisord/${SERVICE_NAME}-server.log
 stdout_logfile_maxbytes=5MB
 stdout_logfile_backups=3
-environment=NODE_ENV="production",ADMIN_SECRET="${ADMIN_SECRET}",PORT="${PORT}",PATH="$(npm bin):%(ENV_PATH)s"
+environment=NODE_ENV="production",ADMIN_SECRET="${ADMIN_SECRET}",PORT="${PORT}",BASE_PATH="${BASE_PATH}",PATH="${NPM_BIN}:%(ENV_PATH)s"
 INIEOF
 
     # ── register & start ──────────────────────────────────────────────────────
