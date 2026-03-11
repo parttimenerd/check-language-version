@@ -14,12 +14,7 @@
 
 <script>
 export default {
-    props: {
-        onJoin: {
-            type: Function,
-            required: true,
-        },
-    },
+    emits: ['join'],
     data() {
         return {
             sessionId: '',
@@ -45,7 +40,7 @@ export default {
                 return;
             }
             this.errorMsg = '';
-            this.onJoin(this.sessionId.trim());
+            this.$emit('join', this.sessionId.trim());
         },
     },
 };

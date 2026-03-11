@@ -18,41 +18,61 @@ function parseArgs() {
         rampUp: 50,       // ms between each user joining
         answerDelay: 1500, // ms delay before answering (simulates thinking)
         answerRate: 0.85,  // fraction of users that answer (rest stay silent)
+        heartbeatInterval: 10000,
+        dropHeartbeatRate: 0.1,
+        heartbeatDropAfter: 30000,
+        reloadRate: 0.15,
+        reloadDelay: 2500,
         verbose: false,
     };
 
     for (let i = 0; i < args.length; i++) {
         switch (args[i]) {
-            case '--url':
-            case '-u':
-                opts.url = args[++i];
-                break;
-            case '--session':
-            case '-s':
-                opts.session = args[++i];
-                break;
-            case '--users':
-            case '-n':
-                opts.users = parseInt(args[++i], 10);
-                break;
-            case '--ramp-up':
-            case '-r':
-                opts.rampUp = parseInt(args[++i], 10);
-                break;
-            case '--answer-delay':
-            case '-d':
-                opts.answerDelay = parseInt(args[++i], 10);
-                break;
-            case '--answer-rate':
-                opts.answerRate = parseFloat(args[++i]);
-                break;
-            case '--verbose':
-            case '-v':
-                opts.verbose = true;
-                break;
-            case '--help':
-            case '-h':
-                console.log(`
+        case '--url':
+        case '-u':
+            opts.url = args[++i];
+            break;
+        case '--session':
+        case '-s':
+            opts.session = args[++i];
+            break;
+        case '--users':
+        case '-n':
+            opts.users = parseInt(args[++i], 10);
+            break;
+        case '--ramp-up':
+        case '-r':
+            opts.rampUp = parseInt(args[++i], 10);
+            break;
+        case '--answer-delay':
+        case '-d':
+            opts.answerDelay = parseInt(args[++i], 10);
+            break;
+        case '--answer-rate':
+            opts.answerRate = parseFloat(args[++i]);
+            break;
+        case '--heartbeat-interval':
+            opts.heartbeatInterval = parseInt(args[++i], 10);
+            break;
+        case '--drop-heartbeat-rate':
+            opts.dropHeartbeatRate = parseFloat(args[++i]);
+            break;
+        case '--heartbeat-drop-after':
+            opts.heartbeatDropAfter = parseInt(args[++i], 10);
+            break;
+        case '--reload-rate':
+            opts.reloadRate = parseFloat(args[++i]);
+            break;
+        case '--reload-delay':
+            opts.reloadDelay = parseInt(args[++i], 10);
+            break;
+        case '--verbose':
+        case '-v':
+            opts.verbose = true;
+            break;
+        case '--help':
+        case '-h':
+            console.log(`
 WebSocket Stress Tester for Java Version Quiz
 
 Usage: node stress-test.js [options]
@@ -64,13 +84,19 @@ Options:
   --ramp-up, -r <ms>        Delay between each user joining (default: 50ms)
   --answer-delay, -d <ms>   Thinking time before answering (default: 1500ms)
   --answer-rate <0-1>       Fraction of users that answer questions (default: 0.85)
+    --heartbeat-interval <ms> Heartbeat interval for players (default: 10000ms)
+    --drop-heartbeat-rate <0-1> Fraction of players that stop heartbeats (default: 0.1)
+    --heartbeat-drop-after <ms> Delay before selected players stop heartbeats (default: 30000ms)
+    --reload-rate <0-1>       Fraction of players that simulate page reload (default: 0.15)
+    --reload-delay <ms>       Delay before reconnect after simulated reload (default: 2500ms)
   --verbose, -v             Show per-user messages
   --help, -h                Show this help
 `);
-                process.exit(0);
-            default:
-                console.error(`Unknown option: ${args[i]}`);
-                process.exit(1);
+            process.exit(0);
+        // falls through
+        default:
+            console.error(`Unknown option: ${args[i]}`);
+            process.exit(1);
         }
     }
 
@@ -93,6 +119,10 @@ const stats = {
     answersSent: 0,
     answersCorrect: 0,
     answersWrong: 0,
+    heartbeatsSent: 0,
+    countdownCanceled: 0,
+    resumedActiveQuestion: 0,
+    reconnected: 0,
     errors: 0,
     disconnected: 0,
 };
@@ -107,6 +137,9 @@ function printStats() {
         `WS: ${stats.wsConnected} conn / ${stats.wsJoined} joined`,
         `Q: ${stats.questionsReceived}`,
         `A: ${stats.answersSent} (✓${stats.answersCorrect} ✗${stats.answersWrong})`,
+        `HB: ${stats.heartbeatsSent}`,
+        `cancel: ${stats.countdownCanceled}`,
+        `rejoin: ${stats.reconnected}`,
         `err: ${stats.errors}`,
         `dc: ${stats.disconnected}`,
     ].join(' | ');
@@ -123,6 +156,11 @@ class SimPlayer {
         this.ws = null;
         this.sessionId = opts.session;
         this.willAnswer = Math.random() < opts.answerRate;
+        this.dropHeartbeat = Math.random() < opts.dropHeartbeatRate;
+        this.willReload = Math.random() < opts.reloadRate;
+        this.heartbeatTimer = null;
+        this.hasReloaded = false;
+        this.pendingReconnectTimer = null;
     }
 
     log(...args) {
@@ -186,6 +224,12 @@ class SimPlayer {
                     if (msg.type === 'joined') {
                         stats.wsJoined++;
                         this.log('WS joined session');
+                        if (msg.state === 'active' && msg.currentQuestion != null) {
+                            stats.resumedActiveQuestion++;
+                        }
+                        this.startHeartbeat();
+                        this.scheduleHeartbeatDrop();
+                        this.scheduleReload();
                         resolve(true);
                     } else if (msg.type === 'not_found') {
                         clearTimeout(timeout);
@@ -193,7 +237,7 @@ class SimPlayer {
                         this.log('WS not_found');
                         resolve(false);
                     }
-                } catch (e) {
+                } catch {
                     stats.errors++;
                 }
             });
@@ -207,48 +251,102 @@ class SimPlayer {
 
             this.ws.on('close', () => {
                 stats.disconnected++;
+                this.stopHeartbeat();
             });
         });
     }
 
+    startHeartbeat() {
+        this.stopHeartbeat();
+        this.heartbeatTimer = setInterval(() => {
+            if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+            this.ws.send(
+                JSON.stringify({
+                    type: 'heartbeat',
+                    sessionId: this.sessionId,
+                    uuid: this.uuid,
+                })
+            );
+            stats.heartbeatsSent++;
+        }, this.opts.heartbeatInterval);
+    }
+
+    stopHeartbeat() {
+        if (this.heartbeatTimer) {
+            clearInterval(this.heartbeatTimer);
+            this.heartbeatTimer = null;
+        }
+    }
+
+    scheduleHeartbeatDrop() {
+        if (!this.dropHeartbeat || this.hasReloaded) return;
+        setTimeout(() => {
+            this.stopHeartbeat();
+            this.log('Stopped heartbeat to test stale timeout');
+        }, this.opts.heartbeatDropAfter);
+    }
+
+    scheduleReload() {
+        if (!this.willReload || this.hasReloaded) return;
+        this.hasReloaded = true;
+        setTimeout(async () => {
+            if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                this.log('Simulating reload: closing WS');
+                this.ws.close();
+            }
+            this.pendingReconnectTimer = setTimeout(async () => {
+                const ok = await this.connect();
+                if (ok) {
+                    stats.reconnected++;
+                    this.log('Reconnected after simulated reload');
+                }
+            }, this.opts.reloadDelay);
+        }, Math.max(500, this.opts.answerDelay));
+    }
+
     handleMessage(msg) {
         switch (msg.type) {
-            case 'question_started':
-                stats.questionsReceived++;
-                this.log('Question started:', msg.questionId, 'options:', msg.answerOptions);
-                if (this.willAnswer) {
-                    this.scheduleAnswer(msg.answerOptions || []);
-                }
-                break;
+        case 'question_started':
+            stats.questionsReceived++;
+            this.log('Question started:', msg.questionId, 'options:', msg.answerOptions);
+            if (this.willAnswer) {
+                this.scheduleAnswer(msg.answerOptions || []);
+            }
+            break;
 
-            case 'countdown_started':
-                this.log('Countdown:', msg.seconds, 'seconds');
-                break;
+        case 'countdown_started':
+            this.log('Countdown:', msg.seconds, 'seconds');
+            break;
 
-            case 'question_stopped':
-                this.log('Question stopped (solution shown)');
-                break;
+        case 'countdown_canceled':
+            stats.countdownCanceled++;
+            this.log('Countdown canceled');
+            break;
 
-            case 'answer_received':
-                if (msg.correct) {
-                    stats.answersCorrect++;
-                } else {
-                    stats.answersWrong++;
-                }
-                this.log('Answer result:', msg.correct ? '✓' : '✗', 'score:', msg.score);
-                break;
+        case 'question_stopped':
+            this.log('Question stopped (solution shown)');
+            break;
 
-            case 'error':
-                stats.errors++;
-                this.log('Server error:', msg.message);
-                break;
+        case 'answer_received':
+            if (msg.correct) {
+                stats.answersCorrect++;
+            } else {
+                stats.answersWrong++;
+            }
+            this.log('Answer result:', msg.correct ? '✓' : '✗', 'score:', msg.score);
+            break;
 
-            case 'joined':
-                // Already handled in connect()
-                break;
+        case 'error':
+            stats.errors++;
+            this.log('Server error:', msg.message);
+            break;
 
-            default:
-                this.log('Message:', msg.type);
+        case 'joined':
+            // Already handled in connect()
+            break;
+
+        default:
+            this.log('Message:', msg.type);
         }
     }
 
@@ -277,6 +375,11 @@ class SimPlayer {
     }
 
     close() {
+        this.stopHeartbeat();
+        if (this.pendingReconnectTimer) {
+            clearTimeout(this.pendingReconnectTimer);
+            this.pendingReconnectTimer = null;
+        }
         if (this.ws) {
             this.ws.close();
             this.ws = null;
@@ -292,13 +395,16 @@ async function sleep(ms) {
 }
 
 async function main() {
-    console.log(`\nStress Test Configuration:`);
+    console.log('\nStress Test Configuration:');
     console.log(`  Server:       ${opts.url}`);
     console.log(`  Session:      ${opts.session}`);
     console.log(`  Users:        ${opts.users}`);
     console.log(`  Ramp-up:      ${opts.rampUp}ms between joins`);
     console.log(`  Answer delay: ${opts.answerDelay}ms (±50% jitter)`);
     console.log(`  Answer rate:  ${(opts.answerRate * 100).toFixed(0)}%`);
+    console.log(`  Heartbeat:    every ${opts.heartbeatInterval}ms`);
+    console.log(`  Drop HB:      ${(opts.dropHeartbeatRate * 100).toFixed(0)}% after ${opts.heartbeatDropAfter}ms`);
+    console.log(`  Reload sim:   ${(opts.reloadRate * 100).toFixed(0)}% reconnect after ${opts.reloadDelay}ms`);
     console.log('');
 
     startTime = Date.now();
@@ -360,6 +466,10 @@ async function main() {
         console.log(`  Answers sent:          ${stats.answersSent}`);
         console.log(`  Correct answers:       ${stats.answersCorrect}`);
         console.log(`  Wrong answers:         ${stats.answersWrong}`);
+        console.log(`  Heartbeats sent:       ${stats.heartbeatsSent}`);
+        console.log(`  Countdown canceled:    ${stats.countdownCanceled}`);
+        console.log(`  Resumed active q:      ${stats.resumedActiveQuestion}`);
+        console.log(`  Reconnected:           ${stats.reconnected}`);
         console.log(`  Errors:                ${stats.errors}`);
         console.log(`  Disconnections:        ${stats.disconnected}`);
         console.log(`  Total time:            ${((Date.now() - startTime) / 1000).toFixed(1)}s`);

@@ -8,13 +8,14 @@
     "dev": "npm run build && node server.js",
     "build": "webpack",
     "build:watch": "webpack --watch",
-    "test:load": "node load-test.js --players 50 --questions 8 --delay 30",
-    "test:load:large": "node load-test.js --players 200 --questions 10 --delay 20",
-    "test:load:stress": "node load-test.js --players 500 --questions 3 --delay 10 --verbose",
-    "lint": "eslint src/ server.js load-test.js",
-    "lint:fix": "eslint src/ server.js load-test.js --fix",
-    "format": "prettier --write src/ server.js load-test.js",
-    "format:check": "prettier --check src/ server.js load-test.js"
+    "test": "ADMIN_SECRET=test-secret node --test server.test.js",
+    "test:load": "node stress-test.js --users 50 --ramp-up 30 --answer-delay 1200 --reload-rate 0.2 --drop-heartbeat-rate 0.15",
+    "test:load:large": "node stress-test.js --users 200 --ramp-up 20 --answer-delay 1200 --reload-rate 0.2 --drop-heartbeat-rate 0.15",
+    "test:load:stress": "node stress-test.js --users 500 --ramp-up 10 --answer-delay 900 --reload-rate 0.25 --drop-heartbeat-rate 0.2 --verbose",
+    "lint": "eslint src/ server.js stress-test.js server.test.js",
+    "lint:fix": "eslint src/ server.js stress-test.js server.test.js --fix",
+    "format": "prettier --write src/ server.js stress-test.js server.test.js",
+    "format:check": "prettier --check src/ server.js stress-test.js server.test.js"
   },
   "dependencies": {
     "express": "^5.2.1",

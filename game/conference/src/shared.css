@@ -276,6 +276,8 @@ button {
     border: none;
     border-radius: 4px;
     transition: background 0.2s;
+    touch-action: manipulation; /* Prevent double-tap zoom on mobile */
+    -webkit-tap-highlight-color: transparent; /* Remove tap flash on iOS */
 }
 
 @media (hover: hover) and (pointer: fine) {

@@ -1,5 +1,6 @@
 <template>
     <div id="presenter-view-game">
+        <div v-if="connectionLost" class="connection-lost-banner">⚠️ Connection lost — reconnecting…</div>
         <h1 class="header-bar">
             <template v-if="countdown !== null">
                 Guess in {{ countdown }} seconds
@@ -211,6 +212,31 @@ import 'prismjs/components/prism-java';
 import { apiUrl, wsUrl } from '../basePath.js';
 
 let ws = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+// Stable presenter ID across reconnects — avoids accumulating orphaned
+// wsConnection entries on the server when WiFi drops and reconnects.
+const presenterId = `presenter-${Math.random().toString(36).slice(2, 10)}`;
+
+// Retry wrapper for fetch calls on spotty WiFi
+async function fetchWithRetry(url, options = {}, retries = 2, baseDelay = 500, timeout = 15000) {
+    for (let i = 0; i <= retries; i++) {
+        // Per-attempt timeout — prevents hung requests on conference WiFi
+        const controller = new AbortController();
+        const timer = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
+        try {
+            const res = await fetch(url, { ...options, signal: controller.signal });
+            if (timer) clearTimeout(timer);
+            if (res.ok || (res.status >= 400 && res.status < 500)) return res;
+            if (i === retries) return res;
+        } catch (err) {
+            if (timer) clearTimeout(timer);
+            if (i === retries) throw err;
+        }
+        const delay = baseDelay * Math.pow(2, i) * (0.5 + Math.random() * 0.5);
+        await new Promise(r => setTimeout(r, delay));
+    }
+}
 
 export default {
     components: {
@@ -240,6 +266,7 @@ export default {
             countdown: null,
             countdownInterval: null,
             md: null,
+            connectionLost: false,
         };
     },
     computed: {
@@ -307,16 +334,43 @@ export default {
         });
         this.fetchQrCode();
         this.connectWebSocket();
+
+        // Visibility change — reconnect immediately when presenter tab/laptop wakes up
+        this._visibilityHandler = () => {
+            if (document.visibilityState === 'visible' && this.sessionId) {
+                if (!ws || ws.readyState !== WebSocket.OPEN) {
+                    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                    reconnectAttempts = 0;
+                    this.connectWebSocket();
+                }
+            }
+        };
+        document.addEventListener('visibilitychange', this._visibilityHandler);
+
+        // Online/Offline — reconnect immediately when network returns
+        this._onlineHandler = () => {
+            if (this.sessionId && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                console.log('[presenter] online event — reconnecting');
+                if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+                reconnectAttempts = 0;
+                this.connectWebSocket();
+            }
+        };
+        this._offlineHandler = () => {
+            this.connectionLost = true;
+        };
+        window.addEventListener('online', this._onlineHandler);
+        window.addEventListener('offline', this._offlineHandler);
     },
     methods: {
         async fetchQrCode() {
             try {
-                const res = await fetch(apiUrl(`/session/${this.sessionId}/qr`), {
+                const res = await fetchWithRetry(apiUrl(`/session/${this.sessionId}/qr`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
                 });
-                if (!res.ok) return;
+                if (!res || !res.ok) return;
                 const data = await res.json();
                 this.qrCode = data.qrCode || '';
                 if (typeof data.playerCount === 'number') {
@@ -331,12 +385,12 @@ export default {
                 // Load data based on quizMode (set from session)
                 let response;
                 if (this.quizMode === 'sizes') {
-                    response = await fetch(apiUrl('/object-sizes.json'));
+                    response = await fetchWithRetry(apiUrl('/object-sizes.json'), {}, 3);
                 } else {
-                    response = await fetch(apiUrl('/code.json'));
+                    response = await fetchWithRetry(apiUrl('/code.json'), {}, 3);
                     if (!response.ok) {
                         // Fall back to sizes if code.json doesn't exist
-                        response = await fetch(apiUrl('/object-sizes.json'));
+                        response = await fetchWithRetry(apiUrl('/object-sizes.json'), {}, 3);
                         this.quizMode = 'sizes';
                     }
                 }
@@ -357,7 +411,7 @@ export default {
         },
         async loadDescriptions() {
             try {
-                const res = await fetch(apiUrl('/descriptions.json'));
+                const res = await fetchWithRetry(apiUrl('/descriptions.json'));
                 if (!res.ok) return;
                 const data = await res.json();
                 this.featureDescriptions = (data && data.features) || {};
@@ -367,11 +421,11 @@ export default {
         },
         async loadSession() {
             try {
-                const res = await fetch(apiUrl(`/session/${this.sessionId}`), {
+                const res = await fetchWithRetry(apiUrl(`/session/${this.sessionId}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
-                });
+                }, 3);
                 if (res.ok) {
                     this.currentSession = await res.json();
                     this.totalPlayers = this.currentSession.playerCount || 0;
@@ -433,11 +487,30 @@ export default {
             sessionStorage.setItem(`showingResults_${this.sessionId}`, String(val));
         },
         connectWebSocket() {
-            const presenterId = `presenter-${Math.random().toString(36).slice(2, 10)}`;
-            ws = new WebSocket(wsUrl(`/ws?uuid=${presenterId}`));
+            // Close old WS before creating a new one. Without this, the
+            // old socket's onclose handler fires asynchronously, sets
+            // connectionLost=true, and schedules a competing reconnect —
+            // causing duplicate connections on conference WiFi reconnects.
+            if (ws) {
+                try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ }
+                ws = null;
+            }
+            try {
+                ws = new WebSocket(wsUrl(`/ws?uuid=${presenterId}`));
+            } catch (err) {
+                console.error('[WS] constructor threw:', err);
+                this.scheduleReconnect();
+                return;
+            }
 
             ws.onmessage = (event) => {
-                const msg = JSON.parse(event.data);
+                let msg;
+                try {
+                    msg = JSON.parse(event.data);
+                } catch (parseErr) {
+                    console.error('[WS] failed to parse message:', parseErr);
+                    return;
+                }
                 if (msg.type === 'leaderboard') {
                     this.leaderboard = msg.data || [];
                 } else if (msg.type === 'question_started') {
@@ -466,6 +539,8 @@ export default {
                         this.currentSession.state = 'waiting';
                     }
                     this.fetchStats();
+                } else if (msg.type === 'countdown_canceled') {
+                    this.cancelCountdown({ notifyServer: false });
                 } else if (msg.type === 'session_restarted') {
                     this.setShowingResults(false);
                     this.currentQuestion = null;
@@ -476,10 +551,26 @@ export default {
                     // Receive stats push from server
                     this.totalPlayers = msg.playerCount || 0;
                     this.submittedCount = msg.answeredCount || 0;
+                } else if (msg.type === 'player_left') {
+                    // A player quit/was evicted — update stats, leaderboard, and histogram
+                    this.totalPlayers = msg.playerCount || 0;
+                    if (typeof msg.answeredCount === 'number') {
+                        this.submittedCount = msg.answeredCount;
+                    }
+                    if (Array.isArray(msg.leaderboard)) {
+                        this.leaderboard = msg.leaderboard;
+                    }
+                    if (msg.answerDistribution && this.answerOptions.length) {
+                        this.answerCounts = this.answerOptions.map(option => {
+                            return msg.answerDistribution[String(option)] || 0;
+                        });
+                    }
                 }
             };
 
             ws.onopen = () => {
+                reconnectAttempts = 0;
+                this.connectionLost = false;
                 if (this.sessionId) {
                     ws.send(
                         JSON.stringify({
@@ -489,10 +580,28 @@ export default {
                     );
                 }
             };
+
+            ws.onclose = () => {
+                // Auto-reconnect if still attached to a session
+                if (this.sessionId && !reconnectTimer) {
+                    this.connectionLost = true;
+                    const baseDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+                    const jitter = baseDelay * (0.5 + Math.random() * 0.5);
+                    reconnectAttempts++;
+                    reconnectTimer = setTimeout(() => {
+                        reconnectTimer = null;
+                        this.connectWebSocket();
+                    }, jitter);
+                }
+            };
+
+            ws.onerror = () => {
+                // onclose fires after onerror; reconnect is handled there
+            };
         },
         async fetchStats() {
             try {
-                const res = await fetch(apiUrl('/admin/stats'), {
+                const res = await fetchWithRetry(apiUrl('/admin/stats'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -517,8 +626,9 @@ export default {
         },
         startCountdown(seconds = 20) {
             this.countdown = seconds;
+            const countdownEndsAt = Date.now() + seconds * 1000;
             // Notify server so it can relay countdown to players
-            fetch(apiUrl('/admin/start_countdown'), {
+            fetchWithRetry(apiUrl('/admin/start_countdown'), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -530,24 +640,37 @@ export default {
                 }),
             }).catch(err => console.error('Failed to notify countdown:', err));
             this.countdownInterval = setInterval(() => {
-                this.countdown--;
+                // Use absolute time to prevent drift (presenter laptop may throttle intervals)
+                this.countdown = Math.max(0, Math.round((countdownEndsAt - Date.now()) / 1000));
                 if (this.countdown <= 0) {
-                    this.cancelCountdown();
+                    this.cancelCountdown({ notifyServer: false });
                     this.closeQuestion();
                 }
             }, 1000);
         },
-        cancelCountdown() {
+        cancelCountdown({ notifyServer = true } = {}) {
             if (this.countdownInterval) {
                 clearInterval(this.countdownInterval);
                 this.countdownInterval = null;
             }
             this.countdown = null;
+            if (notifyServer) {
+                fetchWithRetry(apiUrl('/admin/cancel_countdown'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-admin-secret': this.authSecret,
+                    },
+                    body: JSON.stringify({
+                        sessionId: this.sessionId,
+                    }),
+                }).catch(err => console.error('Failed to cancel countdown:', err));
+            }
         },
         async closeQuestion() {
-            this.cancelCountdown();
+            this.cancelCountdown({ notifyServer: false });
             try {
-                const res = await fetch(apiUrl(`/admin/stop_question`), {
+                const res = await fetchWithRetry(apiUrl(`/admin/stop_question`), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -555,8 +678,8 @@ export default {
                     },
                     body: JSON.stringify({ sessionId: this.sessionId }),
                 });
-                if (!res.ok) {
-                    const text = await res.text();
+                if (!res || !res.ok) {
+                    const text = res ? await res.text() : 'Network error';
                     alert(`Failed to close question: ${text || res.status}`);
                 } else {
                     this.setShowingResults(true);
@@ -603,7 +726,7 @@ export default {
                 }
                 const fullQuestion = this.quizData ? this.quizData[questionId] : null;
                 const correctAnswer = fullQuestion ? fullQuestion.correct : null;
-                const res = await fetch(apiUrl('/admin/start_question'), {
+                const res = await fetchWithRetry(apiUrl('/admin/start_question'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -616,8 +739,8 @@ export default {
                         answerOptions: fullQuestion ? this.computeAnswerOptions(fullQuestion) : [],
                     }),
                 });
-                if (!res.ok) {
-                    const text = await res.text();
+                if (!res || !res.ok) {
+                    const text = res ? await res.text() : 'Network error';
                     alert(`Failed to start question: ${text || res.status}`);
                 } else {
                     if (fullQuestion) {
@@ -739,16 +862,30 @@ export default {
         },
         quitGame() {
             if (!confirm('Quit the game?')) return;
+            if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+            reconnectAttempts = 0;
+            this.connectionLost = false;
             if (ws) ws.close();
             if (this.statsInterval) clearInterval(this.statsInterval);
-            this.cancelCountdown();
+            this.cancelCountdown({ notifyServer: false });
             this.$emit('back');
         },
     },
     beforeUnmount() {
+        if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+        reconnectAttempts = 0;
         if (this.statsInterval) clearInterval(this.statsInterval);
-        this.cancelCountdown();
+        this.cancelCountdown({ notifyServer: false });
         if (ws) ws.close();
+        if (this._visibilityHandler) {
+            document.removeEventListener('visibilitychange', this._visibilityHandler);
+        }
+        if (this._onlineHandler) {
+            window.removeEventListener('online', this._onlineHandler);
+        }
+        if (this._offlineHandler) {
+            window.removeEventListener('offline', this._offlineHandler);
+        }
     },
 };
 </script>
@@ -1238,5 +1375,21 @@ table.mono td {
     border-radius: 12px;
     font-weight: 600;
     font-size: 0.95em;
+}
+
+.connection-lost-banner {
+    background: var(--warning, #f0ad4e);
+    color: #fff;
+    text-align: center;
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.92em;
+    animation: pulse-banner 2s ease-in-out infinite;
+}
+@keyframes pulse-banner {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
 }
 </style>

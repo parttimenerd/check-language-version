@@ -5,7 +5,7 @@ export default [
         ignores: ['node_modules/', 'dist/', 'build/', 'public/dist/']
     },
     {
-        files: ['src/**/*.js', 'server.js', 'load-test.js'],
+        files: ['src/**/*.js', 'server.js', 'load-test.js', 'stress-test.js', 'server.test.js'],
         languageOptions: {
             ecmaVersion: 2021,
             sourceType: 'module',
@@ -25,6 +25,8 @@ export default [
                 process: 'readonly',
                 __dirname: 'readonly',
                 require: 'readonly',
+                module: 'readonly',
+                Buffer: 'readonly',
                 // Others
                 confirm: 'readonly'
             }

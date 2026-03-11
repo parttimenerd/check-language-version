@@ -43,6 +43,7 @@ import Prism from 'prismjs';
 import 'prismjs/components/prism-java';
 
 export default {
+    emits: ['answer'],
     props: {
         question: {
             type: Object,
@@ -63,10 +64,6 @@ export default {
         selectedAnswer: {
             type: [Number, String],
             default: null,
-        },
-        onAnswer: {
-            type: Function,
-            required: true,
         },
         quizMode: {
             type: String,
@@ -129,7 +126,7 @@ export default {
         },
         submitAnswer(option) {
             if (this.hasAnswered) return;
-            this.onAnswer(option);
+            this.$emit('answer', option);
         },
     },
 };

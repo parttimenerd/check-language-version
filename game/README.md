@@ -119,6 +119,14 @@ Once the server is running:
 - **Players** → `http://localhost:3000/` – enter the Session ID shown by the presenter
 - **Presenter** → `http://localhost:3000/presenter` – log in with your secret, create a session, start questions
 
+Behavior notes:
+
+- The header `✕` in the presenter view cancels the active close-countdown globally (presenter + all players).
+- Player clients send a heartbeat every 10 seconds; if no heartbeat is received for 45 seconds, players are marked offline.
+- Both player and presenter connections auto-reconnect with exponential backoff on WiFi drops.
+- Answers submitted during a brief disconnect are queued and sent on reconnect.
+- Player identity (anonymous generated name + session) is stored in a cookie for up to 24 hours, so a reload rejoins with the same identity.
+
 ### URL parameters
 
 Both the player and presenter pages support the following query parameters:

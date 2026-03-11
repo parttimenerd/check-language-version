@@ -39,6 +39,29 @@
 import PresenterViewGame from './PresenterViewGame.vue';
 import { apiUrl, navUrl } from '../basePath.js';
 
+// Retry wrapper for fetch calls on spotty WiFi
+async function fetchWithRetry(url, options = {}, retries = 3, baseDelay = 1000, timeout = 15000) {
+    for (let i = 0; i <= retries; i++) {
+        // Per-attempt timeout — prevents hung requests on slow WiFi
+        const controller = new AbortController();
+        const timer = timeout > 0 ? setTimeout(() => controller.abort(), timeout) : null;
+        try {
+            const res = await fetch(url, { ...options, signal: controller.signal });
+            if (timer) clearTimeout(timer);
+            // Don't retry 4xx (client errors) — they won't succeed on retry
+            if (res.ok || (res.status >= 400 && res.status < 500)) return res;
+            // 5xx — server or reverse-proxy glitch (e.g. 502 from nginx),
+            // common at conferences. Worth retrying.
+            if (i === retries) return res;
+        } catch (err) {
+            if (timer) clearTimeout(timer);
+            if (i === retries) throw err;
+        }
+        const delay = baseDelay * Math.pow(2, i) * (0.5 + Math.random() * 0.5);
+        await new Promise(r => setTimeout(r, delay));
+    }
+}
+
 export default {
     components: {
         PresenterViewGame,
@@ -72,10 +95,10 @@ export default {
             if (secret) {
                 this.authSecret = secret;
                 try {
-                    const res = await fetch(apiUrl('/admin/sessions'), {
+                    const res = await fetchWithRetry(apiUrl('/admin/sessions'), {
                         headers: { 'x-admin-secret': secret },
                     });
-                    if (res.ok) {
+                    if (res && res.ok) {
                         this.isAuthenticated = true;
                         this.setAuthCookie(secret);
                     } else {
@@ -91,7 +114,11 @@ export default {
                 .split('; ')
                 .find((row) => row.startsWith('presenter_auth='));
             if (cookie) {
-                this.authSecret = cookie.split('=')[1];
+                // Use substring instead of split('=')[1] to handle secrets
+                // containing '=' characters. decodeURIComponent reverses the
+                // encoding applied by setAuthCookie.
+                const raw = cookie.substring(cookie.indexOf('=') + 1);
+                try { this.authSecret = decodeURIComponent(raw); } catch { this.authSecret = raw; }
                 this.isAuthenticated = true;
             }
         },
@@ -110,7 +137,7 @@ export default {
         async resolveSessionId() {
             if (!this.sessionSlug) return;
             try {
-                const res = await fetch(apiUrl('/admin/sessions'), {
+                const res = await fetchWithRetry(apiUrl('/admin/sessions'), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },
@@ -134,7 +161,7 @@ export default {
         },
         async createSessionFromSlug() {
             try {
-                const res = await fetch(apiUrl('/session/create'), {
+                const res = await fetchWithRetry(apiUrl('/session/create'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -172,10 +199,10 @@ export default {
             this.authError = '';
             // Verify secret against the server before granting access
             try {
-                const res = await fetch(apiUrl('/admin/sessions'), {
+                const res = await fetchWithRetry(apiUrl('/admin/sessions'), {
                     headers: { 'x-admin-secret': this.authSecret },
                 });
-                if (!res.ok) {
+                if (!res || !res.ok) {
                     this.authError = 'Invalid admin secret';
                     this.isAuthenticated = false;
                     return;
@@ -197,7 +224,7 @@ export default {
         },
         async loadSession() {
             try {
-                const res = await fetch(apiUrl(`/session/${this.sessionId}`), {
+                const res = await fetchWithRetry(apiUrl(`/session/${this.sessionId}`), {
                     headers: {
                         'x-admin-secret': this.authSecret,
                     },

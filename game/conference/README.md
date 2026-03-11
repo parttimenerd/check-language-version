@@ -73,6 +73,8 @@ The server will start on `http://localhost:3000`
 ✓ **Anonymous player names** - Generated from adjectives + animals (e.g., "BravePanda", "CleverQuickFox")
 ✓ **Server-authoritative timer** - No client-side cheating
 ✓ **Real-time WebSocket sync** - Instant updates for all players
+✓ **Heartbeat liveness** - Players send heartbeat every 10s; offline after 45s without heartbeat
+✓ **Auto-reconnect** - Both player and presenter auto-reconnect with exponential backoff on WiFi drops
 ✓ **SQLite persistence** - Crash protection with in-memory database
 ✓ **Live leaderboard** - Updated as answers come in
 ✓ **Admin controls** - Full presenter dashboard
@@ -101,12 +103,17 @@ conference/
 
 **Player → Server**
 - `{ type: 'join', sessionId, uuid }` - Join a session
+- `{ type: 'heartbeat', sessionId, uuid }` - Keep connection alive / mark player online
 - `{ type: 'answer', sessionId, answer }` - Submit answer
 
 **Server → Players**
 - `{ type: 'question_started', questionId, durationSeconds }` - New question
+- `{ type: 'countdown_started', seconds }` - Presenter started close countdown
+- `{ type: 'countdown_canceled' }` - Presenter canceled close countdown
 - `{ type: 'question_stopped' }` - Question closed
 - `{ type: 'player_answered', uuid }` - Another player answered (for real-time leaderboard)
+
+On reconnect/reload with the same cookie (`player_session`), the server returns a `joined` snapshot including active-question state, remaining countdown time, and whether the player has already answered.
 
 ### REST Endpoints
 
@@ -215,14 +222,21 @@ node stress-test.js --url http://localhost:3003 --session my-session --users 200
 | `--ramp-up` | `-r` | `50` ms | Delay between each user joining |
 | `--answer-delay` | `-d` | `1500` ms | Simulated thinking time (±50% jitter) |
 | `--answer-rate` | | `0.85` | Fraction of users that answer (0–1) |
+| `--heartbeat-interval` | | `10000` ms | Interval for simulated heartbeat messages |
+| `--drop-heartbeat-rate` | | `0.1` | Fraction of players that stop heartbeats |
+| `--heartbeat-drop-after` | | `15000` ms | Delay before those players stop heartbeats |
+| `--reload-rate` | | `0.15` | Fraction of players that simulate browser reload |
+| `--reload-delay` | | `2500` ms | Delay before reconnect after reload |
 | `--verbose` | `-v` | off | Log per-user messages |
 
 ### How It Works
 
 1. **Phase 1 (Ramp-up)** — Users join sequentially via `POST /player/join`, then each opens a WebSocket and sends a `join` message. A configurable delay between joins prevents thundering herd.
 2. **Phase 2 (Steady state)** — All users stay connected. When the presenter starts a question (`question_started`), ~85% of users (configurable) pick a random answer option after a jittered delay and submit it.
-3. **Live stats** — A single-line summary updates every 500 ms showing join counts, WS connections, questions received, answers sent, correct/wrong counts, errors, and disconnections.
-4. **Ctrl+C** — Gracefully closes all WebSocket connections and prints a final summary.
+3. **Resilience simulation** — A configurable fraction of users simulate browser reload (disconnect/reconnect with same UUID), and another fraction stop heartbeats to trigger server-side stale-player removal.
+4. **Countdown cancel visibility** — Clients count `countdown_canceled` broadcasts, so presenter header cancel propagation can be verified under load.
+5. **Live stats** — A single-line summary updates every 500 ms showing joins, WS state, answers, heartbeats, cancel events, reconnects, errors, and disconnections.
+6. **Ctrl+C** — Gracefully closes all WebSocket connections and prints a final summary.
 
 ### Examples
 
