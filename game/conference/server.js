@@ -20,6 +20,8 @@ const BASE_PATH = (process.env.BASE_PATH || '').replace(/\/+$/, '');
 const MAX_PLAYERS_PER_SESSION = parseInt(process.env.MAX_PLAYERS_PER_SESSION || '1000', 10);
 const MAX_SESSIONS = parseInt(process.env.MAX_SESSIONS || '1000', 10);
 const MAX_QR_SIZE = 2048; // Max QR PNG width/height to prevent memory exhaustion
+const DEFAULT_FRAME_ANCESTORS = "'self' http://localhost:* http://127.0.0.1:* https://localhost:* https://127.0.0.1:*";
+const FRAME_ANCESTORS = (process.env.FRAME_ANCESTORS || DEFAULT_FRAME_ANCESTORS).trim();
 
 if (!ADMIN_SECRET) {
     console.error('Error: ADMIN_SECRET environment variable must be set');
@@ -41,10 +43,29 @@ if (process.env.TRUST_PROXY) {
     app.set('trust proxy', process.env.TRUST_PROXY === 'true' ? true : process.env.TRUST_PROXY);
 }
 
+function stripBasePathFromRequestPath(requestPath) {
+    if (!BASE_PATH) return requestPath;
+    if (requestPath === BASE_PATH) return '/';
+    if (requestPath.startsWith(BASE_PATH + '/')) return requestPath.slice(BASE_PATH.length);
+    return requestPath;
+}
+
+function isEmbeddablePagePath(requestPath) {
+    const normalizedPath = stripBasePathFromRequestPath(requestPath);
+    return /^\/(?:$|presenter(?:\/view(?:\/[^/]+)?)?)$/.test(normalizedPath);
+}
+
 // Security headers — prevent MIME-sniffing and clickjacking
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'DENY');
+    // Allow iframe embedding only for player/presenter HTML pages.
+    // For those routes, CSP frame-ancestors is used to explicitly permit localhost.
+    // Keep strict DENY for all other endpoints (API/admin/static/ws-upgrade paths).
+    if (isEmbeddablePagePath(req.path)) {
+        res.setHeader('Content-Security-Policy', `frame-ancestors ${FRAME_ANCESTORS}`);
+    } else {
+        res.setHeader('X-Frame-Options', 'DENY');
+    }
     // Prevent caching of API responses — critical on conference WiFi where
     // aggressive caching proxies and mobile browsers cache JSON responses
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');

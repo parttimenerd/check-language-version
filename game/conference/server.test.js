@@ -1339,6 +1339,15 @@ describe('Round 3 Hardening', () => {
         assert.equal(res.headers['x-frame-options'], 'DENY');
     });
 
+    it('presenter page uses CSP frame-ancestors and allows localhost embedding', async () => {
+        const res = await fetch('GET', '/presenter');
+        assert.equal(res.status, 200);
+        assert.notEqual(res.headers['x-frame-options'], 'DENY');
+        assert.ok(res.headers['content-security-policy']);
+        assert.ok(res.headers['content-security-policy'].includes('frame-ancestors'));
+        assert.ok(res.headers['content-security-policy'].includes('http://localhost:*'));
+    });
+
     // -- Session cap (MAX_SESSIONS) --
 
     it('enforces MAX_SESSIONS limit', async () => {
