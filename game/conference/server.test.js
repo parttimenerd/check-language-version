@@ -304,6 +304,35 @@ describe('Player Join/Leave', () => {
         assert.ok(!playerLastSeen.has(uuid));
         assert.ok(!wsConnections.has(uuid));
     });
+
+    it('reuses existing uuid when /player/join provides known uuid for same session', async () => {
+        const id = await createSession('Reuse UUID');
+        const joined = await joinPlayer(id);
+
+        const res = await fetch('POST', '/player/join', {
+            body: { sessionId: id, uuid: joined.uuid, displayName: joined.displayName },
+        });
+        assert.equal(res.status, 200);
+        assert.equal(res.body.uuid, joined.uuid);
+        assert.equal(res.body.displayName, joined.displayName);
+        assert.ok(players.has(joined.uuid));
+    });
+
+    it('creates player with requested uuid when unknown and session exists', async () => {
+        const id = await createSession('Requested UUID');
+        const requestedUuid = '00000000-0000-4000-8000-000000000123';
+        const requestedName = 'ReconnectPanda';
+
+        const res = await fetch('POST', '/player/join', {
+            body: { sessionId: id, uuid: requestedUuid, displayName: requestedName },
+        });
+
+        assert.equal(res.status, 200);
+        assert.equal(res.body.uuid, requestedUuid);
+        assert.equal(res.body.displayName, requestedName);
+        assert.ok(players.has(requestedUuid));
+        assert.equal(players.get(requestedUuid).sessionId, id);
+    });
 });
 
 // ── WebSocket ───────────────────────────────────────────────────────

@@ -572,7 +572,7 @@ function handleMessage(uuid, data, ws) {
             session._presenterStatsInterval = setInterval(() => {
                 if (ws.readyState === WebSocket.OPEN && session) {
                     let answeredCount = 0;
-                    if (session.currentQuestion && session.playerAnswers) {
+                    if (session.currentQuestion != null && session.playerAnswers) {
                         for (const uuid of session.players) {
                             if (session.playerAnswers.has(uuid)) {
                                 answeredCount++;
@@ -867,11 +867,31 @@ app.post('/session/create', (req, res) => {
 
 // Player join
 app.post('/player/join', (req, res) => {
-    const { sessionId } = req.body;
+    const { sessionId, uuid: requestedUuid, displayName: requestedDisplayName } = req.body;
 
     const session = sessions.get(sessionId);
     if (!session) {
         return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Reuse existing player identity when a reconnecting client provides UUID.
+    // This keeps the same name/score if the user did not explicitly quit.
+    if (typeof requestedUuid === 'string' && requestedUuid.trim()) {
+        const existingPlayer = players.get(requestedUuid);
+        if (existingPlayer) {
+            if (existingPlayer.sessionId !== sessionId) {
+                // If the old session is gone, allow migration to the new session
+                if (sessions.has(existingPlayer.sessionId)) {
+                    return res.status(409).json({ error: 'Player ID already belongs to a different session' });
+                }
+                // Old session expired — migrate player to new session
+                existingPlayer.sessionId = sessionId;
+                existingPlayer.score = 0;
+            }
+            session.players.add(requestedUuid);
+            playerLastSeen.set(requestedUuid, Date.now());
+            return res.json({ uuid: requestedUuid, displayName: existingPlayer.displayName });
+        }
     }
 
     if (session.players.size >= MAX_PLAYERS_PER_SESSION) {
@@ -879,15 +899,31 @@ app.post('/player/join', (req, res) => {
         return res.status(429).json({ error: 'Session is full' });
     }
 
-    const uuid = uuidv4();
-    const displayName = generateUniqueName(sessionId);
+    const uuid = (typeof requestedUuid === 'string' && requestedUuid.trim()) ? requestedUuid.trim() : uuidv4();
+
+    // Optional display name restore for reconnect flows where UUID was lost from memory
+    // but still supplied by the browser. If unavailable/taken, generate a unique one.
+    const requestedName = typeof requestedDisplayName === 'string' ? requestedDisplayName.trim() : '';
+    let displayName = '';
+    if (requestedName) {
+        let nameTaken = false;
+        for (const [, p] of players.entries()) {
+            if (p.sessionId === sessionId && p.displayName === requestedName) {
+                nameTaken = true;
+                break;
+            }
+        }
+        displayName = nameTaken ? generateUniqueName(sessionId) : requestedName;
+    } else {
+        displayName = generateUniqueName(sessionId);
+    }
 
     const player = { sessionId, displayName, score: 0 };
     players.set(uuid, player);
     session.players.add(uuid);
 
     db.run(
-        'INSERT INTO players (uuid, sessionId, displayName, score) VALUES (?, ?, ?, ?)',
+        'INSERT OR REPLACE INTO players (uuid, sessionId, displayName, score) VALUES (?, ?, ?, ?)',
         [uuid, sessionId, displayName, 0],
         (err) => {
             if (err) {
@@ -1375,7 +1411,7 @@ app.get('/session/:sessionId/stats', (req, res) => {
 
     // Count how many players have answered the current question
     let answeredCount = 0;
-    if (session.currentQuestion) {
+    if (session.currentQuestion != null) {
         for (const uuid of session.players) {
             if (session.playerAnswers && session.playerAnswers.has(uuid)) {
                 answeredCount++;

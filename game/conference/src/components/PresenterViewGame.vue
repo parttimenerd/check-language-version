@@ -9,12 +9,11 @@
             <template v-else>{{ quizMode === 'sizes' ? 'Guess the Object Size' : 'Guess the Java Version' }}</template>
             <span v-if="currentSession && showQuiz && currentSession.state === 'active' && !showingResults" class="header-meta">
                 <span class="header-stat">{{ submittedCount }}/{{ totalPlayers }} submitted</span>
-                <span class="qr-link" @click="showQrOverlay = true">📱 QR</span>
             </span>
         </h1>
 
         <!-- Pre-Quiz QR View -->
-        <div v-if="currentSession && (!showQuiz || showQrOverlay)" class="qr-view">
+        <div v-if="currentSession && !showQuiz" class="qr-view">
             <p class="qr-heading">📱 Scan to Join</p>
             <div class="qr-card">
                 <div class="qr-stats">
@@ -28,168 +27,184 @@
                 />
                 <div class="qr-session">Session ID: {{ sessionId }}</div>
                 <button
-                    v-if="!showQuiz"
-                    @click="setShowQuiz(true); showQrOverlay = false"
+                    @click="setShowQuiz(true)"
                     class="go-quiz-btn"
                 >
                     Go to Quiz
                 </button>
-                <button
-                    v-else
-                    @click="showQrOverlay = false"
-                    class="go-quiz-btn"
-                >
-                    Back to Quiz
-                </button>
             </div>
         </div>
 
-        <!-- Question Mode -->
-        <div
-            v-else-if="currentSession && showQuiz && currentSession.state === 'active' && !showingResults"
-        >
-            <!-- Question Content -->
-            <div v-if="currentQuestion" class="question-content">
-                <div class="code-container">
-                    <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
-                </div>
-                <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint">
-                    <span class="subtle">Answer uses</span>
-                    <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
-                </div>
-                <div class="options">
-                    <button
-                        v-for="(option, idx) in answerOptions"
-                        :key="idx"
-                        class="option-btn"
-                    >
-                        {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
-                    </button>
-                </div>
-            </div>
-
-            <div class="close-btns">
-                <button @click="closeQuestion" class="close-btn-small close-btn-now" title="Close immediately">✕ Close</button>
-                <button v-if="countdown === null" @click="startCountdown(10)" class="close-btn-small" title="Close in 10 seconds">✕ Close (10s)</button>
-                <button v-if="countdown === null" @click="startCountdown(20)" class="close-btn-small" title="Close in 20 seconds">✕ Close (20s)</button>
-                <button @click="quitGame" class="close-btn-small quit-btn-inline" title="Quit game">🚪 Quit</button>
-            </div>
-        </div>
-
-        <!-- Results Mode -->
-        <div v-else-if="currentSession && showQuiz && showingResults && currentQuestion">
-            <!-- Code & Correct Answer -->
-            <div class="code-container">
-                <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
-            </div>
-            <div class="feedback" :class="{ wrong: false }">
-                <strong>Correct Answer:</strong>
-                {{
-                    quizMode === 'sizes'
-                        ? currentQuestion.correct + ' B'
-                        : 'Java ' + formatVersion(currentQuestion.correct)
-                }}
-                <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint" style="margin-top:8px;">
-                    <span class="subtle">Answer uses</span>
-                    <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
-                </div>
-                <div v-if="quizMode === 'sizes' && currentQuestion.classLayout && currentQuestion.classLayout.length" class="layout-info">
-                    <div v-for="(cl, clIdx) in currentQuestion.classLayout" :key="clIdx" class="class-layout-block">
-                        <div class="class-layout-title">
-                            <span class="type">{{ prettifyJvmTypeName(cl.type) }}</span>
-                            <span v-if="cl.instanceSize != null" class="tag">Instance size: {{ cl.instanceSize }} B</span>
-                            <span v-if="cl.spaceLosses && cl.spaceLosses.total" class="tag">Space losses: {{ cl.spaceLosses.total }} B</span>
+        <div v-else-if="currentSession && showQuiz" class="presenter-split">
+            <div class="presenter-main">
+                <!-- Question Mode -->
+                <div v-if="currentSession.state === 'active' && !showingResults">
+                    <!-- Question Content -->
+                    <div v-if="currentQuestion" class="question-content">
+                        <div class="code-container">
+                            <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
                         </div>
-                        <div class="table-wrap">
-                            <table class="data mono">
-                                <thead><tr><th>offset</th><th>size</th><th>type</th><th>description</th></tr></thead>
-                                <tbody>
-                                    <tr v-for="(row, rIdx) in cl.rows" :key="rIdx">
-                                        <td>{{ row.offset }}</td>
-                                        <td>{{ row.size }}</td>
-                                        <td>{{ prettifyJvmTypeName(row.type) }}</td>
-                                        <td class="wrap">{{ row.description }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                        <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint">
+                            <span class="subtle">Answer uses</span>
+                            <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+                        </div>
+                        <div class="options">
+                            <button
+                                v-for="(option, idx) in answerOptions"
+                                :key="idx"
+                                class="option-btn"
+                            >
+                                {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
+                            </button>
                         </div>
                     </div>
+
+                    <div class="close-btns">
+                        <button @click="closeQuestion" class="close-btn-small close-btn-now" title="Close immediately">✕ Close</button>
+                        <button v-if="countdown === null" @click="startCountdown(10)" class="close-btn-small" title="Close in 10 seconds">✕ Close (10s)</button>
+                        <button v-if="countdown === null" @click="startCountdown(20)" class="close-btn-small" title="Close in 20 seconds">✕ Close (20s)</button>
+                        <button @click="quitGame" class="close-btn-small quit-btn-inline" title="Quit game">🚪 Quit</button>
+                    </div>
                 </div>
-                <div v-if="detectedFeatures.length" class="feature-list">
-                    <h3>Features Used:</h3>
-                    <div class="feature-accordion">
-                        <details
-                            v-for="feat in detectedFeatures"
-                            :key="feat.name"
-                            class="feature"
-                        >
-                            <summary>
-                                <span class="feature-title">
-                                    <span class="label">{{ feat.label }}</span>
-                                    <span class="meta">(Java {{ formatVersion(feat.version) }})</span>
-                                </span>
-                                <span class="chevron" aria-hidden="true"></span>
-                            </summary>
-                            <div class="feature-body">
-                                <div
-                                    v-if="feat.description"
-                                    class="md"
-                                    v-html="renderMarkdown(feat.description)"
-                                ></div>
-                                <div v-else class="feature-item">No description available.</div>
+
+                <!-- Results Mode -->
+                <div v-else-if="showingResults && currentQuestion">
+                    <!-- Code & Correct Answer -->
+                    <div class="code-container">
+                        <pre class="language-java"><code class="language-java" v-html="highlightedCode"></code></pre>
+                    </div>
+                    <div class="feedback" :class="{ wrong: false }">
+                        <strong>Correct Answer:</strong>
+                        {{
+                            quizMode === 'sizes'
+                                ? currentQuestion.correct + ' B'
+                                : 'Java ' + formatVersion(currentQuestion.correct)
+                        }}
+                        <div v-if="quizMode === 'sizes' && currentQuestion.useCompactHeaders !== undefined" class="mode-hint" style="margin-top:8px;">
+                            <span class="subtle">Answer uses</span>
+                            <span class="pill">Compact headers: {{ currentQuestion.useCompactHeaders ? 'ON' : 'OFF' }}</span>
+                        </div>
+                        <div v-if="quizMode === 'sizes' && currentQuestion.classLayout && currentQuestion.classLayout.length" class="layout-info">
+                            <div v-for="(cl, clIdx) in currentQuestion.classLayout" :key="clIdx" class="class-layout-block">
+                                <div class="class-layout-title">
+                                    <span class="type">{{ prettifyJvmTypeName(cl.type) }}</span>
+                                    <span v-if="cl.instanceSize != null" class="tag">Instance size: {{ cl.instanceSize }} B</span>
+                                    <span v-if="cl.spaceLosses && cl.spaceLosses.total" class="tag">Space losses: {{ cl.spaceLosses.total }} B</span>
+                                </div>
+                                <div class="table-wrap">
+                                    <table class="data mono">
+                                        <thead><tr><th>offset</th><th>size</th><th>type</th><th>description</th></tr></thead>
+                                        <tbody>
+                                            <tr v-for="(row, rIdx) in cl.rows" :key="rIdx">
+                                                <td>{{ row.offset }}</td>
+                                                <td>{{ row.size }}</td>
+                                                <td>{{ prettifyJvmTypeName(row.type) }}</td>
+                                                <td class="wrap">{{ row.description }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </details>
+                        </div>
+                        <div v-if="detectedFeatures.length" class="feature-list">
+                            <h3>Features Used:</h3>
+                            <div class="feature-accordion">
+                                <details
+                                    v-for="feat in detectedFeatures"
+                                    :key="feat.name"
+                                    class="feature"
+                                >
+                                    <summary>
+                                        <span class="feature-title">
+                                            <span class="label">{{ feat.label }}</span>
+                                            <span class="meta">(Java {{ formatVersion(feat.version) }})</span>
+                                        </span>
+                                        <span class="chevron" aria-hidden="true"></span>
+                                    </summary>
+                                    <div class="feature-body">
+                                        <div
+                                            v-if="feat.description"
+                                            class="md"
+                                            v-html="renderMarkdown(feat.description)"
+                                        ></div>
+                                        <div v-else class="feature-item">No description available.</div>
+                                    </div>
+                                </details>
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- Answer Distribution Histogram -->
+                    <div class="histogram">
+                        <h3>Answer Distribution</h3>
+                        <div class="bars">
+                            <div v-for="(option, idx) in answerOptions" :key="idx" class="bar-row">
+                                <div class="bar-label">
+                                    {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
+                                </div>
+                                <div class="bar-container">
+                                    <div
+                                        class="bar"
+                                        :style="{
+                                            width:
+                                                totalPlayers > 0
+                                                    ? (answerCounts[idx] / totalPlayers) * 100 + '%'
+                                                    : '0%',
+                                            background:
+                                                option === currentQuestion.correct ? 'var(--success)' : 'var(--danger)',
+                                        }"
+                                    ></div>
+                                </div>
+                                <div class="count">{{ answerCounts[idx] }}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Leaderboard -->
+                    <Leaderboard :players="leaderboard" current-uuid="" style="margin-top: 20px" />
+
+                    <button @click="nextQuestion" class="next-btn">Next Question</button>
+                </div>
+
+                <!-- Waiting for question (quiz view active) -->
+                <div v-else class="waiting">
+                    <div class="stats">
+                        <span>{{ totalPlayers }} players connected</span>
+                    </div>
+                    <p class="ready-hint">Ready for the next question?</p>
+                    <button
+                        @click="startRandomQuestion"
+                        class="next-btn start-btn"
+                        :disabled="!hasQuizData"
+                    >
+                        Start Random Question
+                    </button>
+                    <p v-if="!hasQuizData" class="loading-hint">Loading questions...</p>
                 </div>
             </div>
 
-            <!-- Answer Distribution Histogram -->
-            <div class="histogram">
-                <h3>Answer Distribution</h3>
-                <div class="bars">
-                    <div v-for="(option, idx) in answerOptions" :key="idx" class="bar-row">
-                        <div class="bar-label">
-                            {{ quizMode === 'sizes' ? option + ' B' : 'Java ' + formatVersion(option) }}
-                        </div>
-                        <div class="bar-container">
-                            <div
-                                class="bar"
-                                :style="{
-                                    width:
-                                        totalPlayers > 0
-                                            ? (answerCounts[idx] / totalPlayers) * 100 + '%'
-                                            : '0%',
-                                    background:
-                                        option === currentQuestion.correct ? 'var(--success)' : 'var(--danger)',
-                                }"
-                            ></div>
-                        </div>
-                        <div class="count">{{ answerCounts[idx] }}</div>
+            <div
+                class="splitter-handle"
+                @mousedown.prevent="startDrag"
+                @touchstart.prevent="startDrag"
+                title="Drag to resize"
+            ></div>
+
+            <aside class="presenter-side" ref="presenterSide">
+                <p class="qr-heading">📱 Scan to Join</p>
+                <div class="qr-card">
+                    <div class="qr-stats">
+                        <strong>{{ totalPlayers }}</strong> signed up
                     </div>
+                    <img
+                        v-if="qrCode"
+                        :src="qrCode"
+                        alt="QR Code"
+                        class="qr-image"
+                    />
+                    <div class="qr-session">Session ID: {{ sessionId }}</div>
                 </div>
-            </div>
-
-            <!-- Leaderboard -->
-            <Leaderboard :players="leaderboard" current-uuid="" style="margin-top: 20px" />
-
-            <button @click="nextQuestion" class="next-btn">Next Question</button>
-        </div>
-
-        <!-- Waiting for question (quiz view active) -->
-        <div v-else-if="currentSession && showQuiz" class="waiting">
-            <div class="stats">
-                <span>{{ totalPlayers }} players connected</span>
-                <span class="qr-link" @click="showQrOverlay = true">📱 QR</span>
-            </div>
-            <p class="ready-hint">Ready for the next question?</p>
-            <button
-                @click="startRandomQuestion"
-                class="next-btn start-btn"
-                :disabled="!hasQuizData"
-            >
-                Start Random Question
-            </button>
-            <p v-if="!hasQuizData" class="loading-hint">Loading questions...</p>
+            </aside>
         </div>
 
         <!-- Waiting -->
@@ -214,6 +229,8 @@ import { apiUrl, wsUrl } from '../basePath.js';
 let ws = null;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
+let connectionLostTimer = null;
+const CONNECTION_LOST_GRACE_MS = 4000;
 // Stable presenter ID across reconnects — avoids accumulating orphaned
 // wsConnection entries on the server when WiFi drops and reconnects.
 const presenterId = `presenter-${Math.random().toString(36).slice(2, 10)}`;
@@ -262,7 +279,6 @@ export default {
             statsInterval: null,
             showQuiz: false,
             qrCode: '',
-            showQrOverlay: false,
             countdown: null,
             countdownInterval: null,
             md: null,
@@ -357,12 +373,68 @@ export default {
             }
         };
         this._offlineHandler = () => {
-            this.connectionLost = true;
+            this.markConnectionIssue();
         };
         window.addEventListener('online', this._onlineHandler);
         window.addEventListener('offline', this._offlineHandler);
     },
     methods: {
+        startDrag(e) {
+            const side = this.$refs.presenterSide;
+            if (!side) return;
+            const startX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+            const startWidth = side.getBoundingClientRect().width;
+
+            const onMove = (ev) => {
+                const clientX = ev.type === 'touchmove' ? ev.touches[0].clientX : ev.clientX;
+                const delta = startX - clientX; // dragging left → bigger side panel
+                const newWidth = Math.max(200, Math.min(startWidth + delta, window.innerWidth * 0.6));
+                side.style.flex = `0 0 ${newWidth}px`;
+                side.style.width = `${newWidth}px`;
+            };
+            const onUp = () => {
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup', onUp);
+                document.removeEventListener('touchmove', onMove);
+                document.removeEventListener('touchend', onUp);
+                document.body.style.userSelect = '';
+                document.body.style.cursor = '';
+            };
+            document.body.style.userSelect = 'none';
+            document.body.style.cursor = 'col-resize';
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+            document.addEventListener('touchmove', onMove, { passive: false });
+            document.addEventListener('touchend', onUp);
+        },
+        markConnectionIssue() {
+            if (this.connectionLost || connectionLostTimer) return;
+            // Avoid banner flicker during short reconnect hiccups.
+            connectionLostTimer = setTimeout(() => {
+                connectionLostTimer = null;
+                if (this.sessionId && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                    this.connectionLost = true;
+                }
+            }, CONNECTION_LOST_GRACE_MS);
+        },
+        clearConnectionIssue() {
+            if (connectionLostTimer) {
+                clearTimeout(connectionLostTimer);
+                connectionLostTimer = null;
+            }
+            this.connectionLost = false;
+        },
+        scheduleReconnect() {
+            if (!this.sessionId || reconnectTimer) return;
+            this.markConnectionIssue();
+            const baseDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
+            const jitter = baseDelay * (0.5 + Math.random() * 0.5);
+            reconnectAttempts++;
+            reconnectTimer = setTimeout(() => {
+                reconnectTimer = null;
+                this.connectWebSocket();
+            }, jitter);
+        },
         async fetchQrCode() {
             try {
                 const res = await fetchWithRetry(apiUrl(`/session/${this.sessionId}/qr`), {
@@ -570,7 +642,7 @@ export default {
 
             ws.onopen = () => {
                 reconnectAttempts = 0;
-                this.connectionLost = false;
+                this.clearConnectionIssue();
                 if (this.sessionId) {
                     ws.send(
                         JSON.stringify({
@@ -583,16 +655,7 @@ export default {
 
             ws.onclose = () => {
                 // Auto-reconnect if still attached to a session
-                if (this.sessionId && !reconnectTimer) {
-                    this.connectionLost = true;
-                    const baseDelay = Math.min(1000 * Math.pow(2, reconnectAttempts), 30000);
-                    const jitter = baseDelay * (0.5 + Math.random() * 0.5);
-                    reconnectAttempts++;
-                    reconnectTimer = setTimeout(() => {
-                        reconnectTimer = null;
-                        this.connectWebSocket();
-                    }, jitter);
-                }
+                this.scheduleReconnect();
             };
 
             ws.onerror = () => {
@@ -692,19 +755,25 @@ export default {
                 console.error('Failed to close question', e);
             }
         },
-        getRandomQuestionId() {
+        getRandomQuestionId({ excludeCorrect = null } = {}) {
             const entries = Array.isArray(this.quizData) ? this.quizData : [];
             if (!entries.length) return null;
             // Build list of valid (non-alpha) indices
             const validIndices = [];
+            const fallbackIndices = [];
             for (let i = 0; i < entries.length; i++) {
                 const v = entries[i].correct;
                 if (v === undefined || v >= 0) {
-                    validIndices.push(i);
+                    fallbackIndices.push(i);
+                    if (excludeCorrect === null || excludeCorrect === undefined || v !== excludeCorrect) {
+                        validIndices.push(i);
+                    }
                 }
             }
-            if (!validIndices.length) return null;
-            return validIndices[Math.floor(Math.random() * validIndices.length)];
+            // If no alternative exists, allow repeats instead of blocking the game.
+            const candidates = validIndices.length ? validIndices : fallbackIndices;
+            if (!candidates.length) return null;
+            return candidates[Math.floor(Math.random() * candidates.length)];
         },
         async startRandomQuestion() {
             try {
@@ -719,7 +788,10 @@ export default {
                 if (!this.hasQuizData) {
                     await this.loadQuizData();
                 }
-                const questionId = this.getRandomQuestionId();
+                const lastCorrect = this.currentQuestion && this.currentQuestion.correct !== undefined
+                    ? this.currentQuestion.correct
+                    : null;
+                const questionId = this.getRandomQuestionId({ excludeCorrect: lastCorrect });
                 if (questionId === null) {
                     alert('No questions loaded yet. Please wait a moment and try again.');
                     return;
@@ -761,7 +833,6 @@ export default {
         },
         nextQuestion() {
             this.setShowingResults(false);
-            this.currentQuestion = null;
             this.startRandomQuestion();
         },
         computeAnswerOptions(question) {
@@ -864,7 +935,7 @@ export default {
             if (!confirm('Quit the game?')) return;
             if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
             reconnectAttempts = 0;
-            this.connectionLost = false;
+            this.clearConnectionIssue();
             if (ws) ws.close();
             if (this.statsInterval) clearInterval(this.statsInterval);
             this.cancelCountdown({ notifyServer: false });
@@ -886,14 +957,50 @@ export default {
         if (this._offlineHandler) {
             window.removeEventListener('offline', this._offlineHandler);
         }
+        if (connectionLostTimer) {
+            clearTimeout(connectionLostTimer);
+            connectionLostTimer = null;
+        }
     },
 };
 </script>
 
 <style scoped>
 /* Layout is handled by shared.css #app — no card styling here */
-#presenter-view-game {
-    /* content fills parent */
+
+.presenter-split {
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.presenter-main {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.presenter-side {
+    flex: 0 0 220px;
+    width: 220px;
+    min-width: 160px;
+    max-width: 60vw;
+    overflow: auto;
+    padding-left: 6px;
+}
+
+.splitter-handle {
+    flex: 0 0 6px;
+    width: 6px;
+    cursor: col-resize;
+    background: var(--border-separator);
+    border-radius: 3px;
+    transition: background 0.15s;
+    align-self: stretch;
+}
+
+.splitter-handle:hover,
+.splitter-handle:active {
+    background: var(--accent, #007bff);
 }
 
 .stats {
@@ -1060,10 +1167,10 @@ export default {
     font-size: 0.8em;
 }
 .qr-heading {
-    font-size: 1.3em;
+    font-size: 1em;
     font-weight: 600;
     color: var(--text-primary);
-    margin: 0 0 10px;
+    margin: 0 0 4px;
 }
 
 .qr-view {
@@ -1073,32 +1180,33 @@ export default {
 
 .qr-card {
     margin: 0 auto;
-    max-width: 420px;
+    max-width: 100%;
     background: var(--bg-section);
-    border-radius: 10px;
-    padding: 20px;
+    border-radius: 8px;
+    padding: 8px;
     border: 1px solid var(--border-color);
 }
 
 .qr-stats {
-    font-size: 18px;
-    margin-bottom: 12px;
+    font-size: 14px;
+    margin-bottom: 4px;
 }
 
 .qr-image {
-    width: 260px;
-    height: 260px;
-    border: 3px solid var(--accent);
-    border-radius: 8px;
+    width: min(200px, 100%);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    border: 2px solid var(--accent);
+    border-radius: 6px;
     background: white;
-    margin: 8px auto 12px;
+    margin: 4px auto 6px;
     display: block;
 }
 
 .qr-session {
     color: var(--text-secondary);
-    font-size: 14px;
-    margin-bottom: 16px;
+    font-size: 12px;
+    margin-bottom: 4px;
 }
 
 .go-quiz-btn {
@@ -1391,5 +1499,27 @@ table.mono td {
 @keyframes pulse-banner {
     0%, 100% { opacity: 1; }
     50% { opacity: 0.7; }
+}
+
+@media (max-width: 980px) {
+    .presenter-split {
+        flex-direction: column;
+    }
+
+    .splitter-handle {
+        width: 100%;
+        height: 6px;
+        cursor: row-resize;
+        align-self: auto;
+    }
+
+    .presenter-side {
+        width: 100%;
+        max-width: none;
+        min-width: 0;
+        border-top: 1px solid var(--border-separator);
+        padding-left: 0;
+        padding-top: 10px;
+    }
 }
 </style>

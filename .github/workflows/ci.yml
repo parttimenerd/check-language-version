@@ -30,4 +30,4 @@ jobs:
             link-check-cache-${{ runner.os }}-
 
       - name: Run tests (with link checks)
-        run: ./mvnw test
+        run: mvn -B test --file pom.xml

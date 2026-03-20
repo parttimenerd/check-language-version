@@ -113,9 +113,11 @@ let ws = null;
 let heartbeatInterval = null;
 let reconnectTimer = null;
 let reconnectAttempts = 0;
+let connectionLostTimer = null;
 let pendingAnswer = null;
 let missedHeartbeats = 0;
 const MAX_MISSED_HEARTBEATS = 3; // Force reconnect after 3 missed acks (~30s)
+const CONNECTION_LOST_GRACE_MS = 4000;
 let quizDataJava = { entries: [] };
 let quizDataSizes = [];
 let quizData = { entries: [] };
@@ -293,11 +295,20 @@ export default {
     },
     async mounted() {
         this.currentTheme = this.$getTheme();
-        await loadQuizData();
-        this.quizModeLocal = quizMode;
-        // Restore any pending answer from a previous page load (mobile refresh while answering)
+        // Restore identity and reconnect BEFORE loading quiz data.
+        // Otherwise the player stares at the join screen while code.json
+        // loads on slow conference WiFi.
         loadPendingAnswer();
         this.tryResumeFromCookie();
+        await loadQuizData();
+        this.quizModeLocal = quizMode;
+        // Restore question from saved index now that quiz data is loaded
+        if (this._pendingQuestionId != null && !this.currentQuestion) {
+            const entries = Array.isArray(quizData) ? quizData : (quizData.entries || []);
+            const q = entries[this._pendingQuestionId];
+            if (q) this.currentQuestion = q;
+            delete this._pendingQuestionId;
+        }
 
         // Page Visibility API — when the user switches back to this tab
         // (common on mobile: lock screen, switch apps, open camera, etc.),
@@ -342,7 +353,7 @@ export default {
         };
         this._offlineHandler = () => {
             if (this.uuid && this.sessionId && this.step !== 'join') {
-                this.connectionLost = true;
+                this.markConnectionIssue();
                 console.log('[network] offline event — will reconnect when back online');
             }
         };
@@ -360,6 +371,23 @@ export default {
         },
     },
     methods: {
+        markConnectionIssue() {
+            if (this.connectionLost || connectionLostTimer) return;
+            // Avoid flashing the warning for brief WS reconnect hiccups.
+            connectionLostTimer = setTimeout(() => {
+                connectionLostTimer = null;
+                if (this.uuid && this.sessionId && this.step !== 'join' && (!ws || ws.readyState !== WebSocket.OPEN)) {
+                    this.connectionLost = true;
+                }
+            }, CONNECTION_LOST_GRACE_MS);
+        },
+        clearConnectionIssue() {
+            if (connectionLostTimer) {
+                clearTimeout(connectionLostTimer);
+                connectionLostTimer = null;
+            }
+            this.connectionLost = false;
+        },
         // ── QR code ───────────────────────────────────────────────────────
         async fetchQrCode() {
             if (!this.sessionId) return;
@@ -378,13 +406,44 @@ export default {
                 uuid: this.uuid,
                 displayName: this.displayName,
                 sessionId: this.sessionId,
+                score: this.score,
             });
             // 24 hour expiry
             const expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toUTCString();
             document.cookie = `player_session=${encodeURIComponent(value)}; expires=${expires}; path=/; SameSite=Lax`;
+            // Also persist in localStorage as backup — cookies get lost on
+            // some mobile browsers (iOS Private Browsing, memory pressure, etc.)
+            try { localStorage.setItem('player_session', value); } catch { /* quota */ }
         },
         clearPlayerCookie() {
             document.cookie = 'player_session=; expires=Thu, 01 Jan 1970 00:00:00 GMT; path=/; SameSite=Lax';
+            try { localStorage.removeItem('player_session'); } catch { /* ignore */ }
+        },
+        saveGameState() {
+            try {
+                // Determine current question index for restore after reload
+                let questionId = null;
+                if (this.currentQuestion) {
+                    const entries = Array.isArray(quizData) ? quizData : (quizData.entries || []);
+                    questionId = entries.indexOf(this.currentQuestion);
+                    if (questionId === -1) questionId = null;
+                }
+                sessionStorage.setItem('game_state', JSON.stringify({
+                    sessionId: this.sessionId,
+                    step: this.step,
+                    score: this.score,
+                    hasAnswered: this.hasAnswered,
+                    selectedAnswer: this.selectedAnswer,
+                    isCorrect: this.isCorrect,
+                    showingSolution: this.showingSolution,
+                    bonus: this.bonus,
+                    questionId,
+                    serverAnswers: this.serverAnswers,
+                }));
+            } catch { /* quota */ }
+        },
+        clearGameState() {
+            try { sessionStorage.removeItem('game_state'); } catch { /* ignore */ }
         },
         async deleteMyData() {
             if (!this.uuid) {
@@ -416,6 +475,7 @@ export default {
                 savePendingAnswer(null);
                 // Clear all local state
                 this.clearPlayerCookie();
+                this.clearGameState();
                 this.uuid = '';
                 this.displayName = '';
                 this.sessionId = '';
@@ -434,30 +494,63 @@ export default {
             }
         },
         tryResumeFromCookie() {
+            let saved = null;
+            // Try cookie first, then localStorage as fallback
             const match = document.cookie.match(/(?:^|;\s*)player_session=([^;]*)/);
-            if (!match) return;
-            try {
-                const saved = JSON.parse(decodeURIComponent(match[1]));
-                if (saved.uuid && saved.displayName && saved.sessionId) {
-                    this.uuid = saved.uuid;
-                    this.displayName = saved.displayName;
-                    this.sessionId = saved.sessionId;
-                    this.step = 'waiting';
-                    this.connectWebSocket({ resuming: true });
-                    this.fetchQrCode();
-                }
-            } catch (e) {
-                this.clearPlayerCookie();
+            if (match) {
+                try { saved = JSON.parse(decodeURIComponent(match[1])); } catch { /* ignore */ }
             }
+            if (!saved) {
+                try {
+                    const ls = localStorage.getItem('player_session');
+                    if (ls) saved = JSON.parse(ls);
+                } catch { /* ignore */ }
+            }
+            if (!saved || !saved.uuid || !saved.displayName || !saved.sessionId) {
+                if (saved) this.clearPlayerCookie();
+                return;
+            }
+            this.uuid = saved.uuid;
+            this.displayName = saved.displayName;
+            this.sessionId = saved.sessionId;
+            if (typeof saved.score === 'number') this.score = saved.score;
+            this.step = 'waiting';
+            // Restore game state from sessionStorage (score, answer status, etc.)
+            try {
+                const gs = sessionStorage.getItem('game_state');
+                if (gs) {
+                    const state = JSON.parse(gs);
+                    if (state.sessionId === this.sessionId) {
+                        if (typeof state.score === 'number') this.score = state.score;
+                        if (typeof state.hasAnswered === 'boolean') this.hasAnswered = state.hasAnswered;
+                        if (state.selectedAnswer !== undefined) this.selectedAnswer = state.selectedAnswer;
+                        if (typeof state.isCorrect === 'boolean') this.isCorrect = state.isCorrect;
+                        if (typeof state.showingSolution === 'boolean') this.showingSolution = state.showingSolution;
+                        if (typeof state.bonus === 'number') this.bonus = state.bonus;
+                        if (state.questionId != null) this._pendingQuestionId = state.questionId;
+                        if (Array.isArray(state.serverAnswers)) this.serverAnswers = state.serverAnswers;
+                        if (state.step === 'question') this.step = state.step;
+                    }
+                }
+            } catch { /* ignore */ }
+            this.connectWebSocket({ resuming: true });
+            this.fetchQrCode();
         },
         // ── Join ──────────────────────────────────────────────────────────
         async handleJoin(sessionId) {
             this.sessionId = sessionId;
             try {
+                const joinPayload = { sessionId };
+                // Only send old uuid/displayName when rejoining the SAME session.
+                // Sending uuid for a different session causes a 409 conflict.
+                const sameSess = !this._lastSessionId || this._lastSessionId === sessionId;
+                if (this.uuid && sameSess) joinPayload.uuid = this.uuid;
+                if (this.displayName && sameSess) joinPayload.displayName = this.displayName;
+                this._lastSessionId = sessionId;
                 const joinRes = await fetchWithRetry(apiUrl('/player/join'), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ sessionId }),
+                    body: JSON.stringify(joinPayload),
                 }, { retries: 2 });
                 if (!joinRes.ok) {
                     const err = await joinRes.json().catch(() => ({}));
@@ -483,13 +576,15 @@ export default {
                 try { ws.onclose = null; ws.close(); } catch (_) { /* ignore */ }
                 ws = null;
             }
+            let socket;
             try {
-                ws = new WebSocket(wsUrl(`/ws?uuid=${this.uuid}`));
+                socket = new WebSocket(wsUrl(`/ws?uuid=${this.uuid}`));
+                ws = socket;
             } catch (err) {
                 // WebSocket constructor can throw on mobile when networking is denied
                 console.error('[WS] constructor threw:', err);
                 if (this.uuid && this.sessionId && this.step !== 'join') {
-                    this.connectionLost = true;
+                    this.markConnectionIssue();
                     this.scheduleReconnect();
                 }
                 return;
@@ -508,7 +603,9 @@ export default {
                   }, 10000)
                 : null;
 
-            ws.onmessage = (event) => {
+            socket.onmessage = (event) => {
+                // Ignore events from stale sockets that were superseded by a newer reconnect.
+                if (socket !== ws) return;
                 let msg;
                 try {
                     msg = JSON.parse(event.data);
@@ -520,7 +617,7 @@ export default {
                 if (msg.type === 'joined') {
                     if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; }
                     reconnectAttempts = 0;
-                    this.connectionLost = false;
+                    this.clearConnectionIssue();
                     this.score = msg.score || 0;
                     // Calibrate server-client clock offset for accurate timer sync
                     if (msg.serverTime) {
@@ -533,6 +630,10 @@ export default {
                     }
                     // If a question is already active when we (re)connect, show it immediately
                     if (msg.state === 'active' && msg.currentQuestion != null) {
+                        // Preserve answer state from session restore — receiveQuestion resets them
+                        const savedAnswer = this.selectedAnswer;
+                        const savedCorrect = this.isCorrect;
+                        const savedBonus = this.bonus;
                         this.serverAnswers = msg.answerOptions || [];
                         this.receiveQuestion(msg.currentQuestion);
                         // If a countdown is already running, use absolute server time for accuracy
@@ -556,6 +657,12 @@ export default {
                             this.startTimer();
                         }
                         this.hasAnswered = !!msg.hasAnswered;
+                        // Restore answer details that receiveQuestion cleared
+                        if (msg.hasAnswered && savedAnswer != null) {
+                            this.selectedAnswer = savedAnswer;
+                            this.isCorrect = savedCorrect;
+                            this.bonus = savedBonus;
+                        }
                     }
                     // Flush answer that was queued during disconnect (from memory or sessionStorage)
                     const pending = loadPendingAnswer();
@@ -569,14 +676,58 @@ export default {
                         ws.send(JSON.stringify({ type: 'answer', sessionId: pending.sessionId, answer: pending.answer }));
                     }
                     savePendingAnswer(null);
+                    this.saveGameState();
+                    this.savePlayerCookie();
                 } else if (msg.type === 'not_found') {
                     if (resumeTimeout) { clearTimeout(resumeTimeout); resumeTimeout = null; }
-                    console.log('[WS] not_found – clearing cookie, back to join');
-                    this.clearPlayerCookie();
-                    this.step = 'join';
+                    // Try to re-register with our old identity before giving up.
+                    // Handles: server restart lost in-memory state, stale sweep
+                    // removed us, etc.
+                    if (this.uuid && this.sessionId) {
+                        console.log('[WS] not_found – attempting re-register via /player/join');
+                        fetchWithRetry(apiUrl('/player/join'), {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                sessionId: this.sessionId,
+                                uuid: this.uuid,
+                                displayName: this.displayName,
+                            }),
+                        }, { retries: 1 }).then(res => {
+                            if (res && res.ok) {
+                                return res.json().then(data => {
+                                    this.uuid = data.uuid;
+                                    this.displayName = data.displayName;
+                                    this.savePlayerCookie();
+                                    // Re-send WS join now that server knows us again
+                                    if (ws && ws.readyState === WebSocket.OPEN) {
+                                        ws.send(JSON.stringify({
+                                            type: 'join',
+                                            sessionId: this.sessionId,
+                                            uuid: this.uuid,
+                                        }));
+                                    }
+                                });
+                            } else {
+                                // Session is truly gone — give up
+                                console.log('[WS] re-register failed – session gone, back to join');
+                                this.clearPlayerCookie();
+                                this.step = 'join';
+                            }
+                        }).catch(() => {
+                            console.log('[WS] re-register network error – back to join');
+                            this.clearPlayerCookie();
+                            this.step = 'join';
+                        });
+                    } else {
+                        console.log('[WS] not_found – no identity to re-register, back to join');
+                        this.clearPlayerCookie();
+                        this.step = 'join';
+                    }
                 } else if (msg.type === 'question_started') {
                     this.serverAnswers = msg.answerOptions || [];
                     this.receiveQuestion(msg.questionId);
+                    this.saveGameState();
                 } else if (msg.type === 'countdown_started') {
                     // Presenter started a close countdown — use absolute server time for accuracy
                     if (msg.timerEndsAt) {
@@ -605,6 +756,7 @@ export default {
                     savePendingAnswer(null);
                     // Show solution to all players (answered or not)
                     this.showingSolution = true;
+                    this.saveGameState();
                 } else if (msg.type === 'session_restarted') {
                     // Admin restarted the session — reset all quiz state
                     console.log('[WS] session_restarted');
@@ -621,12 +773,16 @@ export default {
                     this.serverAnswers = [];
                     this.step = 'waiting';
                     savePendingAnswer(null);
+                    this.saveGameState();
+                    this.savePlayerCookie();
                 } else if (msg.type === 'answer_received') {
                     this.isCorrect = msg.correct;
                     this.score = msg.score;
                     this.bonus = msg.bonus || 0;
                     // Server confirmed the answer — clear the pending queue
                     savePendingAnswer(null);
+                    this.saveGameState();
+                    this.savePlayerCookie();
                 } else if (msg.type === 'leaderboard') {
                     this.leaderboard = msg.data || [];
                 } else if (msg.type === 'next-question-in') {
@@ -634,11 +790,13 @@ export default {
                 } else if (msg.type === 'heartbeat_ack') {
                     // Server confirmed it received our heartbeat — connection is healthy
                     missedHeartbeats = 0;
-                    this.connectionLost = false;
+                    this.clearConnectionIssue();
                 }
             };
 
-            ws.onopen = () => {
+            socket.onopen = () => {
+                if (socket !== ws) return;
+                this.clearConnectionIssue();
                 ws.send(
                     JSON.stringify({
                         type: 'join',
@@ -681,7 +839,8 @@ export default {
                 }, 10000);
             };
 
-            ws.onclose = (event) => {
+            socket.onclose = (event) => {
+                if (socket !== ws) return;
                 if (heartbeatInterval) {
                     clearInterval(heartbeatInterval);
                     heartbeatInterval = null;
@@ -705,21 +864,23 @@ export default {
                 if (isTerminal) {
                     console.log(`[WS] terminal close (code=${code}, reason=${reason}) — returning to join`);
                     this.clearPlayerCookie();
+                    this.clearGameState();
                     savePendingAnswer(null);
                     this.cancelReconnect();
-                    this.connectionLost = false;
+                    this.clearConnectionIssue();
                     this.step = 'join';
                     return;
                 }
 
                 // Auto-reconnect if still in a game
                 if (this.uuid && this.sessionId && this.step !== 'join') {
-                    this.connectionLost = true;
+                    this.markConnectionIssue();
                     this.scheduleReconnect();
                 }
             };
 
-            ws.onerror = () => {
+            socket.onerror = () => {
+                if (socket !== ws) return;
                 // onclose fires after onerror; reconnect is handled there
             };
         },
@@ -801,6 +962,7 @@ export default {
             }
 
             this.clearTimer();
+            this.saveGameState();
         },
         startTimer() {
             if (this.timerInterval) clearInterval(this.timerInterval);
@@ -846,6 +1008,7 @@ export default {
             this.cancelReconnect();
             savePendingAnswer(null);
             this.clearPlayerCookie();
+            this.clearGameState();
             this.clearTimer();
             this.uuid = '';
             this.displayName = '';
@@ -883,7 +1046,7 @@ export default {
             // answer must survive so it gets flushed on the 'joined' message.
             // Pending answers are cleared explicitly in quitGame, deleteMyData,
             // and when the server confirms receipt (answer_received/question_stopped).
-            this.connectionLost = false;
+            this.clearConnectionIssue();
         },
         doToggleTheme() {
             this.currentTheme = this.$toggleTheme();
@@ -914,6 +1077,7 @@ export default {
         if (this._offlineHandler) {
             window.removeEventListener('offline', this._offlineHandler);
         }
+        this.clearConnectionIssue();
     },
 };
 </script>
