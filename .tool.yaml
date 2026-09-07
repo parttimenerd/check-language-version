@@ -1,0 +1,59 @@
+tag: experimental
+tagline: Static analyser that scans your Java source tree and reports the minimum language level each
+  file actually requires, so you know exactly what is preventing you from lowering --release.
+tagline_short: Find what's blocking a --release downgrade — per-file minimum Java version from syntax analysis.
+when_to_use:
+- You want to lower your project's --release target and need to know what's blocking it
+- You are auditing a multi-module project for language-level inconsistencies
+- You want a quick per-file breakdown before a Java version migration
+features:
+- Per-file minimum Java version detection from Java 1.0 through 21+
+- Detects syntax features: lambdas, records, sealed classes, switch expressions, text blocks, var, pattern matching
+- Summary table across all files
+- JSON output for scripting and aggregation across multiple runs
+- visualize.py for chart generation from JSON output
+no_release: true
+install:
+- label: Build from source
+  lang: bash
+  code: |
+    git clone https://github.com/parttimenerd/check-language-version
+    cd check-language-version
+    mvn package
+    # JAR: target/check-language-version.jar
+usage:
+- label: Scan a directory
+  lang: bash
+  code: |
+    java -jar check-language-version.jar src/main/java/
+    java -jar check-language-version.jar src/main/java/ --summary --verbose
+how_to:
+- title: Find what's preventing a --release downgrade
+  body: |
+    Run against your source tree, then use `--summary` to see the highest version required
+    across all files and which features are responsible:
+    ```bash
+    java -jar check-language-version.jar src/main/java/ --summary
+    ```
+    Drill into individual files with `--verbose` to see exactly which syntax triggered the version:
+    ```bash
+    java -jar check-language-version.jar src/main/java/MyClass.java --verbose
+    ```
+
+- title: Export to JSON and visualize across multiple modules
+  body: |
+    Capture per-file results as JSON for scripting or cross-module aggregation:
+    ```bash
+    java -jar check-language-version.jar src/ --json > module-a.json
+    java -jar check-language-version.jar other/src/ --json > module-b.json
+    ```
+    Aggregate into a single summary table:
+    ```bash
+    java -jar check-language-version.jar summary module-a.json module-b.json
+    ```
+    Generate charts with the bundled script:
+    ```bash
+    python3 visualize.py module-a.json module-b.json --output-dir charts --open
+    ```
+
+note: Syntax-only — does not detect API-level features like virtual threads (used via method calls, not syntax).
